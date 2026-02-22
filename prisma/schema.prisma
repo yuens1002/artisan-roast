@@ -28,6 +28,7 @@ model Product {
   variety           String?
   processing        String?
   details           Json?
+  roasterBrewGuide  Json?
   categories        CategoriesOnProducts[]
   tags              ProductTag[]
   variants          ProductVariant[]
