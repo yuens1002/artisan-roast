@@ -31,6 +31,7 @@ Customers become "Brew Contributors" who share recipes and confirm tasting notes
 | Helpful voting | One vote per user per review, denormalized `helpfulCount` |
 | Review ranking | Completeness heuristic + helpful votes (AI scoring is Tier 2) |
 | Media | Text-only in Tier 1 (image/video uploads are Tier 2) |
+| Verified Buyer badge | Always show "Verified Buyer" tag on review cards (all Tier 1 reviews are purchase-gated, but the badge establishes trust and the pattern for when non-verified reviews may exist) |
 | UI framing | "Brew Report" form, editorial card design, journal entry aesthetic |
 | "Best For" source | Replace hardcoded roast-level map with roaster-curated brew methods |
 | Roaster's notes | Structured JSON on Product model, editable in admin product editor |
@@ -341,7 +342,7 @@ Reviews are presented as **Brew Reports** — editorial journal entries, not for
   - Recipe details row (if provided): grind / temp / ratio in a subtle metadata strip
   - Content text
   - "Helpful" button with count (uses `voteHelpful` action)
-  - Verified purchase badge
+  - "Verified Buyer" badge with checkmark icon (green shield or similar trust indicator)
 - **New file:** `app/(site)/_components/review/ReviewList.tsx` — paginated list:
   - Sort selector: "Most Recent" | "Most Helpful" | "Most Detailed"
   - Brew method filter pills (shows only methods that have reviews for this product)
@@ -638,6 +639,7 @@ After `npm run seed`:
 25. Product with 5+ reviews -> "Community brews this with" line shows top brew methods from reviews alongside roaster recommendation
 26. `npm run seed` -> creates ~20 users, brew guides on 8-10 products, ~50-60 reviews with votes, denormalized summaries computed
 27. Demo site (artisanroast.app) after seed -> product cards show ratings, detail pages show roaster guides + brew reports with filters/sorting working out of the box
+28. Every review card displays a "Verified Buyer" badge with trust indicator (all Tier 1 reviews are purchase-gated)
 
 ---
 
