@@ -11,10 +11,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useBreadcrumbItems } from "./BreadcrumbContext";
 import { useBreadcrumbTrail } from "@/lib/navigation/hooks";
-import {
-  AdminBreadcrumbDropdown,
-  hasNavigableChildren,
-} from "./AdminBreadcrumbDropdown";
+import { AdminBreadcrumbDropdown } from "./AdminBreadcrumbDropdown";
 
 /**
  * Shared styles for breadcrumb items.
@@ -91,13 +88,6 @@ export function AdminBreadcrumb() {
             );
           }
 
-          // Check if previous item rendered a trailing animated separator
-          const prev = index > 0 ? allItems[index - 1] : null;
-          const prevIsNavWithDropdown =
-            prev !== null &&
-            !prev.id.startsWith("custom-") &&
-            hasNavigableChildren(prev.id, index - 1 === allItems.length - 1);
-
           const isCustom = item.id.startsWith("custom-");
 
           // Nav items: AdminBreadcrumbDropdown renders its own separator + item
@@ -107,7 +97,6 @@ export function AdminBreadcrumb() {
                 key={item.id}
                 item={item}
                 isLast={isLast}
-                skipSeparator={prevIsNavWithDropdown}
               />
             );
           }
@@ -115,7 +104,7 @@ export function AdminBreadcrumb() {
           // Custom items: plain separator + text/link
           return (
             <span key={item.id} className="contents">
-              {!prevIsNavWithDropdown && <BreadcrumbSeparator />}
+              <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbItemContent item={item} isLast={isLast} />
               </BreadcrumbItem>

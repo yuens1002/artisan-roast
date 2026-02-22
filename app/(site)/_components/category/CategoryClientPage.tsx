@@ -7,7 +7,6 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { BreadcrumbCategoryDropdown } from "@/app/(site)/_components/navigation/BreadcrumbCategoryDropdown";
@@ -36,7 +35,6 @@ export default function CategoryClientPage({
               <Link href="/">Home</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbCategoryDropdown
               categoryName={categoryName}

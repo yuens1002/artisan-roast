@@ -375,7 +375,6 @@ export default function ProductClientPage({
                 <Link href="/">Home</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbCategoryDropdown
                 categoryName={category.name}
@@ -383,6 +382,7 @@ export default function ProductClientPage({
                 products={categoryProducts}
               />
             </BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>{product.name}</BreadcrumbPage>
             </BreadcrumbItem>

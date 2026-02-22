@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getNavigableChildren } from "@/lib/navigation";
@@ -20,31 +21,32 @@ import {
 interface AdminBreadcrumbDropdownProps {
   item: { id: string; label: string; href: string | null };
   isLast: boolean;
-  /** Skip the leading separator (previous item rendered an animated trailing one) */
-  skipSeparator?: boolean;
 }
 
 const linkStyles = "underline-offset-4 hover:underline";
 
 /**
- * Renders a breadcrumb item, optionally with a leading separator.
+ * Renders a breadcrumb item.
  * When the item has navigable children, the label becomes a dropdown trigger
- * and an animated separator chevron is rendered AFTER the label.
+ * and an animated chevron is rendered BEFORE the label (acting as separator).
+ * Non-dropdown items render a standard leading separator.
  */
 export function AdminBreadcrumbDropdown({
   item,
   isLast,
-  skipSeparator = false,
 }: AdminBreadcrumbDropdownProps) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
-  const children = isLast ? [] : getNavigableChildren(item.id);
+  const children = isLast
+    ? []
+    : getNavigableChildren(item.id).filter((child) => child.href !== pathname);
 
-  // No children — plain text/link
+  // No children — plain separator + text/link
   if (children.length === 0) {
     return (
       <>
-        {!skipSeparator && <BreadcrumbSeparator />}
+        <BreadcrumbSeparator />
         <BreadcrumbItem>
           {isLast || !item.href ? (
             <span>{item.label}</span>
@@ -58,28 +60,26 @@ export function AdminBreadcrumbDropdown({
     );
   }
 
-  // Has children — label is dropdown trigger, trailing > animates
+  // Has children — animated chevron before label, no trailing separator
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      {!skipSeparator && <BreadcrumbSeparator />}
       <BreadcrumbItem>
         <DropdownMenuTrigger
           className={cn(
             linkStyles,
-            "outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 rounded-sm"
+            "inline-flex items-center gap-1.5 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 rounded-sm"
           )}
         >
+          <ChevronRight
+            className={cn(
+              "size-3.5 transition-[rotate] duration-200",
+              open && "-rotate-90"
+            )}
+            aria-hidden="true"
+          />
           {item.label}
         </DropdownMenuTrigger>
       </BreadcrumbItem>
-      <BreadcrumbSeparator>
-        <ChevronRight
-          className={cn(
-            "size-3.5 transition-[rotate] duration-200",
-            open && "-rotate-90"
-          )}
-        />
-      </BreadcrumbSeparator>
       <DropdownMenuContent
         align="start"
         className="max-h-72 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&_[data-slot=dropdown-menu-item]]:cursor-pointer"
@@ -102,13 +102,4 @@ export function AdminBreadcrumbDropdown({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-/**
- * Check if a route ID has navigable children (used by parent to determine
- * whether the next item should skip its leading separator).
- */
-export function hasNavigableChildren(routeId: string, isLast: boolean): boolean {
-  if (isLast) return false;
-  return getNavigableChildren(routeId).length > 0;
 }
