@@ -1,0 +1,11 @@
+{
+  "branches": {
+    "feat/product-reviews-tier1": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 15,
+      "tasks": [],
+      "notes": "Plan approved. Roaster's Brew Guide (Sprint 0) — 7 UI + 5 FN + 3 REG ACs."
+    }
+  }
+}
