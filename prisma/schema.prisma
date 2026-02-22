@@ -29,11 +29,14 @@ model Product {
   processing        String?
   details           Json?
   roasterBrewGuide  Json?
+  averageRating     Float?
+  reviewCount       Int                    @default(0)
   categories        CategoriesOnProducts[]
   tags              ProductTag[]
   variants          ProductVariant[]
   addOnLinksPrimary AddOnLink[]            @relation("PrimaryProduct")
   addOnLinksAsAddon AddOnLink[]            @relation("AddOnProduct")
+  reviews           Review[]
 
   @@index([isFeatured])
 }
@@ -195,6 +198,8 @@ model User {
   activities          UserActivity[]
   passwordResetTokens PasswordResetToken[]
   drafts              ProductMenuDraft[]
+  reviews             Review[]
+  reviewVotes         ReviewVote[]
 }
 
 model Account {
@@ -291,6 +296,7 @@ model Order {
   stripeSubscriptionId  String?
   user                  User?          @relation(fields: [userId], references: [id], onDelete: Restrict)
   items                 OrderItem[]
+  reviews               Review[]
 
   @@index([userId])
   @@index([stripeSessionId])
@@ -598,4 +604,84 @@ enum PageType {
   CAFE
   FAQ
   LINK
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  FLAGGED
+  REMOVED
+}
+
+enum BrewMethod {
+  POUR_OVER_V60
+  CHEMEX
+  AEROPRESS
+  FRENCH_PRESS
+  ESPRESSO
+  MOKA_POT
+  COLD_BREW
+  DRIP_MACHINE
+  SIPHON
+  TURKISH
+  OTHER
+}
+
+model Review {
+  id        String       @id @default(cuid())
+  rating    Int
+  title     String?
+  content   String
+  status    ReviewStatus @default(PUBLISHED)
+
+  brewMethod   BrewMethod?
+  grindSize    String?
+  waterTempF   Int?
+  ratio        String?
+  tastingNotes String[]
+
+  completenessScore Float @default(0)
+  helpfulCount      Int   @default(0)
+
+  productId String
+  userId    String
+  orderId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order   Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  votes   ReviewVote[]
+
+  @@unique([productId, userId])
+  @@index([productId, status, createdAt])
+  @@index([productId, status, completenessScore])
+  @@index([productId, brewMethod])
+}
+
+model ReviewVote {
+  id       String @id @default(cuid())
+  reviewId String
+  userId   String
+
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model ReviewEmailLog {
+  id        String   @id @default(cuid())
+  orderId   String
+  userId    String
+  productId String
+  sentAt    DateTime @default(now())
+
+  @@unique([orderId, userId, productId])
+  @@index([userId])
 }
