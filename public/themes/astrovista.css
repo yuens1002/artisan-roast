@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Merriweather:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 :root {
+  --font-inter: 'Outfit', sans-serif;
   --font-sans: 'Outfit', sans-serif;
   --font-serif: 'Merriweather', serif;
   --font-mono: 'Fira Code', monospace;

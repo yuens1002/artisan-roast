@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Abyssinica+SIL&family=Courier+Prime:wght@400;700&display=swap');
 
 :root {
+  --font-inter: 'Afacad', ui-sans-serif, sans-serif, system-ui;
   --font-sans: 'Afacad', ui-sans-serif, sans-serif, system-ui;
   --font-serif: 'Abyssinica SIL', ui-serif, serif;
   --font-mono: 'Courier Prime', ui-monospace, monospace;
