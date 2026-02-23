@@ -57,8 +57,8 @@ export async function GET(
     const session = await auth();
     const userId = session?.user?.id;
 
-    // Fetch reviews + total count
-    const [reviews, total] = await Promise.all([
+    // Fetch reviews + total count + brew method counts
+    const [reviews, total, brewMethodGroups] = await Promise.all([
       prisma.review.findMany({
         where,
         orderBy,
@@ -96,7 +96,20 @@ export async function GET(
         },
       }),
       prisma.review.count({ where }),
+      prisma.review.groupBy({
+        by: ["brewMethod"],
+        where: { productId, status: "PUBLISHED", brewMethod: { not: null } },
+        _count: true,
+      }),
     ]);
+
+    // Build brew method counts map
+    const brewMethodCounts: Record<string, number> = {};
+    for (const group of brewMethodGroups) {
+      if (group.brewMethod) {
+        brewMethodCounts[group.brewMethod] = group._count;
+      }
+    }
 
     // Map results — add userVoted boolean and isVerifiedPurchase
     const mapped = reviews.map((review) => ({
@@ -129,6 +142,7 @@ export async function GET(
       total,
       page,
       pageSize: PAGE_SIZE,
+      brewMethodCounts,
     });
   } catch (error) {
     console.error("Error fetching reviews:", error);
