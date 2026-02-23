@@ -66,6 +66,7 @@ import { seedMenu } from "./menu";
 import { seedUsers } from "./users";
 import { seedCmsPages } from "./cms-pages";
 import { seedSyntheticData } from "./synthetic-data";
+import { seedReviews } from "./reviews";
 
 async function main() {
   console.log("🌱 Starting modular database seeding...\n");
@@ -114,6 +115,14 @@ async function main() {
       console.log(
         "\n↷ Phase 5 skipped: SEED_INCLUDE_SYNTHETIC is false (clean install mode)"
       );
+    }
+
+    // Phase 6: Product reviews (optional)
+    if (shouldSeedSyntheticData()) {
+      console.log("\n📝 Phase 6: Seeding product reviews...");
+      await seedReviews(prisma);
+    } else {
+      console.log("\n↷ Phase 6 skipped: SEED_INCLUDE_SYNTHETIC is false");
     }
 
     console.log("\n✅ All seeding completed successfully!");
