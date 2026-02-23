@@ -12,7 +12,7 @@ const CHUNK_SIZE = 10;
 
 /**
  * GET /api/cron/check-deliveries
- * Hourly cron job that checks SHIPPED orders for delivery status via carrier APIs.
+ * Daily cron job that checks SHIPPED orders for delivery status via carrier APIs.
  * When a package is detected as delivered, updates order to DELIVERED and sends email.
  */
 export async function GET(request: NextRequest) {

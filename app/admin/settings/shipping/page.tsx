@@ -18,8 +18,10 @@ export default function ShippingSettingsPage() {
         <Info className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
         <span>
           Carrier API keys enable automatic delivery status updates.
-          Orders shipped with a configured carrier will have their tracking
-          status checked daily and customers notified on delivery.
+          Orders shipped with a configured carrier will have their status
+          checked and customers notified on delivery. This feature relies
+          on a scheduled task (cron job) configured through your hosting
+          provider.
         </span>
       </div>
 
