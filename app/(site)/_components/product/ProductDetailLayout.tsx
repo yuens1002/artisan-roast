@@ -11,6 +11,7 @@ interface ProductDetailLayoutProps {
   brewGuide?: ReactNode;
   story?: ReactNode;
   addOns?: ReactNode;
+  reviews?: ReactNode;
   relatedProducts?: ReactNode;
   floatingButton?: ReactNode;
   hasDetails?: boolean;
@@ -26,6 +27,7 @@ export function ProductDetailLayout({
   brewGuide,
   story,
   addOns,
+  reviews,
   relatedProducts,
   floatingButton,
   hasDetails = false,
@@ -74,6 +76,8 @@ export function ProductDetailLayout({
       {brewGuide && !story && (
         <div className="mt-8">{brewGuide}</div>
       )}
+
+      {reviews}
 
       {relatedProducts}
 

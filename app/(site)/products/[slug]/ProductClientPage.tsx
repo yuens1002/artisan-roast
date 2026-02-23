@@ -41,6 +41,7 @@ import {
   BreadcrumbCategoryDropdown,
   type BreadcrumbProduct,
 } from "@/app/(site)/_components/navigation/BreadcrumbCategoryDropdown";
+import { ReviewSection } from "@/app/(site)/_components/review/ReviewSection";
 
 interface ProductClientPageProps {
   product: Product;
@@ -436,6 +437,8 @@ export default function ProductClientPage({
               isOrganic={product.isOrganic}
               processing={product.processing}
               roasterBrewGuide={product.roasterBrewGuide as unknown as RoasterBrewGuideType | null}
+              averageRating={product.averageRating}
+              reviewCount={product.reviewCount}
             />
           ) : (
             <dl className="space-y-3">
@@ -521,6 +524,11 @@ export default function ProductClientPage({
               ))}
             </ScrollCarousel>
           </div>
+        ) : undefined
+      }
+      reviews={
+        isCoffee && product.reviewCount > 0 ? (
+          <ReviewSection productId={product.id} reviewCount={product.reviewCount} />
         ) : undefined
       }
       relatedProducts={

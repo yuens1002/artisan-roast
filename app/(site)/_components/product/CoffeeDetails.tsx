@@ -4,6 +4,7 @@ import {
   type RoasterBrewGuide,
   BREW_METHOD_LABELS,
 } from "@/lib/types/roaster-brew-guide";
+import { StarRating } from "./StarRating";
 
 const brewMethodsByRoast: Record<RoastLevel, string[]> = {
   LIGHT: ["Pour-over (V60/Chemex)", "Aeropress", "Filter"],
@@ -18,6 +19,8 @@ interface CoffeeDetailsProps {
   isOrganic: boolean;
   processing?: string | null;
   roasterBrewGuide?: RoasterBrewGuide | null;
+  averageRating?: number | null;
+  reviewCount?: number;
 }
 
 function DetailItem({ label, value }: { label: string; value: string }) {
@@ -38,6 +41,8 @@ export function CoffeeDetails({
   isOrganic,
   processing,
   roasterBrewGuide,
+  averageRating,
+  reviewCount = 0,
 }: CoffeeDetailsProps) {
   // Priority chain: roaster-curated methods → roast-level fallback
   const brewMethods = roasterBrewGuide?.recommendedMethods?.length
@@ -62,6 +67,22 @@ export function CoffeeDetails({
       {variety && <DetailItem label="Variety" value={variety} />}
       {altitude && <DetailItem label="Altitude" value={altitude} />}
       {processing && <DetailItem label="Processing" value={processing} />}
+      {reviewCount > 0 && averageRating != null && (
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-foreground/50">
+            Community
+          </dt>
+          <dd className="mt-0.5 flex items-center gap-1">
+            <StarRating rating={averageRating} size="sm" />
+            <a
+              href="#reviews"
+              className="text-sm text-text-muted hover:text-primary transition-colors"
+            >
+              ({reviewCount} Brew {reviewCount === 1 ? "Report" : "Reports"})
+            </a>
+          </dd>
+        </div>
+      )}
     </dl>
   );
 }
