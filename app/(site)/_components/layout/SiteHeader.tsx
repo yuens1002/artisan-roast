@@ -208,7 +208,7 @@ export default function SiteHeader({
   return (
     <header
       className={cn(
-        "bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md transition-transform duration-300",
+        "bg-background/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md transition-transform duration-300",
         isHeaderVisible ? "translate-y-0" : "-translate-y-full"
       )}
     >

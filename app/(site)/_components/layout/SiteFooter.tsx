@@ -397,7 +397,7 @@ export default async function SiteFooter() {
       </div>
 
       {/* Copyright - Full Width Separator */}
-      <div className="border-t border-border/30 bg-white/90 dark:bg-slate-950/90">
+      <div className="border-t border-border/30 bg-background/90">
         <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-4 flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} {brandingSettings.storeName}. All
