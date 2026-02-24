@@ -8,7 +8,7 @@
 
 **Name:** Artisan Roast
 **Type:** Full-stack E-commerce Coffee Store with AI Integration
-**Version:** 0.71.4
+**Version:** 0.90.0
 **Live Demo:** <https://artisanroast.app/>
 
 ### Tech Stack
