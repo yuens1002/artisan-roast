@@ -36,7 +36,7 @@ export function ProductDeliverySchedule({
         }
         onValueChange={onSubscriptionCadenceChange}
       >
-        <SelectTrigger className="h-full flex-1 border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0">
+        <SelectTrigger className="h-full flex-1 border-0 bg-transparent dark:bg-transparent shadow-none focus:ring-0 focus:ring-offset-0">
           <SelectValue placeholder="Choose delivery schedule" />
         </SelectTrigger>
         <SelectContent>

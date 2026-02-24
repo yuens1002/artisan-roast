@@ -279,12 +279,12 @@ export function ShoppingCart() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative text-muted-foreground hover:text-primary transition-colors"
+          className="relative"
           aria-label={`Open cart (${displayCount} items)`}
         >
           <ShoppingCartIcon className="w-6 h-6" />
           {displayCount > 0 && (
-            <span className="absolute top-0 -right-1.5 md:-top-2 md:-right-2 bg-red-600 text-white text-[10px] md:text-xs w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-semibold">
+            <span className="absolute top-0 -right-1.5 md:-top-2 md:-right-2 bg-primary text-primary-foreground text-[10px] md:text-xs w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-semibold">
               {displayCount}
             </span>
           )}
@@ -331,7 +331,7 @@ export function ShoppingCart() {
                     className="shrink-0"
                     onClick={() => setIsOpen(false)}
                   >
-                    <div className="relative w-20 h-20 rounded-md overflow-hidden bg-white dark:bg-gray-800">
+                    <div className="relative w-20 h-20 rounded-md overflow-hidden bg-muted">
                       {item.imageUrl ? (
                         <Image
                           src={item.imageUrl}
@@ -340,7 +340,7 @@ export function ShoppingCart() {
                           className="object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                           No image
                         </div>
                       )}

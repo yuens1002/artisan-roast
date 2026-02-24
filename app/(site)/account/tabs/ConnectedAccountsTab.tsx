@@ -106,7 +106,7 @@ export default function ConnectedAccountsTab({
           {/* GitHub Account */}
           <div className="flex items-center justify-between p-4 border border-border rounded-lg">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                 <Github className="w-6 h-6" />
               </div>
               <div>

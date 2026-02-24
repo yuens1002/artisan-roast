@@ -129,29 +129,29 @@
       "name": "Orient",
       "source": "https://tweakcn.com/r/themes/cmlzh5zhg000004jmf4vmcx8c",
       "fonts": {
-        "sans": "'Afacad', ui-sans-serif, sans-serif, system-ui",
-        "serif": "'Abyssinica SIL', ui-serif, serif",
-        "mono": "'Courier Prime', ui-monospace, monospace",
-        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Abyssinica+SIL&family=Courier+Prime:wght@400;700&display=swap"
+        "sans": "'Noto Serif SC', serif, system-ui",
+        "serif": "'Noto Serif SC', serif",
+        "mono": "Menlo, ui-monospace, monospace",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap"
       },
       "colors": {
         "light": {
-          "background": "oklch(0.9761 0 0)",
-          "foreground": "oklch(0.2891 0 0)",
-          "primary": "oklch(0.9547 0.2156 114.5886)",
-          "secondary": "oklch(0.2264 0 0)",
-          "accent": "oklch(0.9612 0 0)",
-          "muted": "oklch(0.9700 0 0)",
-          "destructive": "oklch(0.6453 0.2404 27.3106)"
+          "background": "oklch(0.9877 0.0053 95.2913)",
+          "foreground": "oklch(0.2178 0 0)",
+          "primary": "oklch(0.6280 0.2576 29.2272)",
+          "secondary": "oklch(0.8868 0.1821 95.3373)",
+          "accent": "oklch(0.9551 0.1200 102.8105)",
+          "muted": "oklch(0.9187 0.0165 91.6027)",
+          "destructive": "oklch(0.5680 0.2001 26.3974)"
         },
         "dark": {
-          "background": "oklch(0.1450 0 0)",
-          "foreground": "oklch(0.9850 0 0)",
-          "primary": "oklch(0.9543 0.1898 107.5776)",
-          "secondary": "oklch(0.2690 0 0)",
-          "accent": "oklch(0.3710 0 0)",
-          "muted": "oklch(0.2690 0 0)",
-          "destructive": "oklch(0.7040 0.1910 22.2160)"
+          "background": "oklch(0.1543 0 0)",
+          "foreground": "oklch(0.9702 0 0)",
+          "primary": "oklch(0.6347 0.2509 28.4271)",
+          "secondary": "oklch(0.9330 0.1972 104.3285)",
+          "accent": "oklch(0.3405 0.0727 106.4442)",
+          "muted": "oklch(0.2850 0 0)",
+          "destructive": "oklch(0.6636 0.2231 25.7181)"
         }
       }
     }

@@ -105,7 +105,7 @@ export default function ProductCard({
     >
       <Card
         className={clsx(
-          "w-full overflow-hidden rounded-none bg-card flex flex-col justify-between border-0 shadow-none gap-0",
+          "w-full overflow-hidden rounded-none bg-transparent flex flex-col justify-between border-0 shadow-none gap-0",
           cardPaddingClass ? cardPaddingClass : "p-0",
           !disableCardEffects && "cursor-pointer",
           hoverRevealFooter && "group"
@@ -181,7 +181,7 @@ export default function ProductCard({
                         <p className="text-xs text-muted-foreground line-through">
                           ${formatPrice(oneTimePrice.priceInCents)}
                         </p>
-                        <p className="text-sm font-bold text-primary">
+                        <p className="text-sm font-bold text-foreground">
                           ${displayPrice}
                         </p>
                       </div>
@@ -190,13 +190,13 @@ export default function ProductCard({
                         <p className="text-sm text-muted-foreground line-through">
                           ${formatPrice(oneTimePrice.priceInCents)}
                         </p>
-                        <p className="text-lg font-bold text-primary">
+                        <p className="text-lg font-bold text-foreground">
                           ${displayPrice}
                         </p>
                       </div>
                     </div>
                   ) : (
-                    <p className="font-bold text-primary @max-[300px]/card:text-sm @min-[300px]/card:text-lg">
+                    <p className="font-bold text-foreground @max-[300px]/card:text-sm @min-[300px]/card:text-lg">
                       ${displayPrice}
                     </p>
                   )}

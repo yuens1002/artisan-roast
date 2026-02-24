@@ -231,7 +231,7 @@ export default async function SiteFooter() {
   await auth();
 
   return (
-    <footer className="bg-secondary text-secondary-foreground border-t">
+    <footer className="bg-muted text-foreground border-t">
       <div className="mx-auto max-w-screen-2xl px-4 md:px-8 pt-12 pb-6">
         {/* Logo and Branding */}
         <div className="mb-8">

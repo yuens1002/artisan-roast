@@ -399,7 +399,7 @@ export default function SiteHeader({
                 <NavigationMenu value={navValue} onValueChange={handleNavValueChange} delayDuration={200}>
                   <NavigationMenuList>
                     <NavigationMenuItem value="shop">
-                      <NavigationMenuTrigger className="h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden">
+                      <NavigationMenuTrigger className="h-auto px-2 py-2 text-foreground [&>svg]:hidden">
                         <div className="flex flex-col items-center gap-1">
                           <DynamicIcon name={productMenuIcon as IconName} className="w-5 h-5" />
                           <div className="flex items-center gap-0.5">
@@ -432,7 +432,7 @@ export default function SiteHeader({
                             }
                             className={cn(
                               navigationMenuTriggerStyle(),
-                              "h-auto flex-col gap-1 px-2 py-2 text-foreground hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
+                              "h-auto flex-col gap-1 px-2 py-2 text-foreground"
                             )}
                           >
                             {page.icon ? (

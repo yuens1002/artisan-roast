@@ -29,7 +29,7 @@ export function UserMenu({ user }: UserMenuProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="relative text-muted-foreground hover:text-primary transition-colors"
+          className="relative"
         >
           {user.image ? (
             <Image
