@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.89.15 - 2026-02-24
+
+### Added
+
+- **Product reviews system**: Full review/brew-report system with star ratings, brew method badges, tasting notes, helpful votes, sort/filter, and infinite scroll pagination
+- **Rating breakdown sidebar**: Amazon-style rating distribution chart with horizontal bars, responsive layout (stacked on mobile, sticky sidebar on desktop)
+- **Brew report form**: Multi-step form with star picker, brew parameters (method, grind, temp, ratio), tasting notes, and completeness indicator
+- **Verified purchase badges**: Reviews linked to orders display variant name and "Verified Purchase" badge
+- **Merch reviews**: Review system extended to merchandise products (mugs, kettles) with adapted form hiding brew-specific fields
+- **Brew report action on orders**: Order history shows "Write a Brew Report" action with submenu listing eligible products
+
+### Fixed
+
+- **Orders page 401 for unauthenticated users**: Graceful handling when session is missing
+
 ## 0.89.12 - 2026-02-21
 
 ### Added
