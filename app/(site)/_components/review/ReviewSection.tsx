@@ -10,7 +10,7 @@ interface ReviewSectionProps {
 }
 
 export function ReviewSection({ productId, reviewCount, isCoffee = true }: ReviewSectionProps) {
-  const heading = isCoffee ? "Brew Reports" : "Reviews";
+  const heading = isCoffee ? "Community Brew Reports" : "Reviews";
 
   return (
     <section className="mt-8">

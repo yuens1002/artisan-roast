@@ -10,8 +10,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { AddToCartButton } from "./AddToCartButton";
 import { RoastLevelBar } from "./RoastLevelBar";
-import { RatingSummary } from "./RatingSummary";
-
 import {
   Card,
   CardContent,
@@ -144,14 +142,6 @@ export default function ProductCard({
               <CardDescription className={cn("pt-1 line-clamp-2", compact ? "text-xs" : "text-sm")}>
                 {product.description}
               </CardDescription>
-            )}
-            {product.reviewCount > 0 && (
-              <RatingSummary
-                compact
-                averageRating={product.averageRating}
-                reviewCount={product.reviewCount}
-                className="pt-1.5"
-              />
             )}
           </CardContent>
 

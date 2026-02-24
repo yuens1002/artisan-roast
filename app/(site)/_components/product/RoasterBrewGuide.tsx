@@ -93,7 +93,7 @@ export function RoasterBrewGuide({ guide }: RoasterBrewGuideProps) {
           {guide.accolades!.map((accolade, i) => (
             <span
               key={i}
-              className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/30 px-3 py-1 text-xs font-medium text-amber-800 dark:text-amber-200"
+              className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-primary"
             >
               <Award className="h-3 w-3" />
               {accolade}

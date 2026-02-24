@@ -83,6 +83,12 @@ export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
             <span className="text-sm font-medium text-text-base">
               {formatDisplayName(review.user.name)}
             </span>
+            {review.isVerifiedPurchase && (
+              <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary">
+                <CheckCircle className="h-3 w-3" />
+                Verified Buyer
+              </span>
+            )}
             <StarRating rating={review.rating} size="sm" />
             <span className="text-xs text-text-muted">
               {formatRelativeDate(review.createdAt)}
@@ -90,16 +96,6 @@ export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
           </div>
         </div>
       </div>
-
-      {/* Verified buyer badge */}
-      {review.isVerifiedPurchase && (
-        <div className="flex items-center gap-1 mb-2">
-          <CheckCircle className="h-3.5 w-3.5 text-primary" />
-          <span className="text-xs font-medium text-primary">
-            Verified Buyer
-          </span>
-        </div>
-      )}
 
       {/* Title */}
       {review.title && (
