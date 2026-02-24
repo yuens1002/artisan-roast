@@ -272,8 +272,8 @@ export async function seedMenu(prisma: PrismaClient) {
     const { name, icon } = LABEL_DEFS[i];
     const label = await prisma.categoryLabel.upsert({
       where: { name },
-      update: { order: i + 1, icon },
-      create: { name, order: i + 1, icon },
+      update: { order: i + 1, icon, isVisible: true },
+      create: { name, order: i + 1, icon, isVisible: true },
     });
     labels.set(name, label.id);
   }
