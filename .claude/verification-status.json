@@ -110,6 +110,13 @@
       "acs_total": 38,
       "tasks": [],
       "notes": "Iteration 3: All 38 ACs verified (25 iter1-2 + 13 iter3). Sticky bar polish: transparent inline, seamless docked, pointer-events passthrough. Variant name validation on Create Product. 1 sub-iteration to fix missing isDisabled in local variant."
+    },
+    "feat/storefront-theme-switcher": {
+      "status": "verified",
+      "acs_passed": 17,
+      "acs_total": 17,
+      "tasks": [],
+      "notes": "All 17 ACs verified via sub-agent screenshots + code review. QC confirmed. 1 iteration (Turbopack route detection blocker, resolved by fresh dev server on port 8000)."
     }
   }
 }

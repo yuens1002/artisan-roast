@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.90.0 - 2026-02-24
+
+### Added
+
+- **Storefront theme switcher**: Choose from multiple color themes for the customer-facing storefront with live preview, Google Fonts support, and one-click activation from the admin Appearance settings page
+- **Light/dark preview toggle**: Preview how any theme looks in both light and dark mode directly from the Appearance page without switching the admin UI
+
 ## 0.89.15 - 2026-02-23
 
 ### Added

@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { Check, Palette, Terminal } from "lucide-react";
+import { Check, Moon, Palette, Sun, Terminal } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { SaveButton } from "@/app/admin/_components/forms/SaveButton";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -94,6 +95,10 @@ export default function AppearanceSettingsPage() {
   const [selectedTheme, setSelectedTheme] = useState<string>("default");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewDark, setPreviewDark] = useState(isDark);
+
+  // Sync preview mode when admin theme changes
+  useEffect(() => setPreviewDark(isDark), [isDark]);
 
   // Fetch manifest and current theme on mount
   useEffect(() => {
@@ -184,10 +189,10 @@ export default function AppearanceSettingsPage() {
   // Get the selected theme's data for the preview panel
   const previewEntry = allThemes.find((t) => t.id === selectedTheme);
   const previewColors = previewEntry
-    ? isDark
+    ? previewDark
       ? previewEntry.colors.dark
       : previewEntry.colors.light
-    : isDark
+    : previewDark
       ? DEFAULT_COLORS.dark
       : DEFAULT_COLORS.light;
 
@@ -201,7 +206,7 @@ export default function AppearanceSettingsPage() {
   previewStyle["--muted-foreground"] = previewColors.foreground;
   previewStyle["--card"] = previewColors.background;
   previewStyle["--card-foreground"] = previewColors.foreground;
-  previewStyle["--border"] = isDark
+  previewStyle["--border"] = previewDark
     ? "oklch(1 0 0 / 10%)"
     : previewColors.muted;
   // Apply theme font to the preview
@@ -297,7 +302,17 @@ export default function AppearanceSettingsPage() {
 
             {/* Live preview panel */}
             <div className="mt-6">
-              <p className="text-sm font-medium mb-3">Preview</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium">Preview</p>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setPreviewDark(!previewDark)}
+                  aria-label={previewDark ? "Preview light mode" : "Preview dark mode"}
+                >
+                  {previewDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                </Button>
+              </div>
               <Card
                 className="overflow-hidden p-6"
                 style={previewStyle as React.CSSProperties}
