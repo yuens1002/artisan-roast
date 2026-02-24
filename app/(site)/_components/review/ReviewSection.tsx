@@ -21,24 +21,24 @@ export function ReviewSection({
   const heading = isCoffee ? "Community Brew Reports" : "Reviews";
 
   const [distributionData, setDistributionData] = useState<{
-    ratingDistribution: Record<number, number>;
+    ratingDistribution: Record<string, number>;
     total: number;
   } | null>(null);
 
   const handleDistributionLoad = useCallback(
-    (data: { ratingDistribution: Record<number, number>; total: number }) => {
+    (data: { ratingDistribution: Record<string, number>; total: number }) => {
       setDistributionData(data);
     },
     []
   );
 
-  const sidebar = distributionData && (
-    <RatingBreakdown
-      averageRating={averageRating}
-      totalCount={distributionData.total}
-      distribution={distributionData.ratingDistribution}
-    />
-  );
+  const breakdownProps = distributionData
+    ? {
+        averageRating,
+        totalCount: distributionData.total,
+        distribution: distributionData.ratingDistribution,
+      }
+    : null;
 
   return (
     <section className="mt-8">
@@ -50,11 +50,15 @@ export function ReviewSection({
         {heading} {reviewCount > 0 && `(${reviewCount})`}
       </h2>
 
-      <div className="max-w-4xl md:grid md:grid-cols-[1fr_240px] md:gap-10">
-        {/* Small screens: breakdown stacks above list */}
-        {sidebar && <div className="mb-6 max-w-xs md:hidden">{sidebar}</div>}
+      <div className="lg:grid lg:grid-cols-[minmax(0,_700px)_1fr] lg:gap-10">
+        {/* Stacked breakdown on small/medium screens (left-aligned) */}
+        {breakdownProps && (
+          <div className="mb-6 max-w-xs lg:hidden">
+            <RatingBreakdown {...breakdownProps} />
+          </div>
+        )}
 
-        {/* Review list (left column) */}
+        {/* Review list (left column, max-width constrained) */}
         <div className="min-w-0">
           <ReviewList
             productId={productId}
@@ -62,10 +66,12 @@ export function ReviewSection({
           />
         </div>
 
-        {/* md+: sticky sidebar (right column) */}
-        {sidebar && (
-          <aside className="hidden md:block">
-            <div className="sticky top-24">{sidebar}</div>
+        {/* lg+: sticky sidebar (centered in column) */}
+        {breakdownProps && (
+          <aside className="hidden lg:flex lg:justify-center">
+            <div className="sticky top-24 w-full max-w-[240px]">
+              <RatingBreakdown {...breakdownProps} centered />
+            </div>
           </aside>
         )}
       </div>

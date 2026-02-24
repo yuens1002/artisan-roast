@@ -19,7 +19,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 interface ReviewListProps {
   productId: string;
-  onDistributionLoad?: (data: { ratingDistribution: Record<number, number>; total: number }) => void;
+  onDistributionLoad?: (data: { ratingDistribution: Record<string, number>; total: number }) => void;
 }
 
 interface ReviewsApiResponse {
@@ -28,7 +28,7 @@ interface ReviewsApiResponse {
   page: number;
   pageSize: number;
   brewMethodCounts: Record<string, number>;
-  ratingDistribution: Record<number, number>;
+  ratingDistribution: Record<string, number>;
 }
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -137,7 +137,7 @@ export function ReviewList({ productId, onDistributionLoad }: ReviewListProps) {
   return (
     <div>
       {/* Sort + filter controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
         {/* Sort buttons */}
         <div className="flex items-center gap-1">
           {SORT_OPTIONS.map((option) => (

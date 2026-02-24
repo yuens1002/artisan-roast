@@ -75,7 +75,7 @@ export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
   return (
     <article className="py-5 first:pt-0 border-b last:border-b-0 border-border/50">
       {/* Top row: avatar, name, stars, date */}
-      <div className="flex items-start gap-3 mb-2">
+      <div className="flex items-center gap-3 mb-2">
         <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
           {getInitial(review.user.name)}
         </div>
