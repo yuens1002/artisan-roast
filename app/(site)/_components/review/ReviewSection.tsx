@@ -50,9 +50,9 @@ export function ReviewSection({
         {heading} {reviewCount > 0 && `(${reviewCount})`}
       </h2>
 
-      <div className="lg:grid lg:grid-cols-[1fr_260px] lg:gap-10">
-        {/* Mobile: breakdown stacks above list */}
-        {sidebar && <div className="mb-6 lg:hidden">{sidebar}</div>}
+      <div className="max-w-4xl md:grid md:grid-cols-[1fr_240px] md:gap-10">
+        {/* Small screens: breakdown stacks above list */}
+        {sidebar && <div className="mb-6 max-w-xs md:hidden">{sidebar}</div>}
 
         {/* Review list (left column) */}
         <div className="min-w-0">
@@ -62,9 +62,9 @@ export function ReviewSection({
           />
         </div>
 
-        {/* Desktop: sticky sidebar (right column) */}
+        {/* md+: sticky sidebar (right column) */}
         {sidebar && (
-          <aside className="hidden lg:block">
+          <aside className="hidden md:block">
             <div className="sticky top-24">{sidebar}</div>
           </aside>
         )}
