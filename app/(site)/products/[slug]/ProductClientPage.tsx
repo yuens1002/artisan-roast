@@ -545,7 +545,7 @@ export default function ProductClientPage({
       }
       reviews={
         product.reviewCount > 0 ? (
-          <ReviewSection productId={product.id} reviewCount={product.reviewCount} isCoffee={isCoffee} />
+          <ReviewSection productId={product.id} reviewCount={product.reviewCount} averageRating={product.averageRating ?? 0} isCoffee={isCoffee} />
         ) : undefined
       }
       relatedProducts={

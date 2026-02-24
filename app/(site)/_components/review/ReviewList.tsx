@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useEffect, useTransition, useRef } from "react";
 import useSWRInfinite from "swr/infinite";
 import { ReviewCard, type ReviewData } from "./ReviewCard";
 import { BrewMethodBadge } from "./BrewMethodBadge";
@@ -19,6 +19,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 interface ReviewListProps {
   productId: string;
+  onDistributionLoad?: (data: { ratingDistribution: Record<number, number>; total: number }) => void;
 }
 
 interface ReviewsApiResponse {
@@ -27,11 +28,12 @@ interface ReviewsApiResponse {
   page: number;
   pageSize: number;
   brewMethodCounts: Record<string, number>;
+  ratingDistribution: Record<number, number>;
 }
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-export function ReviewList({ productId }: ReviewListProps) {
+export function ReviewList({ productId, onDistributionLoad }: ReviewListProps) {
   const [sort, setSort] = useState<SortOption>("recent");
   const [brewMethodFilter, setBrewMethodFilter] = useState<string | null>(null);
   const [isVoting, startVotingTransition] = useTransition();
@@ -57,6 +59,17 @@ export function ReviewList({ productId }: ReviewListProps) {
   const brewMethodCounts = data?.[0]?.brewMethodCounts ?? {};
   const hasMore = allReviews.length < total;
   const isLoadingMore = isValidating && size > 1;
+
+  // Notify parent of rating distribution data (for sidebar)
+  const distributionReported = useRef(false);
+  useEffect(() => {
+    if (data?.[0] && !distributionReported.current) {
+      distributionReported.current = true;
+      const dist = data[0].ratingDistribution ?? {};
+      const t = data[0].total ?? 0;
+      onDistributionLoad?.({ ratingDistribution: dist, total: t });
+    }
+  }, [data, onDistributionLoad]);
 
   const handleVote = useCallback(
     (reviewId: string) => {
