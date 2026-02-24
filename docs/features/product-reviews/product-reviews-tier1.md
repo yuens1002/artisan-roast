@@ -288,6 +288,14 @@ Add "Product Reviews" `SettingsSection` with:
 - Auth check -> can't vote own review -> upsert ReviewVote -> update denormalized helpfulCount
 - Returns `{ success, error?, voted: boolean }`
 
+#### Helpful Votes — Dedup & Behavior
+
+- **Auth required:** Only authenticated users can vote. Unauthenticated users see the button but are redirected to sign in on click.
+- **Toggle-based:** Clicking "Helpful" on a review you've already voted for removes the vote (no separate "unhelpful" action). The count and highlight toggle accordingly.
+- **Dedup enforced:** A `@@unique([reviewId, userId])` compound key on `ReviewVote` prevents duplicate votes at the database level. The server action uses `upsert` + delete logic keyed on this constraint.
+- **Self-vote prevented:** The server action checks `review.userId !== session.user.id` and returns an error if the reviewer tries to vote on their own review.
+- **Denormalized count:** `helpfulCount` on the Review model is updated after every vote toggle to avoid aggregate queries on read.
+
 ### 3b. Public reviews API
 
 **New file:** `app/api/reviews/[productId]/route.ts`
