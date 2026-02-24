@@ -89,18 +89,26 @@ export default function OrdersPageClient({
       const url = statusFilter
         ? `/api/user/orders?status=${statusFilter}`
         : "/api/user/orders";
-      const [ordersRes, reviewedRes] = await Promise.all([
-        fetch(url),
-        fetch("/api/user/reviewed-products"),
-      ]);
-      if (!ordersRes.ok) throw new Error("Failed to fetch orders");
+      const ordersRes = await fetch(url);
+      if (!ordersRes.ok) {
+        if (ordersRes.status === 401) {
+          setOrders([]);
+          setIsLoading(false);
+          return;
+        }
+        throw new Error("Failed to fetch orders");
+      }
       const data = await ordersRes.json();
       setOrders(data.orders);
 
-      if (reviewedRes.ok) {
-        const reviewedData = await reviewedRes.json();
-        setReviewedProductIds(new Set(reviewedData.productIds));
-      }
+      // Fetch reviewed products separately (non-blocking)
+      try {
+        const reviewedRes = await fetch("/api/user/reviewed-products");
+        if (reviewedRes.ok) {
+          const reviewedData = await reviewedRes.json();
+          setReviewedProductIds(new Set(reviewedData.productIds));
+        }
+      } catch { /* silent — reviewed products are supplemental */ }
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
