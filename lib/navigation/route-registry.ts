@@ -283,6 +283,14 @@ const routeEntries: RouteEntry[] = [
     isNavigable: true,
   },
   {
+    id: "admin.management.reviews",
+    pathname: "/admin/reviews",
+    matchMode: "exact",
+    label: "Reviews",
+    parentId: "admin.management",
+    isNavigable: true,
+  },
+  {
     id: "admin.management.support",
     pathname: "/admin/support",
     matchMode: "exact",

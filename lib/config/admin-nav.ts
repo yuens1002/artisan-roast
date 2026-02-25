@@ -70,6 +70,7 @@ export const adminNavConfig: NavItem[] = [
     children: [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
+      { label: "Reviews", href: "/admin/reviews" },
       { label: "Support", href: "/admin/support", icon: LifeBuoy },
     ],
   },
@@ -315,6 +316,7 @@ export const mobileNavConfig: NavItem[] = [
     children: [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
+      { label: "Reviews", href: "/admin/reviews" },
       { label: "Support", href: "/admin/support", icon: LifeBuoy },
     ],
   },
