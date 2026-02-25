@@ -41,7 +41,7 @@ export type FilterConfig = {
   id: string;
   label: string;
   shellLabel?: string;
-  filterType: "comparison" | "multiSelect";
+  filterType: "comparison" | "multiSelect" | "dateRange";
   options?: { label: string; value: string }[];
 };
 
