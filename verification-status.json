@@ -13,6 +13,13 @@
       "acs_total": 10,
       "tasks": [],
       "notes": "All ACs verified. 10/10 pass. 1 iteration, 0 fixes. 881 tests pass."
+    },
+    "feat/reviews-ph6-7": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 32,
+      "tasks": [],
+      "notes": "Plan approved. ACs doc created. Ready for implementation."
     }
   }
 }
