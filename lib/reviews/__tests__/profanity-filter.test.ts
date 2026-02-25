@@ -1,4 +1,4 @@
-import { containsProfanity, filterProfanity } from "../profanity-filter";
+import { containsProfanity, filterProfanity, censorText } from "../profanity-filter";
 
 describe("profanity-filter", () => {
   describe("containsProfanity", () => {
@@ -57,6 +57,32 @@ describe("profanity-filter", () => {
     it("deduplicates flagged words", () => {
       const result = filterProfanity("shit shit shit");
       expect(result.flaggedWords).toEqual(["shit"]);
+    });
+  });
+
+  describe("censorText", () => {
+    it("replaces profanity with first letter + asterisks", () => {
+      expect(censorText("what the fuck")).toBe("what the f***");
+      expect(censorText("this is shit")).toBe("this is s***");
+    });
+
+    it("is case-insensitive but preserves first letter case", () => {
+      expect(censorText("FUCK this")).toBe("F*** this");
+      expect(censorText("Damn it")).toBe("D*** it");
+    });
+
+    it("leaves clean text unchanged", () => {
+      expect(censorText("Great coffee with classic flavor")).toBe(
+        "Great coffee with classic flavor"
+      );
+    });
+
+    it("censors multiple profanity words", () => {
+      expect(censorText("shit and damn")).toBe("s*** and d***");
+    });
+
+    it("does not false-positive on 'class' or 'assess'", () => {
+      expect(censorText("world class assessment")).toBe("world class assessment");
     });
   });
 });

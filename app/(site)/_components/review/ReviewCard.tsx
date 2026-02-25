@@ -3,14 +3,18 @@
 import { cn } from "@/lib/utils";
 import { StarRating } from "@/app/(site)/_components/product/StarRating";
 import { BrewMethodBadge } from "./BrewMethodBadge";
-import { ThumbsUp, CheckCircle } from "lucide-react";
+import { ThumbsUp, CheckCircle, AlertTriangle, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { censorText } from "@/lib/reviews/profanity-filter";
 
 export interface ReviewData {
   id: string;
   rating: number;
   title: string | null;
   content: string;
+  status?: string;
+  flagReason?: string | null;
+  adminResponse?: string | null;
   brewMethod: string | null;
   grindSize: string | null;
   waterTempF: number | null;
@@ -107,9 +111,17 @@ export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
         </div>
       </div>
 
+      {/* Flag reason banner */}
+      {review.status === "FLAGGED" && review.flagReason && (
+        <div className="flex items-start gap-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2 mb-2 text-xs text-amber-800 dark:text-amber-200">
+          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+          <span>{review.flagReason}</span>
+        </div>
+      )}
+
       {/* Title */}
       {review.title && (
-        <h4 className="font-semibold text-text-base mb-1">{review.title}</h4>
+        <h4 className="font-semibold text-text-base mb-1">{censorText(review.title)}</h4>
       )}
 
       {/* Brew method badge */}
@@ -142,8 +154,21 @@ export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
 
       {/* Content */}
       <p className="text-sm text-text-base leading-relaxed mb-3">
-        {review.content}
+        {censorText(review.content)}
       </p>
+
+      {/* Admin response */}
+      {review.adminResponse && (
+        <div className="rounded-md bg-muted/50 border border-border/50 px-3 py-2.5 mb-3">
+          <div className="flex items-center gap-1.5 mb-1 text-xs font-medium text-text-muted">
+            <MessageSquare className="h-3 w-3" />
+            Store Response
+          </div>
+          <p className="text-sm text-text-base leading-relaxed">
+            {review.adminResponse}
+          </p>
+        </div>
+      )}
 
       {/* Footer: helpful button */}
       <div className="flex items-center">

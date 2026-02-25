@@ -10,7 +10,7 @@ interface SpamResult {
 
 // Thresholds
 const ALL_CAPS_RATIO_THRESHOLD = 0.7;
-const REPEATED_CHAR_THRESHOLD = 5;
+const _REPEATED_CHAR_THRESHOLD = 5;
 const URL_COUNT_THRESHOLD = 3;
 const MIN_CONTENT_LENGTH = 10;
 
