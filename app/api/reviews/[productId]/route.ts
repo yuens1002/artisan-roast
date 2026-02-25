@@ -31,10 +31,10 @@ export async function GET(
       : "recent";
     const brewMethod = searchParams.get("brewMethod") ?? undefined;
 
-    // Build where clause
+    // Build where clause — include FLAGGED (shown with warning) but not PENDING
     const where: Prisma.ReviewWhereInput = {
       productId,
-      status: "PUBLISHED",
+      status: { in: ["PUBLISHED", "FLAGGED"] },
       ...(brewMethod ? { brewMethod: brewMethod as never } : {}),
     };
 
@@ -69,6 +69,9 @@ export async function GET(
           rating: true,
           title: true,
           content: true,
+          status: true,
+          flagReason: true,
+          adminResponse: true,
           brewMethod: true,
           grindSize: true,
           waterTempF: true,
@@ -119,12 +122,12 @@ export async function GET(
       prisma.review.count({ where }),
       prisma.review.groupBy({
         by: ["brewMethod"],
-        where: { productId, status: "PUBLISHED", brewMethod: { not: null } },
+        where: { productId, status: { in: ["PUBLISHED", "FLAGGED"] }, brewMethod: { not: null } },
         _count: true,
       }),
       prisma.review.groupBy({
         by: ["rating"],
-        where: { productId, status: "PUBLISHED" },
+        where: { productId, status: { in: ["PUBLISHED", "FLAGGED"] } },
         _count: true,
       }),
     ]);
@@ -151,6 +154,9 @@ export async function GET(
         rating: review.rating,
         title: review.title,
         content: review.content,
+        status: review.status,
+        flagReason: review.flagReason,
+        adminResponse: review.adminResponse,
         brewMethod: review.brewMethod,
         grindSize: review.grindSize,
         waterTempF: review.waterTempF,

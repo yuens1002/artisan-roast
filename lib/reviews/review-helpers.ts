@@ -36,7 +36,7 @@ export async function updateProductRatingSummary(
   productId: string
 ): Promise<void> {
   const aggregate = await prisma.review.aggregate({
-    where: { productId, status: "PUBLISHED" },
+    where: { productId, status: { in: ["PUBLISHED", "FLAGGED"] } },
     _avg: { rating: true },
     _count: { rating: true },
   });

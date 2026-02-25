@@ -73,7 +73,7 @@ describe("review-helpers", () => {
       await updateProductRatingSummary("product-1");
 
       expect(mockPrisma.review.aggregate).toHaveBeenCalledWith({
-        where: { productId: "product-1", status: "PUBLISHED" },
+        where: { productId: "product-1", status: { in: ["PUBLISHED", "FLAGGED"] } },
         _avg: { rating: true },
         _count: { rating: true },
       });

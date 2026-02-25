@@ -4,7 +4,8 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { containsProfanity } from "@/lib/reviews/profanity-filter";
+import { filterProfanity } from "@/lib/reviews/profanity-filter";
+import { detectSpam } from "@/lib/reviews/spam-detector";
 import { calculateCompletenessScore } from "@/lib/reviews/completeness-score";
 import {
   getVerifiedPurchaseOrderId,
@@ -77,14 +78,20 @@ export async function submitReview(
     };
   }
 
-  // Profanity check
+  // Profanity + spam check — queue as PENDING instead of rejecting
   const textToCheck = [data.title, data.content].filter(Boolean).join(" ");
-  if (containsProfanity(textToCheck)) {
-    return {
-      success: false,
-      error: "Your review contains inappropriate language. Please revise and resubmit.",
-    };
+  const profanityResult = filterProfanity(textToCheck);
+  const spamResult = detectSpam(textToCheck);
+
+  const flagReasons: string[] = [];
+  if (!profanityResult.clean) {
+    flagReasons.push(`Profanity detected: ${profanityResult.flaggedWords.join(", ")}`);
   }
+  if (spamResult.isSpam) {
+    flagReasons.push(...spamResult.reasons);
+  }
+
+  const isPending = flagReasons.length > 0;
 
   // Calculate completeness score
   const completenessScore = calculateCompletenessScore({
@@ -98,12 +105,14 @@ export async function submitReview(
     ratio: data.ratio,
   });
 
-  // Create review
+  // Create review — PENDING if flagged, PUBLISHED otherwise
   const review = await prisma.review.create({
     data: {
       rating: data.rating,
       title: data.title ?? null,
       content: data.content,
+      status: isPending ? "PENDING" : "PUBLISHED",
+      flagReason: isPending ? flagReasons.join("; ") : null,
       brewMethod: data.brewMethod as never ?? null,
       grindSize: data.grindSize ?? null,
       waterTempF: data.waterTempF ?? null,

@@ -5,8 +5,9 @@ import { requireAdminApi } from "@/lib/admin";
 import { updateProductRatingSummary } from "@/lib/reviews/review-helpers";
 
 const patchSchema = z.object({
-  action: z.enum(["flag", "restore", "remove"]),
+  action: z.enum(["flag", "approve", "reply"]),
   reason: z.string().optional(),
+  response: z.string().optional(),
 });
 
 export async function PATCH(
@@ -22,11 +23,11 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { action, reason } = patchSchema.parse(body);
+    const { action, reason, response } = patchSchema.parse(body);
 
     const review = await prisma.review.findUnique({
       where: { id: reviewId },
-      select: { id: true, productId: true },
+      select: { id: true, productId: true, status: true },
     });
 
     if (!review) {
@@ -38,15 +39,15 @@ export async function PATCH(
         where: { id: reviewId },
         data: { status: "FLAGGED", flagReason: reason || null },
       });
-    } else if (action === "restore") {
+    } else if (action === "approve") {
       await prisma.review.update({
         where: { id: reviewId },
         data: { status: "PUBLISHED", flagReason: null },
       });
-    } else if (action === "remove") {
+    } else if (action === "reply") {
       await prisma.review.update({
         where: { id: reviewId },
-        data: { status: "REMOVED" },
+        data: { adminResponse: response || null },
       });
     }
 
