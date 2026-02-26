@@ -304,7 +304,14 @@ export default function OrdersPageClient({
                         ? "Subscription"
                         : "One-time",
                     quantity: item.quantity,
+                    refundedQuantity: item.refundedQuantity,
                   }))}
+                  price={`$${(order.totalInCents / 100).toFixed(2)}`}
+                  priceExtra={order.refundedAmountInCents > 0 ? (
+                    <p className="text-sm font-semibold text-red-600">-{formatPrice(order.refundedAmountInCents)}</p>
+                  ) : undefined}
+                  itemsClassName={order.refundedAmountInCents >= order.totalInCents ? "line-through text-muted-foreground" : undefined}
+                  detailsSectionHeader="Total"
                   shipping={
                     order.shippingStreet
                       ? {
@@ -384,7 +391,7 @@ export default function OrdersPageClient({
                         {format(new Date(order.createdAt), "MMM d, yyyy")}
                       </td>
                       <td className="py-4 px-4">
-                        <div className="space-y-2">
+                        <div className={`space-y-2 ${order.refundedAmountInCents >= order.totalInCents ? "line-through text-muted-foreground" : ""}`}>
                           {order.items.map((item, idx) => {
                             const product = item.purchaseOption.variant.product;
                             const canReview = isCompletedOrder(order.status);
@@ -432,8 +439,15 @@ export default function OrdersPageClient({
                           muteAddressLines
                         />
                       </td>
-                      <td className="py-4 px-4 text-right font-semibold">
-                        {formatPrice(order.totalInCents)}
+                      <td className="py-4 px-4 text-right">
+                        {order.refundedAmountInCents > 0 ? (
+                          <>
+                            <span className="font-semibold line-through text-muted-foreground">{formatPrice(order.totalInCents)}</span>
+                            <div className="text-sm font-semibold text-red-600">-{formatPrice(order.refundedAmountInCents)}</div>
+                          </>
+                        ) : (
+                          <span className="font-semibold">{formatPrice(order.totalInCents)}</span>
+                        )}
                       </td>
                       <td className="py-4 px-4 text-center">
                         <StatusBadge status={order.status} />

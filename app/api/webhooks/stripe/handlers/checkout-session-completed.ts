@@ -104,6 +104,8 @@ export async function handleCheckoutSessionCompleted(
     paymentInfo: normalizedCheckout.paymentInfo,
     sessionAmountTotal: normalizedCheckout.totalInCents,
     discountAmountInCents: normalizedCheckout.discountAmountInCents,
+    taxAmountInCents: normalizedCheckout.taxAmountInCents,
+    shippingAmountInCents: normalizedCheckout.shippingAmountInCents,
   });
 
   if (!result.success) {

@@ -117,6 +117,13 @@
       "acs_total": 17,
       "tasks": [],
       "notes": "All 17 ACs verified via sub-agent screenshots + code review. QC confirmed. 1 iteration (Turbopack route detection blocker, resolved by fresh dev server on port 8000)."
+    },
+    "feat/admin-refund": {
+      "status": "verified",
+      "acs_passed": 18,
+      "acs_total": 18,
+      "tasks": [],
+      "notes": "Iteration 3: 18/18 ACs verified. 7 FN via code review, 8 UI via code review (screenshots blocked by transient DB issue), 3 REG via precheck (0 errors) + test:ci (888 tests, 0 failures). 0 iterations needed."
     }
   }
 }

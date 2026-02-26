@@ -23,6 +23,8 @@ export interface CreateOrdersFromCheckoutParams {
   paymentInfo: NormalizedPaymentInfo;
   sessionAmountTotal: number;
   discountAmountInCents: number;
+  taxAmountInCents: number;
+  shippingAmountInCents: number;
 }
 
 /**

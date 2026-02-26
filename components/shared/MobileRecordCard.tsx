@@ -21,6 +21,7 @@ export interface RecordItem {
   variant: string;
   purchaseType: string;
   quantity: number;
+  refundedQuantity?: number;
   href?: string;
 }
 
@@ -73,6 +74,8 @@ interface MobileRecordCardProps {
   customer?: { name?: string | null; email?: string | null };
   badge?: React.ReactNode;
   shipper?: RecordShipper;
+  itemsClassName?: string;
+  priceExtra?: React.ReactNode;
 }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -102,6 +105,8 @@ export function MobileRecordCard({
   customer,
   badge,
   shipper,
+  itemsClassName,
+  priceExtra,
 }: MobileRecordCardProps) {
   return (
     <div className="flex flex-col gap-5 px-4 py-4">
@@ -193,6 +198,7 @@ export function MobileRecordCard({
         <div>
           <SectionHeader>{detailsSectionHeader || "Details"}</SectionHeader>
           <p className="mt-0.5 text-sm text-foreground">{price}</p>
+          {priceExtra}
         </div>
       )}
 
@@ -209,10 +215,19 @@ export function MobileRecordCard({
         <SectionHeader>Items</SectionHeader>
         <div className="mt-1 flex flex-col gap-2">
           {items.map((item) => (
-            <div key={item.id}>
+            <div key={item.id} className={itemsClassName}>
               <div className="text-sm">{item.name}</div>
               <div className="text-xs text-muted-foreground">
-                {[item.variant, item.purchaseType, `Qty: ${item.quantity}`].filter(Boolean).join(" · ")}
+                {[item.variant, item.purchaseType].filter(Boolean).join(" · ")}
+                {(item.variant || item.purchaseType) && " · "}
+                {item.refundedQuantity != null && item.refundedQuantity > 0 ? (
+                  <>
+                    Qty: <span className="line-through">{item.quantity}</span>{" "}
+                    <span className="text-red-600">-{item.refundedQuantity}</span>
+                  </>
+                ) : (
+                  <>Qty: {item.quantity}</>
+                )}
               </div>
             </div>
           ))}

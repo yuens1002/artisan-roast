@@ -30,6 +30,7 @@ function buildOrderItem(
     id: "item_1",
     quantity: 1,
     priceInCents: 0,
+    refundedQuantity: 0,
     orderId: "order_1",
     purchaseOptionId: "po_1",
     purchaseOption: {
@@ -59,6 +60,8 @@ function buildOrder(
     id: "cltest12345678",
     totalInCents: 2500,
     discountAmountInCents: 0,
+    taxAmountInCents: 0,
+    shippingAmountInCents: 0,
     promoCode: null,
     status: "PENDING",
     deliveryMethod: "PICKUP",
@@ -82,6 +85,9 @@ function buildOrder(
     userId: "user_1",
     createdAt: new Date("2026-02-16T12:00:00Z"),
     updatedAt: new Date("2026-02-16T12:00:00Z"),
+    refundedAmountInCents: 0,
+    refundedAt: null,
+    refundReason: null,
     items: [buildOrderItem()],
     ...overrides,
   };
@@ -151,6 +157,46 @@ describe("OrderDetailClient — discount display", () => {
   });
 });
 
+describe("OrderDetailClient — tax and shipping", () => {
+  it("shows tax row when taxAmountInCents > 0", () => {
+    const order = buildOrder({
+      totalInCents: 2689,
+      taxAmountInCents: 189,
+      shippingAmountInCents: 1000,
+      items: [buildOrderItem({ purchaseOption: { ...buildOrderItem().purchaseOption, priceInCents: 1500 } })],
+    });
+
+    render(<OrderDetailClient order={order} />);
+
+    expect(screen.getByText("Tax")).toBeInTheDocument();
+    expect(screen.getByText("$1.89")).toBeInTheDocument();
+  });
+
+  it("does not show tax row when taxAmountInCents is 0", () => {
+    const order = buildOrder({
+      totalInCents: 2500,
+      taxAmountInCents: 0,
+      items: [buildOrderItem({ purchaseOption: { ...buildOrderItem().purchaseOption, priceInCents: 1500 } })],
+    });
+
+    render(<OrderDetailClient order={order} />);
+
+    expect(screen.queryByText("Tax")).not.toBeInTheDocument();
+  });
+
+  it("uses stored shippingAmountInCents when > 0", () => {
+    const order = buildOrder({
+      totalInCents: 2500,
+      shippingAmountInCents: 800,
+      items: [buildOrderItem({ purchaseOption: { ...buildOrderItem().purchaseOption, priceInCents: 1500 } })],
+    });
+
+    render(<OrderDetailClient order={order} />);
+
+    expect(screen.getByText("$8.00")).toBeInTheDocument();
+  });
+});
+
 describe("OrderDetailClient — OUT_FOR_DELIVERY status", () => {
   it("renders Out for Delivery badge with orange styling", () => {
     const order = buildOrder({
@@ -195,5 +241,58 @@ describe("OrderDetailClient — OUT_FOR_DELIVERY status", () => {
     expect(screen.getByText("Shipped via USPS")).toBeInTheDocument();
     expect(screen.getByText(/Tracking: 9400111899223456789012/)).toBeInTheDocument();
     expect(screen.getByText("Track Package →")).toBeInTheDocument();
+  });
+});
+
+describe("OrderDetailClient — per-item refund display", () => {
+  it("shows corrected qty and line total when item has refundedQuantity > 0", () => {
+    const order = buildOrder({
+      totalInCents: 4500,
+      items: [
+        buildOrderItem({
+          id: "item_1",
+          quantity: 3,
+          refundedQuantity: 1,
+          purchaseOption: {
+            ...buildOrderItem().purchaseOption,
+            priceInCents: 1500,
+          },
+        }),
+      ],
+    });
+
+    render(<OrderDetailClient order={order} />);
+
+    // Strikethrough original qty "3", red "-1" indicator
+    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("-1")).toBeInTheDocument();
+
+    // Corrected line total $30.00
+    expect(screen.getByText("$30.00")).toBeInTheDocument();
+
+    // Strikethrough original total appears (may be in multiple places like item + subtotal)
+    const allOriginal = screen.getAllByText("$45.00");
+    expect(allOriginal.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows normal qty when refundedQuantity is 0", () => {
+    const order = buildOrder({
+      totalInCents: 1500,
+      items: [
+        buildOrderItem({
+          quantity: 1,
+          refundedQuantity: 0,
+          purchaseOption: {
+            ...buildOrderItem().purchaseOption,
+            priceInCents: 1500,
+          },
+        }),
+      ],
+    });
+
+    render(<OrderDetailClient order={order} />);
+
+    // Normal qty display, no red refund indicator
+    expect(screen.queryByText(/-\d+/)).toBeNull();
   });
 });

@@ -36,6 +36,8 @@ export async function createOrdersFromCheckout(
     paymentInfo,
     sessionAmountTotal,
     discountAmountInCents,
+    taxAmountInCents,
+    shippingAmountInCents: shippingFromStripe,
   } = params;
 
   // Fetch purchase options with full details
@@ -69,10 +71,10 @@ export async function createOrdersFromCheckout(
     purchaseOptions
   );
   const totalItemCost = oneTimeTotal + subscriptionTotal;
-  // sessionAmountTotal already has the discount subtracted by Stripe,
-  // so add it back to isolate shipping from the discount
-  const shippingCostInCents =
-    sessionAmountTotal + discountAmountInCents - totalItemCost;
+  // Use Stripe-reported shipping when available; fall back to derived formula for old orders
+  const shippingCostInCents = shippingFromStripe > 0
+    ? shippingFromStripe
+    : sessionAmountTotal + discountAmountInCents - totalItemCost - taxAmountInCents;
 
   // Normalize address
   const addressData = normalizeAddress(shippingAddress, shippingName);
@@ -93,6 +95,8 @@ export async function createOrdersFromCheckout(
       items: oneTimeItems,
       totalInCents: oneTimeTotal + shippingCostInCents, // One-time order includes shipping
       discountAmountInCents,
+      taxAmountInCents,
+      shippingAmountInCents: shippingCostInCents,
       deliveryMethod,
       addressData,
       paymentInfo,
@@ -126,6 +130,8 @@ export async function createOrdersFromCheckout(
       items: subscriptionItems,
       totalInCents: orderTotal,
       discountAmountInCents: subDiscount,
+      taxAmountInCents: oneTimeItems.length === 0 ? taxAmountInCents : 0,
+      shippingAmountInCents: shouldIncludeShipping ? shippingCostInCents : 0,
       deliveryMethod,
       addressData,
       paymentInfo,
@@ -160,6 +166,8 @@ async function createSingleOrder(params: {
   items: Array<{ purchaseOptionId: string; quantity: number }>;
   totalInCents: number;
   discountAmountInCents: number;
+  taxAmountInCents: number;
+  shippingAmountInCents: number;
   deliveryMethod: "DELIVERY" | "PICKUP";
   addressData: ReturnType<typeof normalizeAddress>;
   paymentInfo: {
@@ -181,6 +189,8 @@ async function createSingleOrder(params: {
       customerPhone: params.customerPhone,
       totalInCents: params.totalInCents,
       discountAmountInCents: params.discountAmountInCents,
+      taxAmountInCents: params.taxAmountInCents,
+      shippingAmountInCents: params.shippingAmountInCents,
       status: "PENDING",
       deliveryMethod: params.deliveryMethod,
       paymentCardLast4: params.paymentInfo.cardLast4,

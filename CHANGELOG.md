@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.91.0 - 2026-02-26
+
+### Added
+
+- **Admin order refunds**: Process full or partial refunds from the admin orders page with per-item quantity selection, proportional tax calculation, reason tracking, and refund history view
+- **Refund notification email**: Customers receive a detailed refund confirmation email with itemized breakdown and reason
+- **Order financial breakdown**: Orders now store tax, shipping, and discount amounts separately for accurate accounting and refund calculations
+- **Edit shipping address**: Admin can update the shipping address on pending orders before shipment
+
+### Changed
+
+- **Order action menu icons**: Each action in the order dropdown menu now has a meaningful icon for faster scanning
+- **Order seed data**: Demo orders include realistic Stripe IDs, carrier tracking numbers, promo codes, and refund scenarios for comprehensive testing
+
 ## 0.90.2 - 2026-02-24
 
 ### Added

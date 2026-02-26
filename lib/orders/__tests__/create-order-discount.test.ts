@@ -90,6 +90,8 @@ function buildBaseParams(
     paymentInfo,
     sessionAmountTotal: 3500,
     discountAmountInCents: 0,
+    taxAmountInCents: 0,
+    shippingAmountInCents: 0,
     ...overrides,
   };
 }

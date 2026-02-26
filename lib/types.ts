@@ -73,6 +73,7 @@ export interface OrderItemWithDetails {
   id: string;
   quantity: number;
   priceInCents: number;
+  refundedQuantity: number;
   orderId: string;
   purchaseOptionId: string;
   purchaseOption: {
@@ -105,6 +106,8 @@ export interface OrderWithItems {
   id: string;
   totalInCents: number;
   discountAmountInCents: number;
+  taxAmountInCents: number;
+  shippingAmountInCents: number;
   promoCode: string | null;
   status: string;
   deliveryMethod: string;
@@ -128,6 +131,9 @@ export interface OrderWithItems {
   userId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  refundedAmountInCents: number;
+  refundedAt: Date | null;
+  refundReason: string | null;
   items: OrderItemWithDetails[];
   orderNumber?: string | null;
 }

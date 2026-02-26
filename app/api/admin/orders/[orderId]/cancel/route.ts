@@ -57,13 +57,39 @@ export async function POST(
       );
     }
 
-    // Update order status to CANCELLED
+    // Update order status to CANCELLED and record full refund
     await prisma.order.update({
       where: { id: orderId },
-      data: { status: "CANCELLED" },
+      data: {
+        status: "CANCELLED",
+        refundedAmountInCents: order.totalInCents,
+        refundedAt: new Date(),
+        refundReason: "Order cancelled",
+      },
     });
 
     console.log(`✅ Order ${orderId} canceled`);
+
+    // Issue Stripe refund if payment exists
+    if (order.stripePaymentIntentId) {
+      try {
+        await stripe.refunds.create({
+          payment_intent: order.stripePaymentIntentId,
+        });
+        console.log(`💰 Stripe refund issued for order ${orderId}`);
+      } catch (stripeRefundError: unknown) {
+        console.error("Failed to issue Stripe refund:", stripeRefundError);
+        return NextResponse.json(
+          {
+            success: true,
+            message: "Order canceled but Stripe refund failed",
+            error: getErrorMessage(stripeRefundError, "Unknown error"),
+            requiresManualAction: true,
+          },
+          { status: 200 }
+        );
+      }
+    }
 
     // Restore inventory
     for (const item of order.items) {

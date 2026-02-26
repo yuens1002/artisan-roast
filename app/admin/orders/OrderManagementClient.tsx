@@ -3,6 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
+import {
+  Truck,
+  MapPin,
+  HandCoins,
+  PackageCheck,
+  ExternalLink,
+  CircleX,
+  ReceiptText,
+  RefreshCcw,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
@@ -30,6 +41,8 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
 import { RecordItemsList } from "@/components/shared/RecordItemsList";
 import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
+import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
+import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 
 type Order = {
   id: string;
@@ -46,6 +59,11 @@ type Order = {
   shippingPostalCode: string | null;
   shippingCountry: string | null;
   stripeSubscriptionId: string | null;
+  taxAmountInCents: number;
+  shippingAmountInCents: number;
+  refundedAmountInCents: number;
+  refundedAt: string | null;
+  refundReason: string | null;
   createdAt: string;
   trackingNumber: string | null;
   carrier: string | null;
@@ -54,8 +72,12 @@ type Order = {
     email: string;
   } | null;
   items: Array<{
+    id: string;
     quantity: number;
+    priceInCents: number;
+    refundedQuantity: number;
     purchaseOption: {
+      priceInCents: number;
       variant: {
         name: string;
         product: {
@@ -79,6 +101,13 @@ export default function OrderManagementClient() {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [carrier, setCarrier] = useState("");
   const [failureReason, setFailureReason] = useState("");
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [refundAmountInput, setRefundAmountInput] = useState("");
+  const [refundReasonSelect, setRefundReasonSelect] = useState("");
+  const [refundReasonCustom, setRefundReasonCustom] = useState("");
+  const [refundItems, setRefundItems] = useState<Record<number, number>>({});
+  const [fullRefund, setFullRefund] = useState(false);
+  const [viewRefundMode, setViewRefundMode] = useState(false);
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -100,6 +129,12 @@ export default function OrderManagementClient() {
       setLoading(false);
     }
   }, [toast]);
+
+  const editAddress = useEditAddress({
+    getEndpointUrl: (orderId) => `/api/admin/orders/${orderId}/address`,
+    successMessage: "Shipping address updated successfully",
+    onSuccess: () => fetchOrders(),
+  });
 
   useEffect(() => {
     fetchOrders();
@@ -196,6 +231,143 @@ export default function OrderManagementClient() {
     setFailDialogOpen(true);
   }
 
+  function openRefundDialog(order: Order) {
+    setSelectedOrder(order);
+    setRefundAmountInput("");
+    setRefundReasonSelect("");
+    setRefundReasonCustom("");
+    setRefundItems({});
+    setFullRefund(false);
+    setViewRefundMode(false);
+    setRefundDialogOpen(true);
+  }
+
+  function openViewRefundDialog(order: Order) {
+    setSelectedOrder(order);
+    setViewRefundMode(true);
+    setRefundDialogOpen(true);
+  }
+
+  function toggleFullRefund(checked: boolean) {
+    if (!selectedOrder) return;
+    setFullRefund(checked);
+    if (checked) {
+      // Cross off all items at full qty
+      const all: Record<number, number> = {};
+      selectedOrder.items.forEach((item, idx) => {
+        all[idx] = item.quantity;
+      });
+      setRefundItems(all);
+      const remaining = selectedOrder.totalInCents - selectedOrder.refundedAmountInCents;
+      setRefundAmountInput((remaining / 100).toFixed(2));
+    } else {
+      setRefundItems({});
+      setRefundAmountInput("");
+    }
+  }
+
+  function toggleRefundItem(index: number, crossedOff: boolean) {
+    if (!selectedOrder) return;
+    const next = { ...refundItems };
+    if (crossedOff) {
+      next[index] = selectedOrder.items[index].quantity;
+    } else {
+      delete next[index];
+    }
+    setRefundItems(next);
+    recalcRefundAmount(next);
+  }
+
+  function updateRefundItemQty(index: number, qty: number) {
+    if (!selectedOrder) return;
+    const maxQty = selectedOrder.items[index].quantity;
+    const clamped = Math.max(0, Math.min(qty, maxQty));
+    const next = { ...refundItems };
+    if (clamped === 0) {
+      delete next[index];
+    } else {
+      next[index] = clamped;
+    }
+    setRefundItems(next);
+    recalcRefundAmount(next);
+  }
+
+  function recalcRefundAmount(items: Record<number, number>) {
+    if (!selectedOrder) return;
+    const itemRefundCents = Object.entries(items).reduce((sum, [idx, qty]) => {
+      const item = selectedOrder.items[Number(idx)];
+      return sum + item.purchaseOption.priceInCents * qty;
+    }, 0);
+    const subtotal = selectedOrder.items.reduce(
+      (sum, item) => sum + item.purchaseOption.priceInCents * item.quantity, 0
+    );
+    const taxRefund = subtotal > 0
+      ? Math.round((itemRefundCents / subtotal) * (selectedOrder.taxAmountInCents ?? 0))
+      : 0;
+    const remaining = selectedOrder.totalInCents - selectedOrder.refundedAmountInCents;
+    const capped = Math.min(itemRefundCents + taxRefund, remaining);
+    setRefundAmountInput((capped / 100).toFixed(2));
+  }
+
+  function getRefundReason(): string {
+    if (refundReasonSelect === "Other") return refundReasonCustom.trim();
+    return refundReasonSelect;
+  }
+
+  async function handleRefund() {
+    const reason = getRefundReason();
+    if (!selectedOrder || !reason || !refundAmountInput) return;
+
+    const amountInCents = Math.round(parseFloat(refundAmountInput) * 100);
+    if (isNaN(amountInCents) || amountInCents <= 0) return;
+
+    setProcessing(true);
+    try {
+      // Build per-item refund data
+      const itemsPayload = Object.entries(refundItems).map(([idx, qty]) => ({
+        orderItemId: selectedOrder.items[Number(idx)].id,
+        quantity: qty,
+      }));
+
+      const res = await fetch(`/api/admin/orders/${selectedOrder.id}/refund`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amountInCents,
+          reason,
+          ...(itemsPayload.length > 0 && { items: itemsPayload }),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to process refund");
+
+      toast({
+        title: "Refund Processed",
+        description: `$${(amountInCents / 100).toFixed(2)} refunded for order #${selectedOrder.orderNumber || selectedOrder.id.slice(-8)}`,
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+
+      setRefundDialogOpen(false);
+      setRefundAmountInput("");
+      setRefundReasonSelect("");
+      setRefundReasonCustom("");
+      setFullRefund(false);
+      setSelectedOrder(null);
+      fetchOrders();
+    } catch (error) {
+      toast({
+        title: "Refund Failed",
+        description: error instanceof Error ? error.message : "Failed to process refund",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  }
+
   async function handleMarkAsFailed() {
     if (!selectedOrder || !failureReason.trim()) return;
 
@@ -284,38 +456,75 @@ export default function OrderManagementClient() {
 
     if (order.status === "PENDING") {
       if (order.deliveryMethod === "DELIVERY") {
-        actions.push({ label: "Ship", onClick: () => openShipDialog(order) });
+        actions.push({
+          label: "Ship",
+          icon: <Truck className="h-4 w-4" />,
+          onClick: () => openShipDialog(order),
+        });
+        actions.push({
+          label: "Edit Shipping",
+          icon: <MapPin className="h-4 w-4" />,
+          onClick: () => editAddress.openDialog({
+            id: order.id,
+            recipientName: order.recipientName,
+            shippingStreet: order.shippingStreet,
+            shippingCity: order.shippingCity,
+            shippingState: order.shippingState,
+            shippingPostalCode: order.shippingPostalCode,
+            shippingCountry: order.shippingCountry,
+          }),
+        });
       } else {
         actions.push({
           label: "Pickup Ready",
+          icon: <HandCoins className="h-4 w-4" />,
           onClick: () => { setSelectedOrder(order); setPickupDialogOpen(true); },
         });
       }
       actions.push({
         label: "Unfulfill",
+        icon: <CircleX className="h-4 w-4" />,
         onClick: () => openFailDialog(order),
-        variant: "destructive",
       });
     } else if (order.status === "SHIPPED" || order.status === "OUT_FOR_DELIVERY") {
       actions.push({
         label: "Mark as Delivered",
+        icon: <PackageCheck className="h-4 w-4" />,
         onClick: () => { setSelectedOrder(order); setDeliverDialogOpen(true); },
-      });
-      actions.push({
-        label: "Edit Shipping",
-        onClick: () => openShipDialog(order),
       });
       if (order.trackingNumber) {
         actions.push({
           label: "Track Package",
+          icon: <ExternalLink className="h-4 w-4" />,
           onClick: () => window.open(getTrackingUrl(order.carrier!, order.trackingNumber!), "_blank"),
         });
       }
     } else if (order.status === "DELIVERED" && order.trackingNumber) {
       actions.push({
         label: "Track Package",
+        icon: <ExternalLink className="h-4 w-4" />,
         onClick: () => window.open(getTrackingUrl(order.carrier!, order.trackingNumber!), "_blank"),
       });
+    }
+
+    // Refund actions for non-cancelled/failed orders
+    if (order.status !== "CANCELLED" && order.status !== "FAILED") {
+      if (order.refundedAmountInCents < order.totalInCents) {
+        actions.push({
+          label: order.refundedAmountInCents > 0 ? "Refund More" : "Refund",
+          icon: <RefreshCcw className="h-4 w-4" />,
+          onClick: () => openRefundDialog(order),
+          variant: "destructive",
+        });
+      }
+      // View Refund for orders that have been refunded
+      if (order.refundedAmountInCents > 0) {
+        actions.push({
+          label: "View Refund",
+          icon: <ReceiptText className="h-4 w-4" />,
+          onClick: () => openViewRefundDialog(order),
+        });
+      }
     }
 
     return actions;
@@ -370,8 +579,13 @@ export default function OrderManagementClient() {
                     variant: item.purchaseOption.variant.name,
                     purchaseType: "",
                     quantity: item.quantity,
+                    refundedQuantity: item.refundedQuantity,
                   }))}
                   price={`$${(order.totalInCents / 100).toFixed(2)}`}
+                  priceExtra={order.refundedAmountInCents > 0 ? (
+                    <p className="text-sm font-semibold text-red-600">-{formatPrice(order.refundedAmountInCents)}</p>
+                  ) : undefined}
+                  itemsClassName={order.refundedAmountInCents >= order.totalInCents ? "line-through text-muted-foreground" : undefined}
                   detailsSectionHeader="Total"
                   shipping={
                     order.shippingStreet
@@ -436,12 +650,14 @@ export default function OrderManagementClient() {
                       </td>
                       <td className="py-4 px-4">
                         <RecordItemsList
+                          strikethrough={order.refundedAmountInCents >= order.totalInCents}
                           items={order.items.map((item, idx) => ({
                             id: String(idx),
                             name: item.purchaseOption.variant.product.name,
                             variant: item.purchaseOption.variant.name,
                             purchaseType: "",
                             quantity: item.quantity,
+                            refundedQuantity: item.refundedQuantity,
                           }))}
                         />
                       </td>
@@ -470,7 +686,16 @@ export default function OrderManagementClient() {
                           </p>
                         )}
                       </td>
-                      <td className="py-4 px-4 text-right font-semibold">{formatPrice(order.totalInCents)}</td>
+                      <td className="py-4 px-4 text-right">
+                        {order.refundedAmountInCents > 0 ? (
+                          <>
+                            <span className="font-semibold line-through text-muted-foreground">{formatPrice(order.totalInCents)}</span>
+                            <div className="text-sm font-semibold text-red-600">-{formatPrice(order.refundedAmountInCents)}</div>
+                          </>
+                        ) : (
+                          <span className="font-semibold">{formatPrice(order.totalInCents)}</span>
+                        )}
+                      </td>
                       <td className="py-4 px-4 text-center">
                         <StatusBadge
                           status={order.status}
@@ -488,6 +713,23 @@ export default function OrderManagementClient() {
           </div>
         </>
       )}
+
+      {/* Edit Address Dialog */}
+      <EditAddressDialog
+        open={editAddress.dialogOpen}
+        onOpenChange={editAddress.setDialogOpen}
+        title="Edit Shipping Address"
+        description="Update the ship-to address for this order."
+        savedAddresses={editAddress.savedAddresses}
+        addressForm={editAddress.addressForm}
+        formLoading={editAddress.formLoading}
+        formErrors={editAddress.formErrors}
+        onAddressSelect={editAddress.handleSelect}
+        onFieldChange={(field, value) =>
+          editAddress.setAddressForm((prev) => ({ ...prev, [field]: value }))
+        }
+        onSubmit={editAddress.handleSubmit}
+      />
 
       {/* Ship Dialog */}
       <Dialog open={shipDialogOpen} onOpenChange={setShipDialogOpen}>
@@ -702,6 +944,320 @@ export default function OrderManagementClient() {
             >
               {processing ? "Processing..." : "Unfulfill Order"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Refund Dialog */}
+      <Dialog open={refundDialogOpen} onOpenChange={(open) => {
+        setRefundDialogOpen(open);
+        if (!open) setViewRefundMode(false);
+      }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{viewRefundMode ? "Refund Details" : "Process Refund"}</DialogTitle>
+            <DialogDescription>
+              Order #{selectedOrder?.orderNumber || selectedOrder?.id.slice(-8)}
+              {" "}&mdash;{" "}
+              {selectedOrder?.user?.name || selectedOrder?.recipientName || "Guest"}
+              {" "}({selectedOrder?.customerEmail})
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewRefundMode && selectedOrder ? (
+            /* View-only refund summary */
+            <div className="space-y-4 py-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm">
+                <p className="font-medium text-yellow-800">
+                  Refunded: ${(selectedOrder.refundedAmountInCents / 100).toFixed(2)}
+                  {selectedOrder.refundedAmountInCents >= selectedOrder.totalInCents ? " (Full)" : " (Partial)"}
+                </p>
+                {selectedOrder.refundedAt && (
+                  <p className="text-yellow-700">
+                    Date: {format(new Date(selectedOrder.refundedAt), "MMM d, yyyy 'at' h:mm a")}
+                  </p>
+                )}
+              </div>
+
+              {/* Items with per-item refund info */}
+              <div className="border rounded-md divide-y">
+                {selectedOrder.items.map((item, idx) => {
+                  const hasRefund = item.refundedQuantity > 0;
+                  const lineTotal = item.purchaseOption.priceInCents * item.quantity;
+                  return (
+                    <div key={idx} className={`px-3 py-2.5 ${hasRefund ? "bg-red-50/50" : ""}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-sm font-medium ${hasRefund ? "line-through text-muted-foreground" : ""}`}>
+                            {item.purchaseOption.variant.product.name}
+                          </span>
+                          <span className={`text-sm ${hasRefund ? "line-through text-muted-foreground" : "text-muted-foreground"}`}>
+                            {" "}&mdash; {item.purchaseOption.variant.name}
+                          </span>
+                        </div>
+                        <span className={`text-sm font-medium tabular-nums shrink-0 ${hasRefund ? "line-through text-muted-foreground" : ""}`}>
+                          ${(lineTotal / 100).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          {item.quantity} &times; ${(item.purchaseOption.priceInCents / 100).toFixed(2)}
+                        </span>
+                        {hasRefund && (
+                          <span className="text-xs text-red-600 ml-2">
+                            Refunded {item.refundedQuantity} of {item.quantity}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Reason */}
+              {selectedOrder.refundReason && (
+                <div className="space-y-1">
+                  <Label className="text-muted-foreground">Reason</Label>
+                  <p className="text-sm">{selectedOrder.refundReason}</p>
+                </div>
+              )}
+
+              {/* Total refunded */}
+              <div className="flex justify-between text-sm border-t pt-3">
+                <span className="text-muted-foreground">Total Refunded</span>
+                <span className="font-semibold text-red-600">
+                  -${(selectedOrder.refundedAmountInCents / 100).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* Edit mode - process new refund */
+            <div className="space-y-4 py-4">
+              {selectedOrder && selectedOrder.refundedAmountInCents > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm">
+                  <p className="font-medium text-yellow-800">
+                    Previously refunded: ${(selectedOrder.refundedAmountInCents / 100).toFixed(2)}
+                  </p>
+                  <p className="text-yellow-700">
+                    Remaining refundable: ${((selectedOrder.totalInCents - selectedOrder.refundedAmountInCents) / 100).toFixed(2)}
+                  </p>
+                </div>
+              )}
+
+              {/* Full Order Refund checkbox */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="fullRefund"
+                  checked={fullRefund}
+                  onCheckedChange={(checked) => toggleFullRefund(checked === true)}
+                />
+                <Label htmlFor="fullRefund" className="text-sm font-medium cursor-pointer">
+                  Full Order Refund
+                </Label>
+              </div>
+
+              {/* Receipt-style item list */}
+              {selectedOrder && (
+                <div className="border rounded-md">
+                  <div className="divide-y">
+                    {selectedOrder.items.map((item, idx) => {
+                      const isCrossedOff = idx in refundItems;
+                      const refundQty = refundItems[idx] ?? 0;
+                      const lineTotal = item.purchaseOption.priceInCents * item.quantity;
+                      const isPartialQty = isCrossedOff && refundQty < item.quantity;
+                      return (
+                        <div
+                          key={idx}
+                          className={`px-3 py-2.5 cursor-pointer transition-colors ${isCrossedOff ? "bg-red-50/50" : "hover:bg-muted/30"}`}
+                          onClick={() => {
+                            if (fullRefund) return;
+                            toggleRefundItem(idx, !isCrossedOff);
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <span className={`text-sm font-medium ${isCrossedOff ? "line-through text-muted-foreground" : ""}`}>
+                                {item.purchaseOption.variant.product.name}
+                              </span>
+                              <span className={`text-sm ${isCrossedOff ? "line-through text-muted-foreground" : "text-muted-foreground"}`}>
+                                {" "}&mdash; {item.purchaseOption.variant.name}
+                              </span>
+                            </div>
+                            <span className={`text-sm font-medium tabular-nums shrink-0 ${isCrossedOff ? "line-through text-muted-foreground" : ""}`}>
+                              ${(lineTotal / 100).toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-muted-foreground">
+                              {item.quantity} &times; ${(item.purchaseOption.priceInCents / 100).toFixed(2)}
+                            </span>
+                            {isCrossedOff && !fullRefund && (
+                              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <span className="text-xs text-red-600">Refund qty:</span>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={item.quantity}
+                                  value={refundQty}
+                                  onChange={(e) => updateRefundItemQty(idx, parseInt(e.target.value) || 1)}
+                                  className="w-14 h-6 text-xs text-center px-1"
+                                />
+                                <span className="text-xs text-muted-foreground">/ {item.quantity}</span>
+                              </div>
+                            )}
+                          </div>
+                          {isPartialQty && (
+                            <p className="text-xs text-red-600 mt-0.5">
+                              Refunding {refundQty} of {item.quantity} = ${((item.purchaseOption.priceInCents * refundQty) / 100).toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Totals */}
+                  <div className="border-t px-3 py-2.5 space-y-1 bg-muted/20">
+                    {(() => {
+                      const itemSubtotal = selectedOrder.items.reduce(
+                        (sum, item) => sum + item.purchaseOption.priceInCents * item.quantity, 0
+                      );
+                      const tax = selectedOrder.taxAmountInCents ?? 0;
+                      const shipping = (selectedOrder.shippingAmountInCents ?? 0) > 0
+                        ? selectedOrder.shippingAmountInCents
+                        : selectedOrder.totalInCents - itemSubtotal - tax;
+                      const hasItemsSelected = Object.keys(refundItems).length > 0;
+                      const itemRefundCents = Object.entries(refundItems).reduce((sum, [idx, qty]) => {
+                        return sum + selectedOrder.items[Number(idx)].purchaseOption.priceInCents * qty;
+                      }, 0);
+                      const taxRefund = itemSubtotal > 0
+                        ? Math.round((itemRefundCents / itemSubtotal) * tax)
+                        : 0;
+                      return (
+                        <>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Subtotal</span>
+                            <span className={`font-medium ${hasItemsSelected ? "line-through text-muted-foreground" : ""}`}>
+                              ${(itemSubtotal / 100).toFixed(2)}
+                            </span>
+                          </div>
+                          {shipping > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Shipping</span>
+                              <span className="font-medium">
+                                ${(shipping / 100).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                          {tax > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Tax</span>
+                              <span className={`font-medium ${hasItemsSelected ? "line-through text-muted-foreground" : ""}`}>
+                                ${(tax / 100).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-sm border-t pt-1">
+                            <span className="text-muted-foreground">Order Total</span>
+                            <span className={`font-medium ${hasItemsSelected ? "line-through text-muted-foreground" : ""}`}>
+                              ${(selectedOrder.totalInCents / 100).toFixed(2)}
+                            </span>
+                          </div>
+                          {hasItemsSelected && (
+                            <div className="flex justify-between text-sm text-red-600">
+                              <span>Refund Amount</span>
+                              <span className="font-semibold">
+                                -${refundAmountInput || "0.00"}
+                              </span>
+                            </div>
+                          )}
+                          {hasItemsSelected && taxRefund > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Includes ${(taxRefund / 100).toFixed(2)} proportional tax
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* Override amount */}
+              {!fullRefund && (
+                <div className="space-y-2">
+                  <Label htmlFor="refundAmount">
+                    Refund Amount ($)
+                    {Object.keys(refundItems).length > 0 && (
+                      <span className="font-normal text-muted-foreground"> &mdash; override if needed</span>
+                    )}
+                  </Label>
+                  <Input
+                    id="refundAmount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max={selectedOrder ? ((selectedOrder.totalInCents - selectedOrder.refundedAmountInCents) / 100).toFixed(2) : undefined}
+                    value={refundAmountInput}
+                    onChange={(e) => setRefundAmountInput(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
+
+              {/* Reason dropdown */}
+              <div className="space-y-2">
+                <Label htmlFor="refundReasonSelect">Reason (required)</Label>
+                <Select value={refundReasonSelect} onValueChange={setRefundReasonSelect}>
+                  <SelectTrigger id="refundReasonSelect">
+                    <SelectValue placeholder="Select a reason" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Customer request">Customer request</SelectItem>
+                    <SelectItem value="Product defect">Product defect</SelectItem>
+                    <SelectItem value="Wrong item shipped">Wrong item shipped</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {refundReasonSelect === "Other" && (
+                  <Input
+                    value={refundReasonCustom}
+                    onChange={(e) => setRefundReasonCustom(e.target.value)}
+                    placeholder="Describe the reason..."
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {viewRefundMode ? (
+              <Button variant="outline" onClick={() => setRefundDialogOpen(false)}>
+                Close
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setRefundDialogOpen(false)}
+                  disabled={processing}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleRefund}
+                  disabled={
+                    !getRefundReason() ||
+                    !refundAmountInput ||
+                    parseFloat(refundAmountInput) <= 0 ||
+                    processing
+                  }
+                >
+                  {processing ? "Processing..." : "Process Refund"}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

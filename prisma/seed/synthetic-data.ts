@@ -79,6 +79,14 @@ const CITY_STATE_ZIP = [
   { city: "Boston", state: "MA", zip: "02101" },
 ];
 
+// Demo user emails for idempotency guard
+const DEMO_EMAILS = [
+  "demo@artisanroast.com",
+  "sarah.coffee@example.com",
+  "mike.espresso@example.com",
+  "emily.brew@example.com",
+];
+
 // --- Helper Functions ---
 function randomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
@@ -98,14 +106,77 @@ function daysAgo(days: number): Date {
   return date;
 }
 
-// Weighted status distribution: 60% SHIPPED, 15% PENDING, 10% PICKED_UP, 10% CANCELLED, 5% FAILED
-const WEIGHTED_STATUSES: OrderStatus[] = [
-  ...Array(12).fill(OrderStatus.SHIPPED),
-  ...Array(3).fill(OrderStatus.PENDING),
-  ...Array(2).fill(OrderStatus.PICKED_UP),
-  ...Array(2).fill(OrderStatus.CANCELLED),
-  ...Array(1).fill(OrderStatus.FAILED),
-];
+// Weighted carrier selection: USPS 60%, FedEx 25%, UPS 10%, DHL 5%
+function pickCarrier(): string {
+  const roll = Math.random();
+  if (roll < 0.60) return "USPS";
+  if (roll < 0.85) return "FedEx";
+  if (roll < 0.95) return "UPS";
+  return "DHL";
+}
+
+function generateTrackingNumber(carrier: string): string {
+  const digits = (n: number) =>
+    Array.from({ length: n }, () => randomInt(0, 9)).join("");
+  switch (carrier) {
+    case "USPS":
+      return `9400${digits(18)}`;
+    case "FedEx":
+      return `7489${digits(8)}`;
+    case "UPS":
+      return `1Z${digits(6)}${randomInt(10, 99)}${digits(8)}`;
+    case "DHL":
+      return `${digits(10)}`;
+    default:
+      return `TRK${digits(12)}`;
+  }
+}
+
+let stripeCounter = 0;
+function generateStripeIds() {
+  const suffix = String(++stripeCounter).padStart(4, "0");
+  const rand = Math.random().toString(36).substring(2, 10);
+  return {
+    stripeSessionId: `cs_seed_${suffix}_${rand}`,
+    stripePaymentIntentId: `pi_seed_${suffix}_${rand}`,
+    stripeChargeId: `ch_seed_${suffix}_${rand}`,
+    stripeCustomerId: `cus_seed_${rand}`,
+    paymentCardLast4: String(randomInt(1000, 9999)),
+  };
+}
+
+const TAX_RATE = 0.08;
+const SHIPPING_RATES = { min: 499, max: 1299 }; // $4.99–$12.99
+
+function computeOrderFinancials(
+  items: Array<{ priceInCents: number; quantity: number }>,
+  deliveryMethod: DeliveryMethod,
+  promoDiscountPercent?: number,
+) {
+  const subtotalInCents = items.reduce(
+    (sum, item) => sum + item.priceInCents * item.quantity,
+    0,
+  );
+  const discountAmountInCents = promoDiscountPercent
+    ? Math.round(subtotalInCents * (promoDiscountPercent / 100))
+    : 0;
+  const taxableAmount = subtotalInCents - discountAmountInCents;
+  const taxAmountInCents = Math.round(taxableAmount * TAX_RATE);
+  const shippingAmountInCents =
+    deliveryMethod === "PICKUP"
+      ? 0
+      : randomInt(SHIPPING_RATES.min, SHIPPING_RATES.max);
+  const totalInCents =
+    taxableAmount + taxAmountInCents + shippingAmountInCents;
+
+  return {
+    subtotalInCents,
+    discountAmountInCents,
+    taxAmountInCents,
+    shippingAmountInCents,
+    totalInCents,
+  };
+}
 
 export async function seedSyntheticData(prisma: PrismaClient) {
   console.log("  🎭 Creating synthetic user behavior data...");
@@ -130,6 +201,19 @@ export async function seedSyntheticData(prisma: PrismaClient) {
     throw new Error(
       "Users and products must be seeded first. Run seedUsers and seedProducts first."
     );
+  }
+
+  // --- Idempotency: delete existing demo user orders on re-run ---
+  const demoUserIds = users
+    .filter((u) => u.email && DEMO_EMAILS.includes(u.email))
+    .map((u) => u.id);
+  if (demoUserIds.length > 0) {
+    const deleted = await prisma.order.deleteMany({
+      where: { userId: { in: demoUserIds } },
+    });
+    if (deleted.count > 0) {
+      console.log(`    ↻ Cleared ${deleted.count} existing demo orders`);
+    }
   }
 
   // --- Seed Newsletter Subscribers ---
@@ -164,90 +248,356 @@ export async function seedSyntheticData(prisma: PrismaClient) {
 
   console.log(`    ✓ Seeded ${newsletterSeeds.length} newsletter subscribers`);
 
-  // --- Demo user: one order per status ---
+  // --- Demo user: 9 orders covering all statuses + refunds ---
   const demoUser = users.find((u) => u.email === "demo@artisanroast.com");
   if (demoUser) {
-    const demoProduct = products[0];
-    const demoVariant = demoProduct.variants.find(
-      (v) => v.purchaseOptions.length > 0
-    )!;
-    const demoPo = demoVariant.purchaseOptions[0];
+    // Collect purchase options from the first 6 products
+    const demoPOs = products
+      .slice(0, 6)
+      .map((p) => {
+        const v = p.variants.find((v) => v.purchaseOptions.length > 0);
+        if (!v) return null;
+        return (
+          v.purchaseOptions.find((po) => po.type === "ONE_TIME") ??
+          v.purchaseOptions[0]
+        );
+      })
+      .filter(
+        (po): po is NonNullable<typeof po> => po !== null && po !== undefined,
+      );
+
     const demoLocation = CITY_STATE_ZIP[0]; // Seattle
 
-    const demoStatuses: Array<{
-      status: OrderStatus;
-      deliveryMethod: DeliveryMethod;
-      daysAgoCreated: number;
-      carrier?: string;
-      trackingNumber?: string;
-      shippedAt?: Date;
-      deliveredAt?: Date;
-    }> = [
-      { status: "PENDING", deliveryMethod: "DELIVERY", daysAgoCreated: 0 },
-      {
-        status: "SHIPPED",
-        deliveryMethod: "DELIVERY",
-        daysAgoCreated: 2,
-        carrier: "USPS",
-        trackingNumber: "a-real-fake-tracking-#-from-glance",
-        shippedAt: daysAgo(1),
-      },
-      {
-        status: "OUT_FOR_DELIVERY",
-        deliveryMethod: "DELIVERY",
-        daysAgoCreated: 3,
-        carrier: "USPS",
-        trackingNumber: "a-real-fake-tracking-#-from-glance",
-        shippedAt: daysAgo(2),
-      },
-      {
-        status: "DELIVERED",
-        deliveryMethod: "DELIVERY",
-        daysAgoCreated: 7,
-        carrier: "USPS",
-        trackingNumber: "a-real-fake-tracking-#-from-glance",
-        shippedAt: daysAgo(5),
-        deliveredAt: daysAgo(3),
-      },
-      { status: "PICKED_UP", deliveryMethod: "PICKUP", daysAgoCreated: 10 },
-      { status: "CANCELLED", deliveryMethod: "DELIVERY", daysAgoCreated: 14 },
-      { status: "FAILED", deliveryMethod: "DELIVERY", daysAgoCreated: 21 },
-    ];
+    const makeAddress = () => ({
+      recipientName: demoUser.name || "Demo User",
+      shippingStreet: `${randomInt(100, 9999)} ${randomElement(STREET_NAMES)}`,
+      shippingCity: demoLocation.city,
+      shippingState: demoLocation.state,
+      shippingPostalCode: demoLocation.zip,
+      shippingCountry: "US",
+      customerEmail: demoUser.email,
+    });
 
-    for (const ds of demoStatuses) {
+    // Order 1: PENDING — delivery, 1 item, no promo
+    {
+      const items = [{ po: demoPOs[0], quantity: 1 }];
+      const fin = computeOrderFinancials(
+        items.map((i) => ({ priceInCents: i.po.priceInCents, quantity: i.quantity })),
+        "DELIVERY",
+      );
       await prisma.order.create({
         data: {
           userId: demoUser.id,
-          status: ds.status,
-          totalInCents: demoPo.priceInCents + 500,
-          deliveryMethod: ds.deliveryMethod,
-          recipientName: demoUser.name || "Demo User",
-          shippingStreet: `${randomInt(100, 9999)} ${randomElement(STREET_NAMES)}`,
-          shippingCity: demoLocation.city,
-          shippingState: demoLocation.state,
-          shippingPostalCode: demoLocation.zip,
-          shippingCountry: "US",
-          customerEmail: demoUser.email,
-          ...(ds.carrier && { carrier: ds.carrier }),
-          ...(ds.trackingNumber && { trackingNumber: ds.trackingNumber }),
-          ...(ds.shippedAt && { shippedAt: ds.shippedAt }),
-          ...(ds.deliveredAt && { deliveredAt: ds.deliveredAt }),
+          status: "PENDING",
+          deliveryMethod: "DELIVERY",
+          ...fin,
+          ...makeAddress(),
+          ...generateStripeIds(),
           items: {
-            create: [
-              {
-                purchaseOptionId: demoPo.id,
-                quantity: 1,
-                priceInCents: demoPo.priceInCents,
-              },
-            ],
+            create: items.map((i) => ({
+              purchaseOptionId: i.po.id,
+              quantity: i.quantity,
+              priceInCents: i.po.priceInCents,
+            })),
           },
-          createdAt: daysAgo(ds.daysAgoCreated),
+          createdAt: daysAgo(0),
+        },
+      });
+    }
+
+    // Order 2: SHIPPED — delivery, 2 items, USPS
+    {
+      const items = [
+        { po: demoPOs[0], quantity: 1 },
+        { po: demoPOs[1], quantity: 2 },
+      ];
+      const fin = computeOrderFinancials(
+        items.map((i) => ({ priceInCents: i.po.priceInCents, quantity: i.quantity })),
+        "DELIVERY",
+      );
+      const carrier = "USPS";
+      await prisma.order.create({
+        data: {
+          userId: demoUser.id,
+          status: "SHIPPED",
+          deliveryMethod: "DELIVERY",
+          ...fin,
+          ...makeAddress(),
+          ...generateStripeIds(),
+          carrier,
+          trackingNumber: generateTrackingNumber(carrier),
+          shippedAt: daysAgo(1),
+          items: {
+            create: items.map((i) => ({
+              purchaseOptionId: i.po.id,
+              quantity: i.quantity,
+              priceInCents: i.po.priceInCents,
+            })),
+          },
+          createdAt: daysAgo(2),
+        },
+      });
+    }
+
+    // Order 3: OUT_FOR_DELIVERY — delivery, 2 items, FedEx
+    {
+      const items = [
+        { po: demoPOs[2], quantity: 1 },
+        { po: demoPOs[3], quantity: 1 },
+      ];
+      const fin = computeOrderFinancials(
+        items.map((i) => ({ priceInCents: i.po.priceInCents, quantity: i.quantity })),
+        "DELIVERY",
+      );
+      const carrier = "FedEx";
+      await prisma.order.create({
+        data: {
+          userId: demoUser.id,
+          status: "OUT_FOR_DELIVERY",
+          deliveryMethod: "DELIVERY",
+          ...fin,
+          ...makeAddress(),
+          ...generateStripeIds(),
+          carrier,
+          trackingNumber: generateTrackingNumber(carrier),
+          shippedAt: daysAgo(2),
+          items: {
+            create: items.map((i) => ({
+              purchaseOptionId: i.po.id,
+              quantity: i.quantity,
+              priceInCents: i.po.priceInCents,
+            })),
+          },
+          createdAt: daysAgo(3),
+        },
+      });
+    }
+
+    // Order 4: DELIVERED — delivery, 3 items, ROAST10 (10% off), USPS
+    {
+      const items = [
+        { po: demoPOs[0], quantity: 1 },
+        { po: demoPOs[2], quantity: 1 },
+        { po: demoPOs[4], quantity: 1 },
+      ];
+      const fin = computeOrderFinancials(
+        items.map((i) => ({ priceInCents: i.po.priceInCents, quantity: i.quantity })),
+        "DELIVERY",
+        10,
+      );
+      const carrier = "USPS";
+      await prisma.order.create({
+        data: {
+          userId: demoUser.id,
+          status: "DELIVERED",
+          deliveryMethod: "DELIVERY",
+          ...fin,
+          ...makeAddress(),
+          ...generateStripeIds(),
+          promoCode: "ROAST10",
+          carrier,
+          trackingNumber: generateTrackingNumber(carrier),
+          shippedAt: daysAgo(5),
+          deliveredAt: daysAgo(3),
+          items: {
+            create: items.map((i) => ({
+              purchaseOptionId: i.po.id,
+              quantity: i.quantity,
+              priceInCents: i.po.priceInCents,
+            })),
+          },
+          createdAt: daysAgo(7),
+        },
+      });
+    }
+
+    // Order 5: DELIVERED — partial refund (1 of 2 items refunded)
+    {
+      const items = [
+        { po: demoPOs[1], quantity: 2 },
+        { po: demoPOs[3], quantity: 1 },
+      ];
+      const fin = computeOrderFinancials(
+        items.map((i) => ({ priceInCents: i.po.priceInCents, quantity: i.quantity })),
+        "DELIVERY",
+      );
+      const carrier = "USPS";
+
+      // Refund: item 0 qty 1 (of 2) — refund that item's unit price + proportional tax
+      const refundItemPrice = items[0].po.priceInCents * 1;
+      const refundTax = Math.round(refundItemPrice * TAX_RATE);
+      const refundedAmountInCents = refundItemPrice + refundTax;
+
+      const order = await prisma.order.create({
+        data: {
+          userId: demoUser.id,
+          status: "DELIVERED",
+          deliveryMethod: "DELIVERY",
+          ...fin,
+          ...makeAddress(),
+          ...generateStripeIds(),
+          carrier,
+          trackingNumber: generateTrackingNumber(carrier),
+          shippedAt: daysAgo(12),
+          deliveredAt: daysAgo(10),
+          refundedAmountInCents,
+          refundedAt: daysAgo(8),
+          refundReason: "Customer received wrong grind size",
+          items: {
+            create: items.map((i) => ({
+              purchaseOptionId: i.po.id,
+              quantity: i.quantity,
+              priceInCents: i.po.priceInCents,
+            })),
+          },
+          createdAt: daysAgo(14),
+        },
+        include: { items: true },
+      });
+
+      // Mark first item as partially refunded (1 of 2 qty)
+      await prisma.orderItem.update({
+        where: { id: order.items[0].id },
+        data: { refundedQuantity: 1 },
+      });
+    }
+
+    // Order 6: DELIVERED — full refund (all items)
+    {
+      const items = [
+        { po: demoPOs[2], quantity: 1 },
+        { po: demoPOs[5], quantity: 2 },
+      ];
+      const fin = computeOrderFinancials(
+        items.map((i) => ({ priceInCents: i.po.priceInCents, quantity: i.quantity })),
+        "DELIVERY",
+      );
+      const carrier = "FedEx";
+
+      const order = await prisma.order.create({
+        data: {
+          userId: demoUser.id,
+          status: "DELIVERED",
+          deliveryMethod: "DELIVERY",
+          ...fin,
+          ...makeAddress(),
+          ...generateStripeIds(),
+          carrier,
+          trackingNumber: generateTrackingNumber(carrier),
+          shippedAt: daysAgo(18),
+          deliveredAt: daysAgo(16),
+          refundedAmountInCents: fin.totalInCents,
+          refundedAt: daysAgo(14),
+          refundReason: "Order arrived damaged — full refund issued",
+          items: {
+            create: items.map((i) => ({
+              purchaseOptionId: i.po.id,
+              quantity: i.quantity,
+              priceInCents: i.po.priceInCents,
+            })),
+          },
+          createdAt: daysAgo(20),
+        },
+        include: { items: true },
+      });
+
+      // Mark all items as fully refunded
+      for (const item of order.items) {
+        await prisma.orderItem.update({
+          where: { id: item.id },
+          data: { refundedQuantity: item.quantity },
+        });
+      }
+    }
+
+    // Order 7: PICKED_UP — pickup, 1 item
+    {
+      const items = [{ po: demoPOs[3], quantity: 1 }];
+      const fin = computeOrderFinancials(
+        items.map((i) => ({ priceInCents: i.po.priceInCents, quantity: i.quantity })),
+        "PICKUP",
+      );
+      await prisma.order.create({
+        data: {
+          userId: demoUser.id,
+          status: "PICKED_UP",
+          deliveryMethod: "PICKUP",
+          ...fin,
+          ...makeAddress(),
+          ...generateStripeIds(),
+          items: {
+            create: items.map((i) => ({
+              purchaseOptionId: i.po.id,
+              quantity: i.quantity,
+              priceInCents: i.po.priceInCents,
+            })),
+          },
+          createdAt: daysAgo(10),
+        },
+      });
+    }
+
+    // Order 8: CANCELLED — delivery, 2 items
+    {
+      const items = [
+        { po: demoPOs[0], quantity: 1 },
+        { po: demoPOs[4], quantity: 1 },
+      ];
+      const fin = computeOrderFinancials(
+        items.map((i) => ({ priceInCents: i.po.priceInCents, quantity: i.quantity })),
+        "DELIVERY",
+      );
+      await prisma.order.create({
+        data: {
+          userId: demoUser.id,
+          status: "CANCELLED",
+          deliveryMethod: "DELIVERY",
+          ...fin,
+          ...makeAddress(),
+          ...generateStripeIds(),
+          items: {
+            create: items.map((i) => ({
+              purchaseOptionId: i.po.id,
+              quantity: i.quantity,
+              priceInCents: i.po.priceInCents,
+            })),
+          },
+          createdAt: daysAgo(14),
+        },
+      });
+    }
+
+    // Order 9: FAILED — delivery, 1 item
+    {
+      const items = [{ po: demoPOs[1], quantity: 1 }];
+      const fin = computeOrderFinancials(
+        items.map((i) => ({ priceInCents: i.po.priceInCents, quantity: i.quantity })),
+        "DELIVERY",
+      );
+      await prisma.order.create({
+        data: {
+          userId: demoUser.id,
+          status: "FAILED",
+          deliveryMethod: "DELIVERY",
+          ...fin,
+          ...makeAddress(),
+          ...generateStripeIds(),
+          failureReason: "Card declined — insufficient funds",
+          failedAt: daysAgo(20),
+          items: {
+            create: items.map((i) => ({
+              purchaseOptionId: i.po.id,
+              quantity: i.quantity,
+              priceInCents: i.po.priceInCents,
+            })),
+          },
+          createdAt: daysAgo(21),
         },
       });
     }
 
     console.log(
-      `    ✓ Created ${demoStatuses.length} demo orders for ${demoUser.email}`
+      `    ✓ Created 9 demo orders for ${demoUser.email} (incl. 2 refunds, 1 promo)`
     );
   }
 
@@ -339,18 +689,21 @@ export async function seedSyntheticData(prisma: PrismaClient) {
         });
       }
 
-      const subtotal = orderProducts.reduce(
-        (sum, item) => sum + item.unitPrice * item.quantity,
-        0
+      if (orderProducts.length === 0) continue;
+
+      const deliveryMethod: DeliveryMethod = "DELIVERY";
+      const fin = computeOrderFinancials(
+        orderProducts.map((item) => ({
+          priceInCents: item.unitPrice,
+          quantity: item.quantity,
+        })),
+        deliveryMethod,
       );
-      const taxAmount = Math.round(subtotal * 0.08); // 8% tax
-      const shippingAmount = randomInt(0, 1500); // $0-15 shipping
-      const totalAmount = subtotal + taxAmount + shippingAmount;
 
       const location = randomElement(CITY_STATE_ZIP);
 
       // First order: OUT_FOR_DELIVERY, second: SHIPPED, rest: DELIVERED
-      const orderStatus =
+      const orderStatus: OrderStatus =
         totalOrders === 0
           ? "OUT_FOR_DELIVERY"
           : totalOrders === 1
@@ -369,20 +722,24 @@ export async function seedSyntheticData(prisma: PrismaClient) {
             ? daysAgo(1)
             : daysAgo(randomInt(3, 55));
 
-      const _order = await prisma.order.create({
+      const carrier = pickCarrier();
+
+      await prisma.order.create({
         data: {
           userId: user.id,
           status: orderStatus,
-          totalInCents: totalAmount,
-          deliveryMethod: "DELIVERY",
+          deliveryMethod,
+          ...fin,
+          ...generateStripeIds(),
           recipientName: user.name || randomElement(FAKE_NAMES),
+          customerEmail: user.email,
           shippingStreet: `${randomInt(100, 9999)} ${randomElement(STREET_NAMES)}`,
           shippingCity: location.city,
           shippingState: location.state,
           shippingPostalCode: location.zip,
           shippingCountry: "US",
-          carrier: "USPS",
-          trackingNumber: "a-real-fake-tracking-#-from-glance",
+          carrier,
+          trackingNumber: generateTrackingNumber(carrier),
           shippedAt,
           ...(orderStatus === "DELIVERED" && { deliveredAt: daysAgo(randomInt(1, 3)) }),
           items: {
@@ -418,7 +775,7 @@ export async function seedSyntheticData(prisma: PrismaClient) {
   }
 
   console.log(`    ✓ Generated ${totalActivities} user activities`);
-  console.log(`    ✓ Created ${totalOrders} orders`);
+  console.log(`    ✓ Created ${totalOrders} random-user orders`);
 
   // --- Generate Anonymous Sessions ---
   const anonymousSessionCount = randomInt(20, 50);

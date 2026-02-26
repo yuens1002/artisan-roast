@@ -64,8 +64,16 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
   // Discount applied via promo code (0 when no promo used)
   const discount = order.discountAmountInCents ?? 0;
 
-  // Calculate shipping (add discount back since totalInCents already has it subtracted)
-  const shipping = order.totalInCents + discount - subtotal;
+  // Tax from Stripe (0 for old orders)
+  const tax = order.taxAmountInCents ?? 0;
+
+  // Use stored shipping when available; fall back to derived for old orders
+  const shipping = order.shippingAmountInCents > 0
+    ? order.shippingAmountInCents
+    : order.totalInCents + discount - subtotal - tax;
+
+  // Strikethrough on full refund
+  const isFullRefund = order.refundedAmountInCents > 0 && order.refundedAmountInCents >= order.totalInCents;
 
   return (
     <PageContainer>
@@ -124,11 +132,11 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                 </thead>
                 <tbody className="divide-y">
                   {order.items.map((item: OrderItemWithDetails) => (
-                    <tr key={item.id}>
+                    <tr key={item.id} className={isFullRefund ? "line-through text-muted-foreground" : ""}>
                       <td className="py-4 px-4">
                         <Link
                           href={`/products/${item.purchaseOption.variant.product.slug}`}
-                          className="text-primary hover:underline font-medium truncate block max-w-[200px] sm:max-w-none"
+                          className={isFullRefund ? "text-muted-foreground font-medium truncate block max-w-[200px] sm:max-w-none" : "text-primary hover:underline font-medium truncate block max-w-[200px] sm:max-w-none"}
                         >
                           {item.purchaseOption.variant.product.name}
                         </Link>
@@ -148,10 +156,29 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                       <td className="py-4 px-4 text-right">
                         {formatPrice(item.purchaseOption.priceInCents)}
                       </td>
-                      <td className="py-4 px-4 text-center">{item.quantity}</td>
+                      <td className="py-4 px-4 text-center">
+                        {item.refundedQuantity > 0 ? (
+                          <>
+                            <span className="line-through text-muted-foreground">{item.quantity}</span>
+                            {" "}
+                            <span className="text-red-600">-{item.refundedQuantity}</span>
+                          </>
+                        ) : (
+                          item.quantity
+                        )}
+                      </td>
                       <td className="py-4 px-4 text-right font-semibold">
-                        {formatPrice(
-                          item.purchaseOption.priceInCents * item.quantity
+                        {item.refundedQuantity > 0 ? (
+                          <>
+                            <span className="line-through text-muted-foreground font-normal">
+                              {formatPrice(item.purchaseOption.priceInCents * item.quantity)}
+                            </span>
+                            <div className="text-sm">
+                              {formatPrice(item.purchaseOption.priceInCents * (item.quantity - item.refundedQuantity))}
+                            </div>
+                          </>
+                        ) : (
+                          formatPrice(item.purchaseOption.priceInCents * item.quantity)
                         )}
                       </td>
                     </tr>
@@ -164,7 +191,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             <div className="mt-6 pt-6 border-t space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium">{formatPrice(subtotal)}</span>
+                <span className={`font-medium ${isFullRefund ? "line-through text-muted-foreground" : ""}`}>{formatPrice(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
@@ -184,8 +211,27 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                     : "Store Pickup"}
                   )
                 </span>
-                <span className="font-medium">{formatPrice(shipping)}</span>
+                <span className={`font-medium ${isFullRefund ? "line-through text-muted-foreground" : ""}`}>{formatPrice(shipping)}</span>
               </div>
+              {tax > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tax</span>
+                  <span className={`font-medium ${isFullRefund ? "line-through text-muted-foreground" : ""}`}>{formatPrice(tax)}</span>
+                </div>
+              )}
+              {order.refundedAmountInCents > 0 && (
+                <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
+                  <span>
+                    Refunded
+                    {order.refundedAmountInCents >= order.totalInCents
+                      ? " (Full)"
+                      : " (Partial)"}
+                  </span>
+                  <span className="font-medium">
+                    -{formatPrice(order.refundedAmountInCents)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-lg font-bold pt-2 border-t">
                 <span>Total</span>
                 <span>{formatPrice(order.totalInCents)} USD</span>

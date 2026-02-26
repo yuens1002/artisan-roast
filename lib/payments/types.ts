@@ -63,6 +63,8 @@ export interface NormalizedCheckoutEvent {
   paymentInfo: NormalizedPaymentInfo;
   totalInCents: number;
   discountAmountInCents: number;
+  taxAmountInCents: number;
+  shippingAmountInCents: number;
 }
 
 /**
