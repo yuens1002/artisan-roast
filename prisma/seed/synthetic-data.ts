@@ -170,7 +170,6 @@ function computeOrderFinancials(
     taxableAmount + taxAmountInCents + shippingAmountInCents;
 
   return {
-    subtotalInCents,
     discountAmountInCents,
     taxAmountInCents,
     shippingAmountInCents,
