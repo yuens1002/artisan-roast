@@ -34,6 +34,7 @@ jest.mock("@/lib/prisma", () => ({
     },
     siteSettings: {
       findUnique: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     },
     session: {
       deleteMany: jest.fn(),

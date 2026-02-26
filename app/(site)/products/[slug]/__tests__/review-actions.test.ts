@@ -171,7 +171,7 @@ describe("submitReview", () => {
         userId: "user-1",
         orderId: "order-1",
       }),
-      select: { id: true, product: { select: { slug: true } } },
+      select: { id: true, product: { select: { name: true, slug: true } } },
     });
     expect(mockUpdateProductRatingSummary).toHaveBeenCalledWith("product-1");
     expect(mockRevalidatePath).toHaveBeenCalledWith("/products/great-coffee");
