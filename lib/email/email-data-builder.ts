@@ -95,7 +95,7 @@ export async function getStoreName(): Promise<string> {
   const storeNameSetting = await prisma.siteSettings.findUnique({
     where: { key: "store_name" },
   });
-  return storeNameSetting?.value || "Artisan Roast";
+  return storeNameSetting?.value || "";
 }
 
 /**

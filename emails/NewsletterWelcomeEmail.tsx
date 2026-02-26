@@ -1,121 +1,73 @@
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Link,
-  Preview,
-  Section,
-  Text,
-} from "@react-email/components";
-import * as React from "react";
+import { Heading, Link, Text } from "@react-email/components";
+import type { EmailBranding } from "./_components";
+import { APP_URL, ContainedSection, Divider, EmailLayout } from "./_components";
+import * as s from "./_styles";
 
-interface NewsletterWelcomeEmailProps {
+interface NewsletterWelcomeEmailProps extends EmailBranding {
   email: string;
   unsubscribeToken?: string;
-  storeName?: string;
 }
 
 export default function NewsletterWelcomeEmail({
   email,
   unsubscribeToken,
-  storeName = "Artisan Roast",
+  storeName,
+  ...branding
 }: NewsletterWelcomeEmailProps) {
   const unsubscribeUrl = unsubscribeToken
-    ? `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/newsletter/unsubscribe?token=${unsubscribeToken}`
+    ? `${APP_URL}/newsletter/unsubscribe?token=${unsubscribeToken}`
     : "#";
 
   return (
-    <Html>
-      <Head />
-      <Preview>Welcome to {storeName} Newsletter</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={h1}>Welcome to {storeName}! ☕</Heading>
+    <EmailLayout
+      preview={`Welcome to ${storeName ?? ""} Newsletter`}
+      storeName={storeName}
+      {...branding}
+    >
+      <Heading style={s.h1}>Welcome to {storeName}!</Heading>
 
-          <Text style={text}>
-            Thank you for subscribing to our newsletter! We&apos;re excited to
-            have you join our community of coffee enthusiasts.
-          </Text>
+      <Text style={s.text}>
+        Thank you for subscribing to our newsletter! We&apos;re excited to
+        have you join our community of coffee enthusiasts.
+      </Text>
 
-          <Section style={highlightBox}>
-            <Text style={highlightText}>
-              You&apos;ll receive updates about:
-            </Text>
-            <ul style={list}>
-              <li>New coffee arrivals and seasonal blends</li>
-              <li>Exclusive subscriber discounts and promotions</li>
-              <li>Brewing tips and coffee education</li>
-              <li>Behind-the-scenes stories from our roasters</li>
-            </ul>
-          </Section>
+      <ContainedSection innerStyle={highlightBoxInner}>
+        <Text style={highlightHeading}>You&apos;ll receive updates about:</Text>
+        <ul style={list}>
+          <li>New coffee arrivals and seasonal blends</li>
+          <li>Exclusive subscriber discounts and promotions</li>
+          <li>Brewing tips and coffee education</li>
+          <li>Behind-the-scenes stories from our roasters</li>
+        </ul>
+      </ContainedSection>
 
-          <Text style={text}>
-            Your subscription is confirmed for: <strong>{email}</strong>
-          </Text>
+      <Text style={s.text}>
+        Your subscription is confirmed for: <strong>{email}</strong>
+      </Text>
 
-          <Hr style={hr} />
+      <Divider />
 
-          <Text style={footer}>
-            You can{" "}
-            <Link href={unsubscribeUrl} style={link}>
-              unsubscribe
-            </Link>{" "}
-            at any time if you no longer wish to receive these emails.
-          </Text>
-
-          <Text style={footer}>
-            © {new Date().getFullYear()} {storeName}. All rights reserved.
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+      <Text style={unsubscribeText}>
+        You can{" "}
+        <Link href={unsubscribeUrl} style={s.footerUrl}>
+          unsubscribe
+        </Link>{" "}
+        at any time if you no longer wish to receive these emails.
+      </Text>
+    </EmailLayout>
   );
 }
 
-const main = {
-  backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
-
-const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-  maxWidth: "600px",
-};
-
-const h1 = {
-  color: "#1f2937",
-  fontSize: "32px",
-  fontWeight: "700",
-  margin: "40px 0",
-  padding: "0 48px",
-  textAlign: "center" as const,
-};
-
-const text = {
-  color: "#4b5563",
-  fontSize: "16px",
-  lineHeight: "26px",
-  padding: "0 48px",
-};
-
-const highlightBox = {
+const highlightBoxInner = {
   backgroundColor: "#fef3c7",
   borderRadius: "8px",
-  margin: "24px 48px",
   padding: "24px",
 };
 
-const highlightText = {
+const highlightHeading = {
   color: "#1f2937",
   fontSize: "16px",
-  fontWeight: "600",
+  fontWeight: "600" as const,
   margin: "0 0 12px 0",
 };
 
@@ -127,19 +79,11 @@ const list = {
   paddingLeft: "20px",
 };
 
-const hr = {
-  borderColor: "#e5e7eb",
-  margin: "32px 48px",
-};
-
-const footer = {
-  color: "#6b7280",
-  fontSize: "14px",
-  lineHeight: "24px",
-  padding: "0 48px",
-};
-
-const link = {
-  color: "#2563eb",
-  textDecoration: "underline",
+const unsubscribeText = {
+  color: "#8898aa",
+  fontSize: "12px",
+  lineHeight: "16px",
+  padding: "0 40px",
+  textAlign: "center" as const,
+  marginBottom: "8px",
 };

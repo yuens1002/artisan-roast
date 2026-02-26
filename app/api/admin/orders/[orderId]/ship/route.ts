@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/components";
+import { getEmailBranding } from "@/lib/config/app-settings";
 import ShipmentConfirmationEmail from "@/emails/ShipmentConfirmationEmail";
 
 /**
@@ -73,11 +74,7 @@ export async function PATCH(
         });
       }
 
-      // Fetch store name
-      const storeNameSetting = await prisma.siteSettings.findUnique({
-        where: { key: "store_name" },
-      });
-      const storeName = storeNameSetting?.value || "Artisan Roast";
+      const { storeName, logoUrl } = await getEmailBranding();
 
       const emailHtml = await render(
         ShipmentConfirmationEmail({
@@ -88,6 +85,7 @@ export async function PATCH(
           estimatedDelivery: "3-5 business days",
           orderId: order.id,
           storeName,
+          logoUrl,
         })
       );
 

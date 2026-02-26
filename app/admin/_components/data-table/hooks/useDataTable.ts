@@ -24,6 +24,7 @@ export interface UseDataTableOptions<TData> {
   filterToColumnFilters?: (filter: ActiveFilter) => ColumnFiltersState;
   pageSize?: number;
   enableColumnResizing?: boolean;
+  initialSorting?: SortingState;
 }
 
 export function useDataTable<TData>({
@@ -35,10 +36,11 @@ export function useDataTable<TData>({
   filterToColumnFilters,
   pageSize = 25,
   enableColumnResizing = true,
+  initialSorting,
 }: UseDataTableOptions<TData>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(initialSorting ?? []);
 
   const columnFilters = useMemo<ColumnFiltersState>(
     () =>

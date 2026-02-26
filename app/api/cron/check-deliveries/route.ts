@@ -5,6 +5,7 @@ import { resend } from "@/lib/services/resend";
 import { getCarrierClient } from "@/lib/services/carriers";
 import DeliveryConfirmationEmail from "@/emails/DeliveryConfirmationEmail";
 import { format } from "date-fns";
+import { getCronSecret, getEmailBranding } from "@/lib/config/app-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,8 @@ const CHUNK_SIZE = 10;
  */
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
+  const dbSecret = await getCronSecret();
+  const cronSecret = dbSecret || process.env.CRON_SECRET;
 
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -56,10 +58,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const storeNameSetting = await prisma.siteSettings.findUnique({
-      where: { key: "store_name" },
-    });
-    const storeName = storeNameSetting?.value || "Artisan Roast";
+    const { storeName, logoUrl } = await getEmailBranding();
 
     let checkedCount = 0;
     let deliveredCount = 0;
@@ -113,6 +112,7 @@ export async function GET(request: NextRequest) {
                         "MMMM d, yyyy 'at' h:mm a"
                       ),
                       storeName,
+                      logoUrl,
                     })
                   );
 

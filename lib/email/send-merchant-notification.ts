@@ -1,5 +1,6 @@
 import { logger } from "@/lib/logger";
 import { resend } from "@/lib/services/resend";
+import { getEmailBranding } from "@/lib/config/app-settings";
 import MerchantOrderNotification from "@/emails/MerchantOrderNotification";
 import type { SendMerchantNotificationParams, EmailSendResult } from "./types";
 import {
@@ -26,6 +27,7 @@ export async function sendMerchantNotification(
     const emailItems = buildOrderEmailItems(order.items);
     const shippingAddressData = buildShippingAddressForEmail(order);
     const orderNumber = formatOrderNumber(order.id);
+    const { logoUrl } = await getEmailBranding();
 
     // Determine subject based on order type
     const subject = isRecurringOrder
@@ -46,6 +48,7 @@ export async function sendMerchantNotification(
         shippingAddress: shippingAddressData,
         orderDate: formatOrderDate(order.createdAt),
         isRecurringOrder,
+        logoUrl,
       }),
     });
 

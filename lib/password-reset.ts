@@ -2,6 +2,7 @@ import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
+import { getEmailBranding } from "@/lib/config/app-settings";
 import PasswordResetEmail from "@/emails/PasswordResetEmail";
 import { hashPassword, isStrongPassword } from "@/lib/password";
 
@@ -38,19 +39,18 @@ export async function requestPasswordReset(email: string) {
 
   const resetUrl = `${APP_URL}/api/auth/password-reset-callback?token=${token}`;
 
-  const [fromEmailSetting, storeNameSetting, supportEmailSetting] =
+  const [{ storeName, logoUrl }, fromEmailSetting, supportEmailSetting] =
     await Promise.all([
+      getEmailBranding(),
       prisma.siteSettings.findUnique({ where: { key: "contactEmail" } }),
-      prisma.siteSettings.findUnique({ where: { key: "store_name" } }),
       prisma.siteSettings.findUnique({ where: { key: "support_email" } }),
     ]);
 
-  const storeName = storeNameSetting?.value || "Artisan Roast";
   const fromEmail = fromEmailSetting?.value || "onboarding@resend.dev";
   const supportEmail = supportEmailSetting?.value;
 
   const html = await render(
-    PasswordResetEmail({ resetUrl, storeName, supportEmail }),
+    PasswordResetEmail({ resetUrl, storeName, logoUrl, supportEmail }),
     { pretty: false }
   );
 

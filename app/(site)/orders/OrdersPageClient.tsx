@@ -24,18 +24,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DialogShell } from "@/app/admin/_components/dialogs/DialogShell";
 import { useToast } from "@/hooks/use-toast";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 import { ShipmentStatusDialog } from "@/app/(site)/_components/account/ShipmentStatusDialog";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { BrewReportForm } from "@/app/(site)/_components/review/BrewReportForm";
+import { BrewReportForm, CompletenessBar } from "@/app/(site)/_components/review/BrewReportForm";
 
 interface OrdersPageClientProps {
   statusFilter?: string;
@@ -62,6 +57,7 @@ export default function OrdersPageClient({
   const [cancelOrder, setCancelOrder] = useState<OrderWithItems | null>(null);
   const [reviewedProductIds, setReviewedProductIds] = useState<Set<string>>(new Set());
   const [reviewFormTarget, setReviewFormTarget] = useState<ReviewFormTarget | null>(null);
+  const [reviewScore, setReviewScore] = useState(0);
   const [shipmentStatusOrder, setShipmentStatusOrder] =
     useState<OrderWithItems | null>(null);
   const editAddress = useEditAddress({
@@ -406,7 +402,7 @@ export default function OrdersPageClient({
                                     {product.name}
                                   </Link>
                                   {canReview && isReviewed && (
-                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-primary flex-shrink-0">
+                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground flex-shrink-0">
                                       <CheckCircle className="h-3 w-3" />
                                       Reported
                                     </span>
@@ -506,31 +502,31 @@ export default function OrdersPageClient({
       </AlertDialog>
 
       {/* Brew Report Dialog */}
-      <Dialog
+      <DialogShell
         open={reviewFormTarget !== null}
-        onOpenChange={(open) => !open && setReviewFormTarget(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReviewFormTarget(null);
+            setReviewScore(0);
+          }
+        }}
+        title="Write a Review"
+        description={reviewFormTarget?.productName}
+        headerExtra={<CompletenessBar score={reviewScore} />}
+        size="sm"
       >
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle>Write a Review</DialogTitle>
-            {reviewFormTarget && (
-              <p className="text-sm text-text-muted">{reviewFormTarget.productName}</p>
-            )}
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto min-h-0">
-            {reviewFormTarget && (
-              <BrewReportForm
-                productId={reviewFormTarget.productId}
-                productName={reviewFormTarget.productName}
-                productTastingNotes={reviewFormTarget.productTastingNotes}
-                isCoffee={reviewFormTarget.productType === "COFFEE"}
-                onSuccess={handleReviewSuccess}
-                stickySubmit
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        {reviewFormTarget && (
+          <BrewReportForm
+            productId={reviewFormTarget.productId}
+            productName={reviewFormTarget.productName}
+            productTastingNotes={reviewFormTarget.productTastingNotes}
+            isCoffee={reviewFormTarget.productType === "COFFEE"}
+            onSuccess={handleReviewSuccess}
+            onScoreChange={setReviewScore}
+            stickySubmit
+          />
+        )}
+      </DialogShell>
 
       {/* Shipment Status Dialog */}
       {shipmentStatusOrder && (

@@ -198,6 +198,7 @@ model User {
   activities          UserActivity[]
   passwordResetTokens PasswordResetToken[]
   drafts              ProductMenuDraft[]
+  reviewsLastViewedAt DateTime?
   reviews             Review[]
   reviewVotes         ReviewVote[]
 }
@@ -618,7 +619,7 @@ enum PageType {
 enum ReviewStatus {
   PUBLISHED
   FLAGGED
-  REMOVED
+  PENDING
 }
 
 enum BrewMethod {
@@ -640,7 +641,9 @@ model Review {
   rating    Int
   title     String?
   content   String
-  status    ReviewStatus @default(PUBLISHED)
+  status        ReviewStatus @default(PUBLISHED)
+  flagReason    String?
+  adminResponse String?
 
   brewMethod   BrewMethod?
   grindSize    String?

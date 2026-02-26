@@ -17,10 +17,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ChevronDown, Filter, MoreHorizontal } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  Filter,
+  MoreHorizontal,
+} from "lucide-react";
 import { useCallback, useRef, useState, type ComponentType } from "react";
+import {
+  subDays,
+  subMonths,
+  startOfMonth,
+  format,
+} from "date-fns";
+import type { DateRange } from "react-day-picker";
 
 import type {
   ActiveFilter,
@@ -154,9 +167,141 @@ function MultiSelectFilterContent({
   );
 }
 
+export interface DateRangeFilterValue {
+  preset: string;
+  from: Date;
+  to: Date;
+}
+
+const DATE_PRESETS = [
+  { label: "Last 7 days", value: "last7" },
+  { label: "Current month", value: "currentMonth" },
+  { label: "Last 90 days", value: "last90" },
+  { label: "Last 6 months", value: "last6mo" },
+] as const;
+
+function computePresetRange(preset: string): { from: Date; to: Date } | null {
+  const now = new Date();
+  switch (preset) {
+    case "last7":
+      return { from: subDays(now, 7), to: now };
+    case "currentMonth":
+      return { from: startOfMonth(now), to: now };
+    case "last90":
+      return { from: subDays(now, 90), to: now };
+    case "last6mo":
+      return { from: subMonths(now, 6), to: now };
+    default:
+      return null;
+  }
+}
+
+function DateRangeFilterContent({
+  config: _config,
+  filter,
+  onFilterChange,
+}: FilterRendererProps) {
+  const currentValue = filter.value as DateRangeFilterValue | null;
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [pendingRange, setPendingRange] = useState<DateRange | undefined>(
+    undefined
+  );
+  const handleOpenChange = (open: boolean) => {
+    setCalendarOpen(open);
+    if (open) {
+      // Restore previous range on reopen
+      if (currentValue) {
+        setPendingRange({ from: currentValue.from, to: currentValue.to });
+      } else {
+        setPendingRange(undefined);
+      }
+    }
+  };
+
+  const handlePresetSelect = (preset: string) => {
+    const range = computePresetRange(preset);
+    if (range) {
+      onFilterChange({ ...filter, value: { preset, ...range } });
+    }
+  };
+
+  const handleCalendarSelect = (range: DateRange | undefined) => {
+    setPendingRange(range);
+    if (range?.from && range?.to && range.from.getTime() !== range.to.getTime()) {
+      onFilterChange({
+        ...filter,
+        value: { preset: "custom", from: range.from, to: range.to },
+      });
+      // Calendar stays open — user closes manually or clicks to start new range
+    }
+  };
+
+  const displayLabel = currentValue
+    ? currentValue.preset === "custom"
+      ? `${format(currentValue.from, "MMM d")} – ${format(currentValue.to, "MMM d")}`
+      : DATE_PRESETS.find((p) => p.value === currentValue.preset)?.label ?? "Select range"
+    : "Select range";
+
+  const customRangeLabel = currentValue?.preset === "custom"
+    ? `${format(currentValue.from, "MMM d")} – ${format(currentValue.to, "MMM d")}`
+    : null;
+
+  return (
+    <>
+      <Popover open={calendarOpen} onOpenChange={handleOpenChange}>
+        <PopoverTrigger asChild>
+          <InputGroupButton
+            size="xs"
+            variant="ghost"
+            className="px-1 text-muted-foreground"
+          >
+            <CalendarDays className="h-4 w-4" />
+          </InputGroupButton>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="range"
+            selected={pendingRange}
+            onSelect={handleCalendarSelect}
+            numberOfMonths={2}
+            disabled={{ after: new Date() }}
+          />
+        </PopoverContent>
+      </Popover>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex-1 flex items-center justify-between gap-1 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground truncate"
+          >
+            <span className="truncate">{displayLabel}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {customRangeLabel && (
+            <DropdownMenuItem disabled className="text-muted-foreground">
+              {customRangeLabel}
+            </DropdownMenuItem>
+          )}
+          {DATE_PRESETS.map((preset) => (
+            <DropdownMenuItem
+              key={preset.value}
+              onClick={() => handlePresetSelect(preset.value)}
+            >
+              {preset.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+}
+
 const FILTER_RENDERERS: Record<string, ComponentType<FilterRendererProps>> = {
   comparison: ComparisonFilterContent,
   multiSelect: MultiSelectFilterContent,
+  dateRange: DateRangeFilterContent,
 };
 
 // --- Main DataTableFilter ---
@@ -188,6 +333,8 @@ export function DataTableFilter({
 
     if (config.filterType === "comparison") {
       onFilterChange({ configId, operator: "=", value: "" });
+    } else if (config.filterType === "dateRange") {
+      onFilterChange({ configId, value: null });
     } else {
       onFilterChange({ configId, value: [] });
     }

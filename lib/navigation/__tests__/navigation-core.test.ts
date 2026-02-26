@@ -552,11 +552,11 @@ describe("navigation-core", () => {
       expect(labels).toEqual(["About", "Cafe", "FAQ"]);
     });
 
-    it("should return 9 children for admin.settings", () => {
+    it("should return 10 children for admin.settings", () => {
       const children = getNavigableChildren("admin.settings");
-      expect(children).toHaveLength(9);
+      expect(children).toHaveLength(10);
       expect(children[0].label).toBe("General");
-      expect(children[8].label).toBe("Social Links");
+      expect(children[9].label).toBe("Social Links");
     });
 
     it("should exclude label:null children (e.g., admin.products.coffees has edit with null label)", () => {
@@ -606,10 +606,10 @@ describe("navigation-core", () => {
       }
     });
 
-    it("should return 3 children for admin.management", () => {
+    it("should return 4 children for admin.management", () => {
       const children = getNavigableChildren("admin.management");
       const labels = children.map((c) => c.label);
-      expect(labels).toEqual(["All Users", "Newsletter", "Support"]);
+      expect(labels).toEqual(["All Users", "Newsletter", "Reviews", "Support"]);
     });
   });
 });

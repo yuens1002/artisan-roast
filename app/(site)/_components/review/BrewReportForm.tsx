@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback, useMemo } from "react";
+import { useState, useTransition, useCallback, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,13 +16,32 @@ import { BREW_METHOD_LABELS } from "@/lib/types/roaster-brew-guide";
 import { calculateCompletenessScore } from "@/lib/reviews/completeness-score";
 import { submitReview } from "@/app/(site)/products/[slug]/review-actions";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronDown, Loader2, Star } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
+
+export function CompletenessBar({ score }: { score: number }) {
+  const pct = Math.round(score * 100);
+  return (
+    <div>
+      <div className="flex items-center justify-between text-xs text-text-muted mb-1">
+        <span>Completeness</span>
+        <span>{pct}%</span>
+      </div>
+      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-300"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 interface BrewReportFormProps {
   productId: string;
   productName: string;
   productTastingNotes: string[];
   onSuccess?: () => void;
+  onScoreChange?: (score: number) => void;
   stickySubmit?: boolean;
   isCoffee?: boolean;
 }
@@ -32,6 +51,7 @@ export function BrewReportForm({
   productName,
   productTastingNotes,
   onSuccess,
+  onScoreChange,
   stickySubmit,
   isCoffee = true,
 }: BrewReportFormProps) {
@@ -49,7 +69,6 @@ export function BrewReportForm({
   const [grindSize, setGrindSize] = useState("");
   const [waterTempF, setWaterTempF] = useState("");
   const [ratio, setRatio] = useState("");
-  const [showRecipeDetails, setShowRecipeDetails] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const completenessScore = useMemo(
@@ -66,6 +85,10 @@ export function BrewReportForm({
       }),
     [rating, title, content, brewMethod, selectedNotes, grindSize, waterTempF, ratio]
   );
+
+  useEffect(() => {
+    onScoreChange?.(completenessScore);
+  }, [completenessScore, onScoreChange]);
 
   const toggleNote = useCallback((note: string) => {
     setSelectedNotes((prev) =>
@@ -153,8 +176,7 @@ export function BrewReportForm({
       {/* Title */}
       <div>
         <label htmlFor="review-title" className="text-sm font-medium text-text-base block mb-1.5">
-          Title <span className="text-text-muted text-xs">(optional)</span>
-        </label>
+          Title        </label>
         <Input
           id="review-title"
           value={title}
@@ -187,8 +209,7 @@ export function BrewReportForm({
       {isCoffee && (
         <div>
           <label className="text-sm font-medium text-text-base block mb-1.5">
-            Brew Method <span className="text-text-muted text-xs">(optional)</span>
-          </label>
+            Brew Method          </label>
           <Select value={brewMethod} onValueChange={setBrewMethod}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select brew method" />
@@ -208,8 +229,7 @@ export function BrewReportForm({
       {isCoffee && (
         <div>
           <label className="text-sm font-medium text-text-base block mb-1.5">
-            Tasting Notes <span className="text-text-muted text-xs">(optional)</span>
-          </label>
+            Tasting Notes          </label>
           <div className="flex flex-wrap gap-1.5 mb-2">
             {productTastingNotes.map((note) => (
               <button
@@ -243,7 +263,7 @@ export function BrewReportForm({
             <Input
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
-              placeholder="Add your own"
+              placeholder="e.g., Caramel, Nutty"
               className="flex-1"
               maxLength={50}
               onKeyDown={(e) => {
@@ -266,81 +286,53 @@ export function BrewReportForm({
         </div>
       )}
 
-      {/* Recipe details (coffee only, collapsible) */}
+      {/* Recipe details (coffee only) */}
       {isCoffee && (
         <div>
-          <button
-            type="button"
-            onClick={() => setShowRecipeDetails(!showRecipeDetails)}
-            className="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-text-base transition-colors"
-          >
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 transition-transform",
-                showRecipeDetails && "rotate-180"
-              )}
-            />
-            Recipe Details
-            <span className="text-xs">(optional)</span>
-          </button>
-          {showRecipeDetails && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-              <div>
-                <label htmlFor="grind-size" className="text-xs text-text-muted block mb-1">
-                  Grind Size
-                </label>
-                <Input
-                  id="grind-size"
-                  value={grindSize}
-                  onChange={(e) => setGrindSize(e.target.value)}
-                  placeholder="e.g., Medium-fine"
-                  maxLength={100}
-                />
-              </div>
-              <div>
-                <label htmlFor="water-temp" className="text-xs text-text-muted block mb-1">
-                  Water Temp (°F)
-                </label>
-                <Input
-                  id="water-temp"
-                  type="number"
-                  value={waterTempF}
-                  onChange={(e) => setWaterTempF(e.target.value)}
-                  placeholder="e.g., 200"
-                  min={100}
-                  max={220}
-                />
-              </div>
-              <div>
-                <label htmlFor="ratio" className="text-xs text-text-muted block mb-1">
-                  Ratio
-                </label>
-                <Input
-                  id="ratio"
-                  value={ratio}
-                  onChange={(e) => setRatio(e.target.value)}
-                  placeholder="e.g., 1:16"
-                  maxLength={50}
-                />
-              </div>
+          <label className="text-sm font-medium text-text-base block mb-1.5">
+            Recipe Details          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label htmlFor="grind-size" className="text-xs text-text-muted block mb-1">
+                Grind Size
+              </label>
+              <Input
+                id="grind-size"
+                value={grindSize}
+                onChange={(e) => setGrindSize(e.target.value)}
+                placeholder="e.g., Medium-fine"
+                maxLength={100}
+              />
             </div>
-          )}
+            <div>
+              <label htmlFor="water-temp" className="text-xs text-text-muted block mb-1">
+                Water Temp (°F)
+              </label>
+              <Input
+                id="water-temp"
+                type="number"
+                value={waterTempF}
+                onChange={(e) => setWaterTempF(e.target.value)}
+                placeholder="e.g., 200"
+                min={100}
+                max={220}
+              />
+            </div>
+            <div>
+              <label htmlFor="ratio" className="text-xs text-text-muted block mb-1">
+                Ratio
+              </label>
+              <Input
+                id="ratio"
+                value={ratio}
+                onChange={(e) => setRatio(e.target.value)}
+                placeholder="e.g., 1:16"
+                maxLength={50}
+              />
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Completeness indicator */}
-      <div>
-        <div className="flex items-center justify-between text-xs text-text-muted mb-1">
-          <span>Completeness</span>
-          <span>{Math.round(completenessScore * 100)}%</span>
-        </div>
-        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-300"
-            style={{ width: `${Math.round(completenessScore * 100)}%` }}
-          />
-        </div>
-      </div>
 
       {/* Error message */}
       {error && (

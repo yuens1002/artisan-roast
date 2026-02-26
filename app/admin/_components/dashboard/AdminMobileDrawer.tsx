@@ -14,6 +14,7 @@ import { ArrowLeft, ChevronRight, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
+import { useUnreadReviews } from "./useUnreadReviews";
 
 interface AdminMobileDrawerProps {
   storeName: string;
@@ -26,9 +27,11 @@ interface AdminMobileDrawerProps {
 function NavChildLink({
   child,
   onNavigate,
+  showBadge,
 }: {
   child: NavChild;
   onNavigate: () => void;
+  showBadge?: boolean;
 }) {
   const isChildActive = useIsHrefActive(child.href);
 
@@ -51,7 +54,12 @@ function NavChildLink({
         isChildActive && "bg-accent text-accent-foreground font-medium"
       )}
     >
-      {child.label}
+      <span className="flex items-center gap-1.5">
+        {child.label}
+        {showBadge && (
+          <span className="h-2 w-2 rounded-full bg-primary" aria-label="New reviews" />
+        )}
+      </span>
     </Link>
   );
 }
@@ -61,11 +69,13 @@ function NavSection({
   isExpanded,
   onToggle,
   onNavigate,
+  unreadCount,
 }: {
   item: NavItem;
   isExpanded: boolean;
   onToggle: () => void;
   onNavigate: () => void;
+  unreadCount: number;
 }) {
   const Icon = item.icon;
   const hasChildren = item.children && item.children.length > 0;
@@ -106,7 +116,7 @@ function NavSection({
       <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
         <div className="pl-8 pr-2 py-1">
           {item.children?.map((child) => (
-            <NavChildLink key={child.href} child={child} onNavigate={onNavigate} />
+            <NavChildLink key={child.href} child={child} onNavigate={onNavigate} showBadge={child.badgeId === "unread-reviews" && unreadCount > 0} />
           ))}
         </div>
       </CollapsibleContent>
@@ -122,11 +132,13 @@ function MobileNavContent({
   expandedSections,
   setExpandedSections,
   onNavigate,
+  unreadCount,
 }: {
   navItems: NavItem[];
   expandedSections: Record<string, boolean>;
   setExpandedSections: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   onNavigate: () => void;
+  unreadCount: number;
 }) {
   const toggleSection = (label: string) => {
     setExpandedSections((prev) => ({
@@ -144,6 +156,7 @@ function MobileNavContent({
           isExpanded={expandedSections[item.label] ?? false}
           onToggle={() => toggleSection(item.label)}
           onNavigate={onNavigate}
+          unreadCount={unreadCount}
         />
       ))}
     </>
@@ -153,6 +166,7 @@ function MobileNavContent({
 export function AdminMobileDrawer({ storeName, storeLogoUrl }: AdminMobileDrawerProps) {
   const [open, setOpen] = React.useState(false);
   const activeRoute = useActiveRoute();
+  const { unreadCount } = useUnreadReviews();
 
   const mobileNavItems = mobileNavConfig;
 
@@ -252,6 +266,7 @@ export function AdminMobileDrawer({ storeName, storeLogoUrl }: AdminMobileDrawer
               expandedSections={expandedSections}
               setExpandedSections={setExpandedSections}
               onNavigate={handleNavigate}
+              unreadCount={unreadCount}
             />
           </nav>
 

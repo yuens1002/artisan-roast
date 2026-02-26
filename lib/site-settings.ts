@@ -19,12 +19,11 @@ export interface SiteSettings {
 }
 
 export const defaultSettings: SiteSettings = {
-  storeName: "Artisan Roast",
-  storeTagline: "Specialty coffee sourced from the world's finest origins.",
-  storeDescription:
-    "Premium specialty coffee, carefully roasted to perfection. From single-origin beans to signature blends, discover exceptional coffee delivered to your door.",
-  storeLogoUrl: "/logo.svg",
-  contactEmail: "hello@artisan-roast.com",
+  storeName: "",
+  storeTagline: "",
+  storeDescription: "",
+  storeLogoUrl: "",
+  contactEmail: "",
   // Marketing Content defaults
   homepageFeaturedHeading: "Our Small Batch Collection",
   homepageRecommendationsTrendingHeading: "Trending Now",

@@ -9,19 +9,12 @@ import {
 export const dynamic = "force-dynamic";
 
 /**
- * Heartbeat cron endpoint
- * Called periodically (e.g., daily via Vercel cron) to send anonymous usage stats
- *
- * Vercel cron config (vercel.json):
- * {
- *   "crons": [{
- *     "path": "/api/cron/heartbeat",
- *     "schedule": "0 0 * * *"
- *   }]
- * }
+ * Heartbeat cron endpoint — PLATFORM-LEVEL
+ * Called periodically (e.g., daily via Vercel cron) to send anonymous usage stats.
+ * This is a platform concern, not per-store — uses only the env var CRON_SECRET
+ * (not the admin-managed DB secret).
  */
 export async function GET(request: NextRequest) {
-  // Verify cron secret for security (optional but recommended)
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 

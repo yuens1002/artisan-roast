@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon } from "@/components/ui/forms/InputGroup";
 import { Loader2, FileIcon } from "lucide-react";
@@ -63,10 +62,8 @@ export default function FileUpload({
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-3">
-        <Label className="text-sm font-medium w-16 shrink-0">Icon</Label>
-        <InputGroup className="flex-1 min-w-0">
+    <div>
+      <InputGroup className="md:max-w-[72ch]">
           <input
             ref={fileInputRef}
             type="file"
@@ -130,7 +127,6 @@ export default function FileUpload({
             Max 2MB
           </InputGroupAddon>
         </InputGroup>
-      </div>
     </div>
   );
 }

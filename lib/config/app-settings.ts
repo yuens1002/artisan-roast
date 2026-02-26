@@ -13,7 +13,9 @@ const APP_SETTINGS_KEYS = {
   ALLOW_PROMO_CODES: "commerce.allowPromoCodes",
   REVIEWS_ENABLED: "commerce.reviewsEnabled",
   REVIEW_EMAIL_DELAY_DAYS: "commerce.reviewEmailDelayDays",
+  NOTIFY_ON_NEW_REVIEW: "commerce.notifyOnNewReview",
   STOREFRONT_THEME: "storefront.theme",
+  CRON_SECRET: "cron.secret",
 } as const;
 
 /**
@@ -146,6 +148,31 @@ export async function setReviewEmailDelayDays(value: number): Promise<void> {
 }
 
 /**
+ * Get whether admin should be notified on new reviews
+ */
+export async function getNotifyOnNewReview(): Promise<boolean> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: APP_SETTINGS_KEYS.NOTIFY_ON_NEW_REVIEW },
+  });
+
+  return setting?.value === "true";
+}
+
+/**
+ * Set whether admin should be notified on new reviews
+ */
+export async function setNotifyOnNewReview(value: boolean): Promise<void> {
+  await prisma.siteSettings.upsert({
+    where: { key: APP_SETTINGS_KEYS.NOTIFY_ON_NEW_REVIEW },
+    update: { value: String(value) },
+    create: {
+      key: APP_SETTINGS_KEYS.NOTIFY_ON_NEW_REVIEW,
+      value: String(value),
+    },
+  });
+}
+
+/**
  * Get the active storefront theme ID
  * @returns theme ID string or null (null = default built-in theme)
  */
@@ -179,6 +206,60 @@ export async function setStorefrontTheme(
       value: themeId,
     },
   });
+}
+
+/**
+ * Get the cron authentication secret
+ * @returns secret string or null if not configured
+ */
+export async function getCronSecret(): Promise<string | null> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: APP_SETTINGS_KEYS.CRON_SECRET },
+  });
+
+  return setting?.value || null;
+}
+
+/**
+ * Set the cron authentication secret
+ */
+export async function setCronSecret(value: string): Promise<void> {
+  await prisma.siteSettings.upsert({
+    where: { key: APP_SETTINGS_KEYS.CRON_SECRET },
+    update: { value },
+    create: {
+      key: APP_SETTINGS_KEYS.CRON_SECRET,
+      value,
+    },
+  });
+}
+
+/**
+ * Get store branding needed for outgoing emails (store name + logo URL).
+ * Single query fetching both values from SiteSettings.
+ * Relative URLs (e.g. /logo.svg) are resolved to absolute using APP_URL
+ * so they render correctly in email clients.
+ */
+export async function getEmailBranding(): Promise<{
+  storeName: string;
+  logoUrl: string | null;
+}> {
+  const settings = await prisma.siteSettings.findMany({
+    where: { key: { in: ["store_name", "store_logo_url"] } },
+  });
+
+  const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+
+  let logoUrl = map.store_logo_url || null;
+  if (logoUrl && logoUrl.startsWith("/")) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    logoUrl = appUrl ? `${appUrl.replace(/\/$/, "")}${logoUrl}` : null;
+  }
+
+  return {
+    storeName: map.store_name || "",
+    logoUrl,
+  };
 }
 
 /**

@@ -1,18 +1,10 @@
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Preview,
-  Section,
-  Text,
-  Tailwind,
-} from "@react-email/components";
-import * as React from "react";
+import { Heading, Section, Text } from "@react-email/components";
+import { Fragment } from "react";
+import type { EmailBranding } from "./_components";
+import { ContainedSection, Divider, EmailLayout } from "./_components";
+import * as s from "./_styles";
 
-interface ContactFormEmailProps {
+interface ContactFormEmailProps extends EmailBranding {
   name: string;
   email: string;
   subject: string;
@@ -24,39 +16,49 @@ export const ContactFormEmail = ({
   email,
   subject,
   message,
+  ...branding
 }: ContactFormEmailProps) => {
-  const previewText = `New Contact Form Submission: ${subject}`;
-
   return (
-    <Html>
-      <Head />
-      <Preview>{previewText}</Preview>
-      <Tailwind>
-        <Body className="bg-white my-auto mx-auto font-sans">
-          <Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] w-[465px]">
-            <Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
-              New Contact Form Submission
-            </Heading>
-            <Text className="text-black text-[14px] leading-[24px]">
-              <strong>From:</strong> {name} ({email})
-            </Text>
-            <Text className="text-black text-[14px] leading-[24px]">
-              <strong>Subject:</strong> {subject}
-            </Text>
-            <Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />
-            <Text className="text-black text-[14px] leading-[24px]">
-              <strong>Message:</strong>
-            </Text>
-            <Section className="bg-[#f4f4f4] rounded p-[20px] mb-[20px]">
-              <Text className="text-black text-[14px] leading-[24px] m-0 whitespace-pre-wrap">
-                {message}
-              </Text>
-            </Section>
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
+    <EmailLayout preview={`New Contact Form Submission: ${subject}`} {...branding}>
+      <Heading style={s.h1}>New Contact Form Submission</Heading>
+
+      <Section style={s.detailSection}>
+        <Text style={s.detailLabel}>From</Text>
+        <Text style={s.detailValue}>
+          {name} ({email})
+        </Text>
+        <Text style={s.detailLabel}>Subject</Text>
+        <Text style={s.detailValue}>{subject}</Text>
+      </Section>
+
+      <Divider />
+
+      <Text style={{ ...s.detailLabel, padding: "0 40px" }}>Message</Text>
+      <ContainedSection innerStyle={messageBoxInner} margin="8px 0 20px">
+        <Text style={messageText}>
+          {message.split("\n").map((line, i) => (
+            <Fragment key={i}>
+              {i > 0 && <br />}
+              {line}
+            </Fragment>
+          ))}
+        </Text>
+      </ContainedSection>
+    </EmailLayout>
   );
 };
 
 export default ContactFormEmail;
+
+const messageBoxInner = {
+  backgroundColor: "#f4f4f4",
+  borderRadius: "8px",
+  padding: "24px",
+};
+
+const messageText = {
+  color: "#333",
+  fontSize: "16px",
+  lineHeight: "26px",
+  margin: "0",
+};

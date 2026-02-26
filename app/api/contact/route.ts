@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resend } from "@/lib/services/resend";
+import { getEmailBranding } from "@/lib/config/app-settings";
 import ContactFormEmail from "@/emails/ContactFormEmail";
 import { getErrorMessage } from "@/lib/error-utils";
 
@@ -28,18 +29,13 @@ export async function POST(req: NextRequest) {
 
     console.log(`Attempting to send email to: ${adminEmail}`);
 
-    // Fetch store name
-    const { prisma } = await import("@/lib/prisma");
-    const storeNameSetting = await prisma.siteSettings.findUnique({
-      where: { key: "store_name" },
-    });
-    const storeName = storeNameSetting?.value || "Artisan Roast";
+    const { storeName, logoUrl } = await getEmailBranding();
 
     const { data, error } = await resend.emails.send({
       from: `${storeName} <onboarding@resend.dev>`,
       to: [adminEmail],
       subject: `[Contact Form] ${subject}`,
-      react: ContactFormEmail({ name, email, subject, message }),
+      react: ContactFormEmail({ name, email, subject, message, logoUrl }),
       replyTo: email,
     });
 

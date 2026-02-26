@@ -46,3 +46,19 @@ export function filterProfanity(text: string): {
     flaggedWords: [...new Set(flaggedWords)],
   };
 }
+
+/**
+ * Censor profanity in text by replacing matched words with first letter + asterisks.
+ * e.g., "fuck" → "f***", "shit" → "s***"
+ */
+export function censorText(text: string): string {
+  const globalRegex = new RegExp(
+    `\\b(${PROFANITY_LIST.join("|")})\\b`,
+    "gi"
+  );
+
+  return text.replace(globalRegex, (match) => {
+    if (match.length <= 1) return "*";
+    return match[0] + "*".repeat(match.length - 1);
+  });
+}

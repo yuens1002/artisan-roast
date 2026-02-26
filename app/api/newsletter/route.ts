@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
+import { getEmailBranding } from "@/lib/config/app-settings";
 import NewsletterWelcomeEmail from "@/emails/NewsletterWelcomeEmail";
 import NewsletterSignupNotification from "@/emails/NewsletterSignupNotification";
 import { z } from "zod";
@@ -62,27 +63,25 @@ export async function POST(request: NextRequest) {
 
         // Send welcome back email and admin notification
         try {
-          const [emailSetting, notifySetting, storeNameSetting] =
+          const [{ storeName, logoUrl }, emailSetting, notifySetting] =
             await Promise.all([
+              getEmailBranding(),
               prisma.siteSettings.findUnique({
                 where: { key: "contactEmail" },
               }),
               prisma.siteSettings.findUnique({
                 where: { key: "notifyAdminOnNewsletterSignup" },
               }),
-              prisma.siteSettings.findUnique({
-                where: { key: "store_name" },
-              }),
             ]);
           const fromEmail = emailSetting?.value || "onboarding@resend.dev";
           const shouldNotifyAdmin = notifySetting?.value === "true";
-          const storeName = storeNameSetting?.value || "Artisan Roast";
 
           const welcomeBackHtml = await render(
             NewsletterWelcomeEmail({
               email,
               unsubscribeToken: subscriber.unsubscribeToken,
               storeName,
+              logoUrl,
             }),
             { pretty: false }
           );
@@ -109,6 +108,7 @@ export async function POST(request: NextRequest) {
                 }),
                 totalSubscribers,
                 storeName,
+                logoUrl,
               }),
               { pretty: false }
             );
@@ -139,20 +139,18 @@ export async function POST(request: NextRequest) {
     });
 
     // Get settings
-    const [emailSetting, notifySetting, storeNameSetting] = await Promise.all([
-      prisma.siteSettings.findUnique({
-        where: { key: "contactEmail" },
-      }),
-      prisma.siteSettings.findUnique({
-        where: { key: "notifyAdminOnNewsletterSignup" },
-      }),
-      prisma.siteSettings.findUnique({
-        where: { key: "store_name" },
-      }),
-    ]);
+    const [{ storeName, logoUrl: newLogoUrl }, emailSetting, notifySetting] =
+      await Promise.all([
+        getEmailBranding(),
+        prisma.siteSettings.findUnique({
+          where: { key: "contactEmail" },
+        }),
+        prisma.siteSettings.findUnique({
+          where: { key: "notifyAdminOnNewsletterSignup" },
+        }),
+      ]);
     const fromEmail = emailSetting?.value || "onboarding@resend.dev";
     const shouldNotifyAdmin = notifySetting?.value === "true";
-    const storeName = storeNameSetting?.value || "Artisan Roast";
 
     // Send welcome email
     try {
@@ -161,6 +159,7 @@ export async function POST(request: NextRequest) {
           email,
           unsubscribeToken: subscriber.unsubscribeToken,
           storeName,
+          logoUrl: newLogoUrl,
         }),
         { pretty: false }
       );
@@ -194,6 +193,7 @@ export async function POST(request: NextRequest) {
             }),
             totalSubscribers,
             storeName,
+            logoUrl: newLogoUrl,
           }),
           { pretty: false }
         );

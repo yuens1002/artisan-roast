@@ -49,7 +49,7 @@ describe("completeness-score", () => {
       brewMethod: "POUR_OVER_V60",
     });
     expect(with_).toBeGreaterThan(without);
-    expect(with_ - without).toBeCloseTo(0.2, 1);
+    expect(with_ - without).toBeCloseTo(0.15, 1);
   });
 
   it("credits tasting notes", () => {
@@ -75,7 +75,7 @@ describe("completeness-score", () => {
       rating: 4,
       grindSize: "Medium",
     });
-    expect(with_ - without).toBeCloseTo(0.15, 1);
+    expect(with_ - without).toBeCloseTo(0.1, 1);
   });
 
   it("credits title", () => {

@@ -5,6 +5,8 @@ import {
   setReviewsEnabled,
   getReviewEmailDelayDays,
   setReviewEmailDelayDays,
+  getNotifyOnNewReview,
+  setNotifyOnNewReview,
 } from "@/lib/config/app-settings";
 
 export async function GET() {
@@ -12,7 +14,8 @@ export async function GET() {
     await requireAdmin();
     const enabled = await getReviewsEnabled();
     const emailDelayDays = await getReviewEmailDelayDays();
-    return NextResponse.json({ enabled, emailDelayDays });
+    const notifyOnNewReview = await getNotifyOnNewReview();
+    return NextResponse.json({ enabled, emailDelayDays, notifyOnNewReview });
   } catch (error) {
     console.error("Error fetching reviews settings:", error);
     return NextResponse.json(
@@ -48,9 +51,20 @@ export async function PUT(request: NextRequest) {
       await setReviewEmailDelayDays(days);
     }
 
+    if ("notifyOnNewReview" in body) {
+      if (typeof body.notifyOnNewReview !== "boolean") {
+        return NextResponse.json(
+          { error: "Invalid value for notifyOnNewReview" },
+          { status: 400 }
+        );
+      }
+      await setNotifyOnNewReview(body.notifyOnNewReview);
+    }
+
     const enabled = await getReviewsEnabled();
     const emailDelayDays = await getReviewEmailDelayDays();
-    return NextResponse.json({ success: true, enabled, emailDelayDays });
+    const notifyOnNewReview = await getNotifyOnNewReview();
+    return NextResponse.json({ success: true, enabled, emailDelayDays, notifyOnNewReview });
   } catch (error) {
     console.error("Error updating reviews settings:", error);
     return NextResponse.json(

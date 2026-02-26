@@ -1,4 +1,4 @@
-import { PrismaClient, BrewMethod } from "@prisma/client";
+import { PrismaClient, BrewMethod, ReviewStatus } from "@prisma/client";
 import { calculateCompletenessScore } from "../../lib/reviews/completeness-score";
 
 // --- 115 Coffee-Enthusiast Personas ---
@@ -129,6 +129,12 @@ interface ReviewSeed {
   waterTempF?: number;
   ratio?: string;
   tastingNotes?: string[];
+  /** Review status — defaults to PUBLISHED */
+  status?: ReviewStatus;
+  /** Reason for flagging (when status is FLAGGED) */
+  flagReason?: string;
+  /** Admin response / comment on the review */
+  adminResponse?: string;
   /** Index into REVIEW_USERS — assigned at definition time to ensure uniqueness per product */
   userIndex: number;
   /** Days ago this review was created */
@@ -221,6 +227,22 @@ const PRODUCT_REVIEWS: Record<string, ReviewSeed[]> = {
       title: "Subscribed after first bag",
       content: "Ordered this on a whim and immediately set up a subscription. The fruit-forward profile is addictive. Every morning I look forward to brewing this. Exceptional quality for the price point.",
       tastingNotes: ["Blueberry", "Bergamot"],
+    },
+    {
+      rating: 5, userIndex: 65, daysAgo: 14,
+      title: "Best coffee in the city",
+      content: "Been ordering from Artisan Roast for a while now and this Yirgacheffe is outstanding. The jasmine florals are so prominent. Brewed it on my V60 at 201°F and the cup was silky smooth with a beautiful lemon finish.",
+      brewMethod: "POUR_OVER_V60", waterTempF: 201, ratio: "1:16",
+      tastingNotes: ["Jasmine", "Lemon"],
+      adminResponse: "Thank you for the kind words! We're so glad you're enjoying the Yirgacheffe — it's one of our favorites too. The jasmine really shines with a V60 pour. Cheers!",
+    },
+    {
+      rating: 1, userIndex: 66, daysAgo: 8,
+      title: "Not what I expected",
+      content: "This coffee tastes nothing like coffee. Way too sour and acidic. I want a refund. Also the bag arrived with a small tear. Would not recommend to anyone. Terrible experience overall. GO BUY FROM [competitor name] INSTEAD.",
+      status: "FLAGGED" as ReviewStatus,
+      flagReason: "Promotional content for competitor; potentially inauthentic review",
+      adminResponse: "We're sorry about the damaged packaging — please contact support@artisanroast.com and we'll make it right. Light roasts do have brighter acidity than darker roasts, so if you prefer a bolder cup we'd recommend our Sumatra or Colombian blends. However, this review has been flagged for containing promotional content for a competitor.",
     },
   ],
 
@@ -714,6 +736,9 @@ export async function seedReviews(prisma: PrismaClient) {
           rating: review.rating,
           title: review.title ?? null,
           content: review.content,
+          status: review.status ?? "PUBLISHED",
+          flagReason: review.flagReason ?? null,
+          adminResponse: review.adminResponse ?? null,
           brewMethod: review.brewMethod ?? null,
           grindSize: review.grindSize ?? null,
           waterTempF: review.waterTempF ?? null,

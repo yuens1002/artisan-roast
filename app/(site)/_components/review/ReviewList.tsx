@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useTransition, useRef } from "react";
 import useSWRInfinite from "swr/infinite";
 import { ReviewCard, type ReviewData } from "./ReviewCard";
-import { BrewMethodBadge } from "./BrewMethodBadge";
+import { BREW_METHOD_LABELS, type BrewMethodKey } from "@/lib/types/roaster-brew-guide";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -159,10 +159,10 @@ export function ReviewList({ productId, onDistributionLoad }: ReviewListProps) {
             <button
               onClick={() => handleFilterChange(null)}
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-medium transition-colors",
+                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground transition-opacity",
                 !brewMethodFilter
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-text-muted hover:bg-muted/80"
+                  ? "opacity-100"
+                  : "opacity-60 hover:opacity-80"
               )}
             >
               All
@@ -174,18 +174,14 @@ export function ReviewList({ productId, onDistributionLoad }: ReviewListProps) {
                   handleFilterChange(brewMethodFilter === method ? null : method)
                 }
                 className={cn(
-                  "transition-opacity decoration-transparent",
-                  brewMethodFilter === method ? "opacity-100" : "opacity-70 hover:opacity-100"
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground transition-opacity",
+                  brewMethodFilter === method
+                    ? "opacity-100"
+                    : "opacity-60 hover:opacity-80"
                 )}
               >
-                <BrewMethodBadge
-                  method={method}
-                  className={cn(
-                    "cursor-pointer",
-                    brewMethodFilter === method && "ring-1 ring-primary"
-                  )}
-                />
-                <span className="sr-only">({count})</span>
+                {BREW_METHOD_LABELS[method as BrewMethodKey] ?? method}
+                <span className="sr-only"> ({count})</span>
               </button>
             ))}
           </div>

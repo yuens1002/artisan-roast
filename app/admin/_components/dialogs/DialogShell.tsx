@@ -17,6 +17,7 @@ interface DialogShellProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
+  headerExtra?: ReactNode;
   size?: DialogSize;
   children: ReactNode;
   // Option 1: Built-in action buttons (most common)
@@ -101,6 +102,7 @@ export function DialogShell({
   onOpenChange,
   title,
   description,
+  headerExtra,
   size = "md",
   children,
   onSave,
@@ -123,6 +125,7 @@ export function DialogShell({
         <DialogHeader className="px-6 pt-6 pb-0 pr-12 shrink-0">
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
+          {headerExtra}
         </DialogHeader>
 
         <div className="overflow-y-auto flex-1 px-6 py-4">{children}</div>

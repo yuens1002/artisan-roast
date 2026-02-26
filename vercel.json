@@ -9,6 +9,10 @@
     {
       "path": "/api/cron/check-deliveries",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/review-emails",
+      "schedule": "0 0 * * *"
     }
   ],
   "redirects": [],

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/components";
+import { getEmailBranding } from "@/lib/config/app-settings";
 import PickupReadyEmail from "@/emails/PickupReadyEmail";
 
 /**
@@ -52,11 +53,7 @@ export async function PATCH(
         });
       }
 
-      // Fetch store name
-      const storeNameSetting = await prisma.siteSettings.findUnique({
-        where: { key: "store_name" },
-      });
-      const storeName = storeNameSetting?.value || "Artisan Roast";
+      const { storeName, logoUrl } = await getEmailBranding();
 
       const emailHtml = await render(
         PickupReadyEmail({
@@ -66,6 +63,7 @@ export async function PATCH(
           storeHours: "Mon-Fri: 7am-6pm, Sat-Sun: 8am-5pm",
           orderId: order.id,
           storeName,
+          logoUrl,
         })
       );
 

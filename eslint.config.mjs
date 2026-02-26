@@ -27,6 +27,7 @@ const eslintConfig = defineConfig([
       "app/admin/menu-builder-mock/**",
       "app/admin/menu-builder-mock2/**",
       // Temporary scratchpad and screenshot scripts
+      ".scratch/**",
       ".scratchpad/**",
       ".screenshots/**",
       "scratchpad/**",

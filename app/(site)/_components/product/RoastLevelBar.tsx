@@ -34,7 +34,7 @@ export function RoastLevelBar({
             key={level}
             className={cn(
               "h-1.5 flex-1 rounded-full",
-              level === roastLevel ? roastActiveColor[level] : "bg-border"
+              level === roastLevel ? roastActiveColor[level] : "bg-muted"
             )}
           />
         ))}

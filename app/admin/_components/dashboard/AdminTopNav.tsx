@@ -21,6 +21,7 @@ import Link from "next/link";
 import * as React from "react";
 import { AdminMobileDrawer } from "./AdminMobileDrawer";
 import { StoreBrand } from "./StoreBrand";
+import { useUnreadReviews } from "./useUnreadReviews";
 
 interface AdminTopNavProps {
   user: {
@@ -36,7 +37,7 @@ interface AdminTopNavProps {
  * Individual nav child link with active state via hook.
  * Extracted to allow hook usage (hooks can't be called in map callbacks).
  */
-function NavChildLink({ child }: { child: NavChild }) {
+function NavChildLink({ child, showBadge }: { child: NavChild; showBadge?: boolean }) {
   const isChildActive = useIsHrefActive(child.href);
 
   return (
@@ -49,13 +50,18 @@ function NavChildLink({ child }: { child: NavChild }) {
           isChildActive && "bg-accent font-medium"
         )}
       >
-        {child.label}
+        <span className="flex items-center gap-1.5">
+          {child.label}
+          {showBadge && (
+            <span className="h-2 w-2 rounded-full bg-primary" aria-label="New reviews" />
+          )}
+        </span>
       </Link>
     </NavigationMenuPrimitive.Link>
   );
 }
 
-function NavDropdown({ item }: { item: NavItem }) {
+function NavDropdown({ item, unreadCount }: { item: NavItem; unreadCount: number }) {
   // Find the parent route ID by looking at the first child's route
   const firstChildRoute = item.children?.[0]
     ? findRouteByHref(item.children[0].href)
@@ -133,7 +139,7 @@ function NavDropdown({ item }: { item: NavItem }) {
               <React.Fragment key={child.href}>
                 {sectionHeader}
                 <li>
-                  <NavChildLink child={child} />
+                  <NavChildLink child={child} showBadge={child.badgeId === "unread-reviews" && unreadCount > 0} />
                 </li>
               </React.Fragment>
             );
@@ -150,6 +156,7 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
     () => getDesktopNavConfig(),
     []
   );
+  const { unreadCount } = useUnreadReviews();
 
   // Debounce nav close to prevent click-to-close racing with hover-to-reopen.
   // Same fix as SiteHeader — ignore close events within 300ms of open.
@@ -211,10 +218,10 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
           <NavigationMenuPrimitive.Root className="hidden lg:flex" value={navValue} onValueChange={handleNavValueChange} delayDuration={200}>
             <NavigationMenuPrimitive.List className="flex items-center gap-2">
               {visibleNavItems.map((item) => (
-                <NavDropdown key={item.label} item={item} />
+                <NavDropdown key={item.label} item={item} unreadCount={unreadCount} />
               ))}
               {overflowNavItem && (
-                <NavDropdown key={overflowNavItem.label} item={overflowNavItem} />
+                <NavDropdown key={overflowNavItem.label} item={overflowNavItem} unreadCount={unreadCount} />
               )}
             </NavigationMenuPrimitive.List>
           </NavigationMenuPrimitive.Root>

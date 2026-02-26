@@ -4,6 +4,7 @@ import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { FormTextArea } from "@/components/ui/forms/FormTextArea";
+import FileUpload from "@/app/admin/_components/cms/fields/FileUpload";
 
 export default function GeneralSettingsPage() {
   return (
@@ -51,6 +52,36 @@ export default function GeneralSettingsPage() {
               isSaving={isSaving}
               isSaveDisabled={!isDirty}
               onSave={onSave}
+            />
+          )}
+        />
+
+        <SettingsField
+          endpoint="/api/admin/settings/branding"
+          field="storeLogoUrl"
+          label="Store Logo"
+          description="Upload your logo (SVG, PNG, or JPG). Displayed in the site header, footer, and outgoing emails."
+          autoSave
+          input={(value, onChange) => (
+            <FileUpload
+              linkId="store-logo"
+              currentIconUrl={value as string}
+              onUploadComplete={(url) => onChange(url)}
+            />
+          )}
+        />
+
+        <SettingsField
+          endpoint="/api/admin/settings/branding"
+          field="storeFaviconUrl"
+          label="Favicon"
+          description="Upload your favicon (.ico, .png, or .svg). Recommended: 32x32px. Browser cache clear may be needed to see updates."
+          autoSave
+          input={(value, onChange) => (
+            <FileUpload
+              linkId="store-favicon"
+              currentIconUrl={value as string}
+              onUploadComplete={(url) => onChange(url)}
             />
           )}
         />

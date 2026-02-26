@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.92.0 - 2026-02-26
+
+### Added
+
+- **Admin reviews moderation page**: Full moderation dashboard with tabs (Published, Pending, Flagged), bulk actions, date/rating filters, sortable columns, hover-card preview, and mobile-responsive card layout
+- **Review flagging & admin responses**: Flag reviews with reason, publish admin responses visible on storefront, restore flagged reviews
+- **Profanity filter**: Automatic censoring of profane words in review content on the storefront
+- **Review request emails**: Automated cron job sends review request emails to customers after order delivery
+- **Admin review notifications**: Unread review badge in admin nav, mark-as-read tracking, new review notification emails with flagged review alerts
+- **Scheduled jobs settings page**: Generate and manage cron authentication secret from admin UI, view all scheduled tasks
+- **Email template architecture**: Shared `EmailLayout` and `EmailBranding` system eliminating store name/URL duplication across all 12 email templates
+
+### Changed
+
+- **DataTable**: Extended with dateRange filter type for flexible date-based filtering
+- **Email templates**: Refactored all templates to use shared layout component with consistent branding
+- **Completeness score**: Improved scoring algorithm with weighted field contributions
+
+### Fixed
+
+- **Admin reviews pagination**: Hidden on mobile where card layout is used instead
+- **FileUpload component**: Removed redundant "Icon" label and constrained width to match other form fields
+
 ## 0.91.0 - 2026-02-26
 
 ### Added

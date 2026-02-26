@@ -1,6 +1,7 @@
 export { DataTable } from "./DataTable";
 export { DataTableActionBar } from "./DataTableActionBar";
 export { DataTableFilter } from "./DataTableFilter";
+export type { DateRangeFilterValue } from "./DataTableFilter";
 export { DataTableHeaderCell } from "./DataTableHeaderCell";
 export { DataTablePageSizeSelector } from "./DataTablePageSizeSelector";
 export { DataTablePagination } from "./DataTablePagination";

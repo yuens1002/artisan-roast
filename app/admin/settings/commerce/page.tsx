@@ -149,6 +149,31 @@ export default function CommerceSettingsPage() {
             </div>
           )}
         />
+        <SettingsField<boolean>
+          endpoint="/api/admin/settings/reviews"
+          field="notifyOnNewReview"
+          label="Email on New Review"
+          autoSave
+          defaultValue={false}
+          input={(value, onChange) => (
+            <div className="space-y-1.5">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={Boolean(value)}
+                  onCheckedChange={(checked) => onChange(checked)}
+                />
+                <Label className="text-sm text-muted-foreground">
+                  {value
+                    ? "Admin email notifications are enabled"
+                    : "Admin email notifications are disabled"}
+                </Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Send an email to all admin users when a new review is submitted
+              </p>
+            </div>
+          )}
+        />
       </SettingsSection>
     </div>
   );

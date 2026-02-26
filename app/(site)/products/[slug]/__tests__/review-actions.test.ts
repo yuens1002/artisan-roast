@@ -1,7 +1,8 @@
 import { submitReview, voteHelpful } from "../review-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { containsProfanity } from "@/lib/reviews/profanity-filter";
+import { filterProfanity } from "@/lib/reviews/profanity-filter";
+import { detectSpam } from "@/lib/reviews/spam-detector";
 import { calculateCompletenessScore } from "@/lib/reviews/completeness-score";
 import {
   getVerifiedPurchaseOrderId,
@@ -26,7 +27,10 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 jest.mock("@/lib/reviews/profanity-filter", () => ({
-  containsProfanity: jest.fn(),
+  filterProfanity: jest.fn(),
+}));
+jest.mock("@/lib/reviews/spam-detector", () => ({
+  detectSpam: jest.fn(),
 }));
 jest.mock("@/lib/reviews/completeness-score", () => ({
   calculateCompletenessScore: jest.fn(),
@@ -38,6 +42,10 @@ jest.mock("@/lib/reviews/review-helpers", () => ({
 }));
 jest.mock("@/lib/config/app-settings", () => ({
   getReviewsEnabled: jest.fn(),
+  getNotifyOnNewReview: jest.fn().mockResolvedValue(false),
+}));
+jest.mock("@/lib/email/send-new-review-notification", () => ({
+  sendNewReviewNotification: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
@@ -48,7 +56,8 @@ const mockPrisma = prisma as unknown as {
   review: { findUnique: jest.Mock; create: jest.Mock };
   reviewVote: { findUnique: jest.Mock; create: jest.Mock; delete: jest.Mock };
 };
-const mockContainsProfanity = containsProfanity as jest.Mock;
+const mockFilterProfanity = filterProfanity as jest.Mock;
+const mockDetectSpam = detectSpam as jest.Mock;
 const mockCompletenessScore = calculateCompletenessScore as jest.Mock;
 const mockGetVerifiedPurchaseOrderId = getVerifiedPurchaseOrderId as jest.Mock;
 const mockUpdateProductRatingSummary = updateProductRatingSummary as jest.Mock;
@@ -69,7 +78,8 @@ describe("submitReview", () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1" } });
     mockGetReviewsEnabled.mockResolvedValue(true);
     mockPrisma.review.findUnique.mockResolvedValue(null);
-    mockContainsProfanity.mockReturnValue(false);
+    mockFilterProfanity.mockReturnValue({ clean: true, flaggedWords: [] });
+    mockDetectSpam.mockReturnValue({ isSpam: false, reasons: [] });
     mockCompletenessScore.mockReturnValue(0.5);
     mockGetVerifiedPurchaseOrderId.mockResolvedValue("order-1");
     mockPrisma.review.create.mockResolvedValue({
@@ -116,13 +126,32 @@ describe("submitReview", () => {
     });
   });
 
-  it("rejects profanity", async () => {
-    mockContainsProfanity.mockReturnValue(true);
+  it("queues review with profanity as PENDING", async () => {
+    mockFilterProfanity.mockReturnValue({ clean: false, flaggedWords: ["damn"] });
     const result = await submitReview(validInput);
-    expect(result).toEqual({
-      success: false,
-      error: "Your review contains inappropriate language. Please revise and resubmit.",
+
+    expect(mockPrisma.review.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        status: "PENDING",
+        flagReason: expect.stringContaining("Profanity detected: damn"),
+      }),
+      select: expect.anything(),
     });
+    expect(result).toEqual({ success: true, reviewId: "review-1" });
+  });
+
+  it("queues review with spam as PENDING", async () => {
+    mockDetectSpam.mockReturnValue({ isSpam: true, reasons: ["Excessive URLs"] });
+    const result = await submitReview(validInput);
+
+    expect(mockPrisma.review.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        status: "PENDING",
+        flagReason: expect.stringContaining("Excessive URLs"),
+      }),
+      select: expect.anything(),
+    });
+    expect(result).toEqual({ success: true, reviewId: "review-1" });
   });
 
   it("creates review with completeness score and verified purchase", async () => {
@@ -135,12 +164,14 @@ describe("submitReview", () => {
         rating: 4,
         title: "Great coffee",
         content: validInput.content,
+        status: "PUBLISHED",
+        flagReason: null,
         completenessScore: 0.5,
         productId: "product-1",
         userId: "user-1",
         orderId: "order-1",
       }),
-      select: { id: true, product: { select: { slug: true } } },
+      select: { id: true, product: { select: { name: true, slug: true } } },
     });
     expect(mockUpdateProductRatingSummary).toHaveBeenCalledWith("product-1");
     expect(mockRevalidatePath).toHaveBeenCalledWith("/products/great-coffee");

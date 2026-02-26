@@ -24,13 +24,9 @@ export async function getSiteMetadata() {
   );
 
   return {
-    storeName: settingsMap.store_name || "Artisan Roast",
-    storeTagline:
-      settingsMap.store_tagline ||
-      "Open-source specialty coffee e-commerce platform",
-    storeDescription:
-      settingsMap.store_description ||
-      "A modern, open-source e-commerce platform built with Next.js, Stripe, and Prisma. Launch your specialty coffee business with subscriptions, AI recommendations, and a beautiful storefront.",
+    storeName: settingsMap.store_name || "",
+    storeTagline: settingsMap.store_tagline || "",
+    storeDescription: settingsMap.store_description || "",
     storeLogoUrl: settingsMap.store_logo_url || "/logo.svg",
     storeFaviconUrl: settingsMap.store_favicon_url || "/favicon.ico",
   };

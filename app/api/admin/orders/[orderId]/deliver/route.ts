@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/components";
+import { getEmailBranding } from "@/lib/config/app-settings";
 import DeliveryConfirmationEmail from "@/emails/DeliveryConfirmationEmail";
 import { format } from "date-fns";
 
@@ -51,10 +52,7 @@ export async function PATCH(
     // Send delivery confirmation email
     try {
       if (order.customerEmail) {
-        const storeNameSetting = await prisma.siteSettings.findUnique({
-          where: { key: "store_name" },
-        });
-        const storeName = storeNameSetting?.value || "Artisan Roast";
+        const { storeName, logoUrl } = await getEmailBranding();
 
         const emailHtml = await render(
           DeliveryConfirmationEmail({
@@ -64,6 +62,7 @@ export async function PATCH(
             orderId: order.id,
             deliveredAt: format(deliveredAt, "MMMM d, yyyy 'at' h:mm a"),
             storeName,
+            logoUrl,
           })
         );
 

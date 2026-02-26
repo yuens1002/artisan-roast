@@ -13,42 +13,51 @@ interface CompletenessInput {
 }
 
 // Weight distribution (sums to 1.0)
+// Each field contributes visibly so the bar responds to every input
 const WEIGHTS = {
-  contentLength: 0.35,
-  brewMethod: 0.2,
+  content: 0.25,
+  brewMethod: 0.15,
   tastingNotes: 0.15,
-  technicalData: 0.15,
+  grindSize: 0.1,
+  waterTempF: 0.1,
+  ratio: 0.1,
   title: 0.1,
   rating: 0.05,
 };
 
-function contentLengthScore(content: string): number {
+function contentScore(content: string): number {
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
-  if (wordCount < 15) return 0;
-  if (wordCount >= 80) return 1;
-  // Linear interpolation between 15 and 80 words
-  return (wordCount - 15) / (80 - 15);
+  if (wordCount < 5) return 0;
+  if (wordCount >= 40) return 1;
+  // Linear interpolation — a couple of short paragraphs is enough
+  return (wordCount - 5) / (40 - 5);
 }
 
 export function calculateCompletenessScore(input: CompletenessInput): number {
   let score = 0;
 
-  // Content word count (0.35)
-  score += WEIGHTS.contentLength * contentLengthScore(input.content);
+  // Content (0.25) — 40 words is a full score
+  score += WEIGHTS.content * contentScore(input.content);
 
-  // Brew method (0.20)
+  // Brew method (0.15)
   if (input.brewMethod) {
     score += WEIGHTS.brewMethod;
   }
 
-  // Tasting notes (0.15) — at least 1 note
+  // Tasting notes (0.15)
   if (input.tastingNotes && input.tastingNotes.length > 0) {
     score += WEIGHTS.tastingNotes;
   }
 
-  // Technical data (0.15) — any of grindSize, waterTempF, ratio
-  if (input.grindSize || input.waterTempF || input.ratio) {
-    score += WEIGHTS.technicalData;
+  // Each recipe field scores independently (0.10 each)
+  if (input.grindSize) {
+    score += WEIGHTS.grindSize;
+  }
+  if (input.waterTempF) {
+    score += WEIGHTS.waterTempF;
+  }
+  if (input.ratio) {
+    score += WEIGHTS.ratio;
   }
 
   // Title (0.10)
@@ -56,7 +65,7 @@ export function calculateCompletenessScore(input: CompletenessInput): number {
     score += WEIGHTS.title;
   }
 
-  // Rating (0.05) — always present when submitting
+  // Rating (0.05)
   if (input.rating > 0) {
     score += WEIGHTS.rating;
   }

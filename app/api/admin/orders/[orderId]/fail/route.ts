@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/components";
+import { getEmailBranding } from "@/lib/config/app-settings";
 import FailedOrderNotification from "@/emails/FailedOrderNotification";
 
 /**
@@ -63,12 +64,10 @@ export async function PATCH(
         });
       }
 
-      // Fetch store name and support email
-      const [storeNameSetting, supportEmailSetting] = await Promise.all([
-        prisma.siteSettings.findUnique({ where: { key: "store_name" } }),
+      const [{ storeName, logoUrl }, supportEmailSetting] = await Promise.all([
+        getEmailBranding(),
         prisma.siteSettings.findUnique({ where: { key: "support_email" } }),
       ]);
-      const storeName = storeNameSetting?.value || "Artisan Roast";
       const supportEmail =
         supportEmailSetting?.value || process.env.RESEND_FROM_EMAIL;
 
@@ -79,6 +78,7 @@ export async function PATCH(
           failureReason: reason.trim(),
           orderId: order.id,
           storeName,
+          logoUrl,
           supportEmail,
         })
       );
