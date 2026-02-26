@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.92.1 - 2026-02-26
+
+### Fixed
+
+- **Theme preview card**: Use default shadcn Badge for proper contrast, replace "Add to Cart" with icon + "Add" to prevent wrapping, add type scale preview (2xl–xs), remove misleading accent area
+- **Storefront button text alignment**: Normalize vertical centering for custom theme fonts (Outfit, Noto Serif SC) via scoped `leading-none` on site layout
+- **Recommended For You images**: Show immediately on page load when above the fold instead of waiting for scroll
+- **Product image height on mobile**: Cut image height in half on xs–sm breakpoints (cropped, not stretched) for better mobile UX
+
+### Changed
+
+- **Theme save button**: Moved below title with amber/green status dot indicating save state
+
 ## 0.92.0 - 2026-02-26
 
 ### Added

@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 interface ImageCarouselProps {
   images: Array<{ url: string; alt?: string }>;
   aspectRatio?: "4/3" | "16/9" | "square";
+  /** Override aspect ratio on mobile (<md). Container crops with object-cover. */
+  mobileAspectRatio?: "4/3" | "16/9" | "2/1";
   className?: string;
   fallbackIcon?: React.ReactNode;
   defaultAlt?: string;
@@ -25,6 +27,7 @@ interface ImageCarouselProps {
 export function ImageCarousel({
   images,
   aspectRatio = "4/3",
+  mobileAspectRatio,
   className = "",
   fallbackIcon,
   defaultAlt = "Image",
@@ -43,11 +46,21 @@ export function ImageCarousel({
   );
   const hasImages = images && images.length > 0;
 
-  const aspectRatioClass = {
+  const desktopAspectMap = {
     "4/3": "aspect-4/3",
     "16/9": "aspect-video",
     square: "aspect-square",
-  }[aspectRatio];
+  } as const;
+
+  const mobileAspectMap = {
+    "4/3": "max-md:aspect-4/3",
+    "16/9": "max-md:aspect-video",
+    "2/1": "max-md:aspect-[2/1]",
+  } as const;
+
+  const aspectRatioClass = mobileAspectRatio
+    ? `${mobileAspectMap[mobileAspectRatio]} md:${desktopAspectMap[aspectRatio]}`
+    : desktopAspectMap[aspectRatio];
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -120,7 +133,7 @@ export function ImageCarousel({
                     alt={img.alt || defaultAlt}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 90vw, 45vw"
+                    sizes="(max-width: 768px) calc(100vw - 2rem), (max-width: 1280px) 45vw, 560px"
                     priority={idx === 0}
                   />
                 </div>

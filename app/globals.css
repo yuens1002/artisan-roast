@@ -161,6 +161,11 @@ We define CSS variables for each theme.
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+  /* Normalize vertical text alignment for custom theme fonts (Outfit, Noto Serif SC, etc.)
+     that have different ascender/descender metrics than Inter. Scoped to storefront only. */
+  [data-site] [data-slot="button"] {
+    line-height: 1;
+  }
 }
 
 /* Global prose typography - apply .prose class to content blocks */

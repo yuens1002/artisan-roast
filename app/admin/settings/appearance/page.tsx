@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { Check, Moon, Palette, Sun, Terminal } from "lucide-react";
+import { Check, Loader2, Moon, Palette, Save, ShoppingCart, Sun, Terminal } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
-import { SaveButton } from "@/app/admin/_components/forms/SaveButton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -203,6 +202,7 @@ export default function AppearanceSettingsPage() {
   }
   // Also set foreground variants for the preview
   previewStyle["--primary-foreground"] = previewColors.background;
+  previewStyle["--secondary-foreground"] = previewColors.foreground;
   previewStyle["--muted-foreground"] = previewColors.foreground;
   previewStyle["--card"] = previewColors.background;
   previewStyle["--card-foreground"] = previewColors.foreground;
@@ -225,21 +225,28 @@ export default function AppearanceSettingsPage() {
         icon={<Palette className="h-5 w-5" />}
         title="Storefront Theme"
         description="Choose a color theme for your customer-facing storefront. Admin pages always use the default neutral theme."
-        action={
-          <div className="flex items-center gap-3">
-            {isDirty && (
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                Unsaved changes
-              </span>
-            )}
-            <SaveButton
-              onClick={handleSave}
-              isSaving={isSaving}
-              disabled={!isDirty}
-            />
-          </div>
-        }
       >
+        <div className="flex justify-end -mt-2">
+          <Button
+            size="sm"
+            onClick={isDirty ? handleSave : undefined}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            <span className="ml-2">{isSaving ? "Saving" : "Save"}</span>
+            <span
+              className={cn(
+                "ml-2 size-2 rounded-full",
+                isDirty ? "bg-amber-400" : "bg-green-400"
+              )}
+            />
+          </Button>
+        </div>
+
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -319,21 +326,14 @@ export default function AppearanceSettingsPage() {
               >
                 <div className="space-y-4">
                   {/* Header row */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <h3
                       className="text-lg font-bold"
                       style={{ color: "var(--foreground)" }}
                     >
                       Ethiopian Yirgacheffe
                     </h3>
-                    <Badge
-                      style={{
-                        backgroundColor: "var(--secondary)",
-                        color: "var(--foreground)",
-                      }}
-                    >
-                      New Arrival
-                    </Badge>
+                    <Badge className="shrink-0">New Arrival</Badge>
                   </div>
 
                   {/* Description */}
@@ -355,17 +355,18 @@ export default function AppearanceSettingsPage() {
                     </span>
                     <button
                       type="button"
-                      className="rounded-md px-4 py-2 text-sm font-medium"
+                      className="inline-flex items-center gap-1.5 rounded-md px-4 py-2.5 text-sm leading-none font-medium"
                       style={{
                         backgroundColor: "var(--primary)",
                         color: "var(--primary-foreground)",
                       }}
                     >
-                      Add to Cart
+                      <ShoppingCart className="h-4 w-4" />
+                      Add
                     </button>
                     <button
                       type="button"
-                      className="rounded-md px-4 py-2 text-sm font-medium border"
+                      className="rounded-md px-4 py-2.5 text-sm leading-none font-medium border"
                       style={{
                         backgroundColor: "var(--destructive)",
                         color: "var(--primary-foreground)",
@@ -376,18 +377,42 @@ export default function AppearanceSettingsPage() {
                     </button>
                   </div>
 
-                  {/* Accent/muted area */}
+                  {/* Type scale + inline styles */}
                   <div
-                    className="rounded-md p-3"
-                    style={{ backgroundColor: "var(--accent)" }}
+                    className="border-t pt-4 space-y-1"
+                    style={{ borderColor: "var(--border)" }}
                   >
-                    <p
-                      className="text-sm"
-                      style={{ color: "var(--foreground)" }}
-                    >
-                      Free shipping on orders over $50
+                    <p className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
+                      2xl — Page Title
+                    </p>
+                    <p className="text-xl font-bold" style={{ color: "var(--foreground)" }}>
+                      xl — Section Heading
+                    </p>
+                    <p className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>
+                      lg — Card Title
+                    </p>
+                    <p className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+                      base — Subheading
+                    </p>
+                    <p className="text-sm font-medium uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+                      sm — Label
+                    </p>
+                    <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
+                      xs — Caption
+                    </p>
+                    <p className="text-sm pt-1" style={{ color: "var(--muted-foreground)" }}>
+                      Body with{" "}
+                      <em>italic</em>,{" "}
+                      <strong style={{ color: "var(--foreground)" }}>bold</strong>, and{" "}
+                      <span
+                        className="underline underline-offset-4"
+                        style={{ color: "var(--primary)" }}
+                      >
+                        link
+                      </span>.
                     </p>
                   </div>
+
                 </div>
               </Card>
             </div>

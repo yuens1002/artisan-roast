@@ -396,6 +396,7 @@ export default function ProductClientPage({
           key={selectedVariant.id}
           images={galleryImages}
           aspectRatio="square"
+          mobileAspectRatio="2/1"
           showThumbnails={showThumbs}
           showDots={true}
         />

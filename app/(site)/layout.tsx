@@ -49,7 +49,7 @@ export default async function SiteLayout({
           <link rel="stylesheet" href={`/themes/${theme}.css`} />
         </>
       )}
-      <div className="relative flex min-h-screen flex-col">
+      <div data-site="" className="relative flex min-h-screen flex-col">
         {/* Demo banner - only shows when NEXT_PUBLIC_DEMO_MODE=true */}
         <DemoBanner />
 
