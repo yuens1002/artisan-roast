@@ -49,5 +49,15 @@ export async function deleteFromBlob(url: string): Promise<void> {
 
 /** Check if a URL is a Vercel Blob URL (vs a relative local path). */
 export function isBlobUrl(url: string): boolean {
-  return url.startsWith("https://") && url.includes(".blob.vercel-storage.com");
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return false;
+    const { hostname } = parsed;
+    return (
+      hostname === "blob.vercel-storage.com" ||
+      hostname.endsWith(".blob.vercel-storage.com")
+    );
+  } catch {
+    return false;
+  }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminApi } from "@/lib/admin";
 import { stripe } from "@/lib/services/stripe";
 import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/components";
@@ -16,7 +16,13 @@ export async function POST(
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    await requireAdmin();
+    const auth = await requireAdminApi();
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 }
+      );
+    }
 
     const { orderId } = await params;
     const body = await request.json();
@@ -127,8 +133,12 @@ export async function POST(
           getEmailBranding(),
           prisma.siteSettings.findUnique({ where: { key: "contactEmail" } }),
         ]);
+        // Extract plain email address (RESEND_FROM_EMAIL may use "Name <email>" format)
+        const fromEnv = process.env.RESEND_FROM_EMAIL || "";
+        const addrMatch = fromEnv.match(/<([^>]+)>/);
+        const fallbackEmail = addrMatch ? addrMatch[1] : fromEnv;
         const supportEmail =
-          contactEmailSetting?.value || process.env.RESEND_FROM_EMAIL;
+          contactEmailSetting?.value || fallbackEmail;
 
         const isFullRefund =
           updatedOrder.refundedAmountInCents >= order.totalInCents;
@@ -186,13 +196,6 @@ export async function POST(
     });
   } catch (error: unknown) {
     console.error("Refund error:", error);
-
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { error: "Admin access required" },
-        { status: 403 }
-      );
-    }
 
     return NextResponse.json(
       { error: "Failed to process refund" },

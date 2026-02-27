@@ -27,8 +27,8 @@ export async function loadOgFonts() {
 export async function renderOgLayout({ title, subtitle, badge, siteUrl, logoUrl }: OgLayoutProps) {
   let logoSrc: string;
 
-  if (logoUrl && logoUrl.startsWith("https://")) {
-    // External URL (blob storage, CDN) — use directly
+  if (logoUrl && (logoUrl.startsWith("https://") || logoUrl.startsWith("http://"))) {
+    // External URL (blob storage, CDN, localhost) — use directly
     logoSrc = logoUrl;
   } else {
     // Fallback: read default SVG from filesystem
