@@ -74,9 +74,18 @@ Admin-uploaded images (product photos, page heroes, category icons) are stored i
 
 **Setup (Vercel Blob):**
 
-1. Vercel Dashboard → your project → **Storage** → **Create Database** → **Blob** (public access)
-2. Copy the generated `BLOB_READ_WRITE_TOKEN` into `.env.local`
-3. The same token works for both local development and production
+1. Go to [vercel.com/dashboard](https://vercel.com/dashboard) and select your project
+2. Click the **Storage** tab in the top navigation
+3. Click **Create Database** → select **Blob**
+4. Give it a name (e.g., `artisan-roast-images`) and select **Public** access
+5. Click **Create** — Vercel auto-links the store to your project and injects `BLOB_READ_WRITE_TOKEN` into production/preview deployments
+6. For **local development only**: go to the Blob store → **Manage** → **Tokens**, copy the token, and add it to your `.env.local`:
+
+   ```env
+   BLOB_READ_WRITE_TOKEN="vercel_blob_rw_..."
+   ```
+
+> **Note:** Production deployments on Vercel get the token automatically — no manual env var setup needed. The `.env.local` token is only for `npm run dev`.
 
 **Using a different provider (S3, Cloudinary, etc.):**
 
