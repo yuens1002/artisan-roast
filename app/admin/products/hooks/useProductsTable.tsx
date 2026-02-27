@@ -385,6 +385,7 @@ export function useProductsTable({
     columnVisibility,
     globalFilterFn: multiFieldFilter,
     filterToColumnFilters: stableFilterToColumnFilters,
+    storageKey: "products-table-state",
   });
 
   return {

@@ -341,6 +341,7 @@ export function useReviewsTable({
     globalFilterFn: multiFieldFilter,
     filterToColumnFilters,
     initialSorting: [{ id: "date", desc: true }],
+    storageKey: "reviews-table-state",
   });
 
   return {

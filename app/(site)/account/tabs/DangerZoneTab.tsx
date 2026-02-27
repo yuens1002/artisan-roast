@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Loader2, Package } from "lucide-react";
@@ -188,7 +188,7 @@ export default function DangerZoneTab({
                 <AlertDialogAction
                   onClick={handleDelete}
                   disabled={confirmEmail !== userEmail || isDeleting}
-                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                  className={buttonVariants({ variant: "destructive" })}
                 >
                   {isDeleting && (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

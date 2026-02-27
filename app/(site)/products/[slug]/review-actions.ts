@@ -25,7 +25,7 @@ const submitReviewSchema = z.object({
   content: z.string().min(10).max(5000),
   brewMethod: z.string().optional(),
   grindSize: z.string().max(100).optional(),
-  waterTempF: z.number().int().min(100).max(220).optional(),
+  waterTempF: z.number().int().min(100).max(300).optional(),
   ratio: z.string().max(50).optional(),
   tastingNotes: z.array(z.string()).max(10).optional(),
 });
@@ -57,7 +57,11 @@ export async function submitReview(
   // Validate input
   const parsed = submitReviewSchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, error: "Invalid review data" };
+    const fieldErrors = parsed.error.issues.map((issue) => {
+      const field = issue.path.join(".");
+      return `${field}: ${issue.message}`;
+    });
+    return { success: false, error: fieldErrors.join(". ") };
   }
   const data = parsed.data;
 

@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
     // Find eligible orders
     const eligibleOrders = await prisma.order.findMany({
       where: {
-        status: "SHIPPED",
-        shippedAt: { lt: cutoffDate },
+        status: "DELIVERED",
+        deliveredAt: { lt: cutoffDate },
         userId: { not: null },
         user: { email: { not: null } },
         // No existing review email log for this order

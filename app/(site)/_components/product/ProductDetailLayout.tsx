@@ -51,7 +51,7 @@ export function ProductDetailLayout({
 
             <div
               ref={purchaseControlsRef}
-              className={`${hasDetails ? "lg:flex-[3]" : ""} lg:min-w-0`}
+              className={`${hasDetails ? "lg:flex-[3]" : "lg:w-3/4"} lg:min-w-0`}
             >
               {purchaseControls}
             </div>

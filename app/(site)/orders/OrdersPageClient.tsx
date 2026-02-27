@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Loader2, CheckCircle, PenLine } from "lucide-react";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 import { formatPrice } from "@/components/shared/record-utils";
@@ -86,10 +86,7 @@ export default function OrdersPageClient({
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     try {
-      const url = statusFilter
-        ? `/api/user/orders?status=${statusFilter}`
-        : "/api/user/orders";
-      const ordersRes = await fetch(url);
+      const ordersRes = await fetch("/api/user/orders");
       if (!ordersRes.ok) {
         if (ordersRes.status === 401) {
           setOrders([]);
@@ -114,7 +111,7 @@ export default function OrdersPageClient({
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter]);
+  }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -182,8 +179,12 @@ export default function OrdersPageClient({
   const canCancelOrder = (order: OrderWithItems) =>
     order.status === "PENDING";
 
-  const isCompletedOrder = (status: string) =>
-    status === "SHIPPED" || status === "PICKED_UP";
+  const isReviewEligible = (order: OrderWithItems) => {
+    if (order.status !== "DELIVERED" || !order.deliveredAt) return false;
+    if (order.refundedAmountInCents >= order.totalInCents) return false;
+    const daysSinceDelivery = (Date.now() - new Date(order.deliveredAt).getTime()) / (1000 * 60 * 60 * 24);
+    return daysSinceDelivery >= 7;
+  };
 
   const canTrackOrViewStatus = (order: OrderWithItems) =>
     order.status === "SHIPPED" || order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED";
@@ -192,7 +193,7 @@ export default function OrdersPageClient({
     canEditAddress(order) || canCancelOrder(order) || canTrackOrViewStatus(order);
 
   const hasReviewActions = (order: OrderWithItems) =>
-    isCompletedOrder(order.status) &&
+    isReviewEligible(order) &&
     order.items.some((item) => !reviewedProductIds.has(item.purchaseOption.variant.product.id));
 
   const getReviewSubMenu = (order: OrderWithItems) => {
@@ -390,7 +391,7 @@ export default function OrdersPageClient({
                         <div className={`space-y-2 ${order.refundedAmountInCents >= order.totalInCents ? "line-through text-muted-foreground" : ""}`}>
                           {order.items.map((item, idx) => {
                             const product = item.purchaseOption.variant.product;
-                            const canReview = isCompletedOrder(order.status);
+                            const canReview = isReviewEligible(order);
                             const isReviewed = reviewedProductIds.has(product.id);
                             return (
                               <div key={item.id}>
@@ -404,8 +405,25 @@ export default function OrdersPageClient({
                                   {canReview && isReviewed && (
                                     <span className="inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground flex-shrink-0">
                                       <CheckCircle className="h-3 w-3" />
-                                      Reported
+                                      {product.type === "COFFEE" ? "Reported" : "Reviewed"}
                                     </span>
+                                  )}
+                                  {canReview && !isReviewed && (
+                                    <button
+                                      type="button"
+                                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
+                                      onClick={() =>
+                                        setReviewFormTarget({
+                                          productId: product.id,
+                                          productName: product.name,
+                                          productTastingNotes: product.tastingNotes,
+                                          productType: product.type,
+                                        })
+                                      }
+                                    >
+                                      <PenLine className="h-3 w-3" />
+                                      {product.type === "COFFEE" ? "Report" : "Review"}
+                                    </button>
                                   )}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
@@ -493,7 +511,7 @@ export default function OrdersPageClient({
             <AlertDialogCancel>Keep Order</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelOrder}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className={buttonVariants({ variant: "destructive" })}
             >
               Cancel Order & Refund
             </AlertDialogAction>

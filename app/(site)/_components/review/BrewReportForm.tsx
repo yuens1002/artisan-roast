@@ -315,7 +315,7 @@ export function BrewReportForm({
                 onChange={(e) => setWaterTempF(e.target.value)}
                 placeholder="e.g., 200"
                 min={100}
-                max={220}
+                max={300}
               />
             </div>
             <div>

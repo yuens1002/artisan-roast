@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -37,8 +37,9 @@ import {
   DataTablePageSizeSelector,
   DataTablePagination,
 } from "@/app/admin/_components/data-table";
+import { useInfiniteScroll } from "@/app/admin/_components/data-table/hooks/useInfiniteScroll";
 import type { ActionBarConfig } from "@/app/admin/_components/data-table/types";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Loader2 } from "lucide-react";
 import { useReviewsTable, type AdminReview } from "./hooks/useReviewsTable";
 import { ReviewCard } from "./_components/ReviewCard";
 
@@ -232,6 +233,24 @@ export default function ReviewModerationClient() {
     onDelete: handleDelete,
   });
 
+  // Infinite scroll for mobile card grid
+  const allFilteredRows = table.getFilteredRowModel().rows;
+  const batchSize = table.getState().pagination.pageSize;
+  const { visibleCount, sentinelRef, hasMore, reset: resetScroll } = useInfiniteScroll({
+    totalCount: allFilteredRows.length,
+    batchSize,
+  });
+
+  // Reset infinite scroll when filters/search/status change
+  const scrollKey = `${statusFilter}|${searchQuery}|${JSON.stringify(activeFilter)}`;
+  const prevScrollKey = useRef(scrollKey);
+  useEffect(() => {
+    if (scrollKey !== prevScrollKey.current) {
+      prevScrollKey.current = scrollKey;
+      resetScroll();
+    }
+  }, [scrollKey, resetScroll]);
+
   const actionBarConfig: ActionBarConfig = {
     left: [
       {
@@ -315,18 +334,28 @@ export default function ReviewModerationClient() {
 
       {/* Mobile cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
-        {table.getFilteredRowModel().rows.length === 0 ? (
+        {allFilteredRows.length === 0 ? (
           <p className="text-center text-muted-foreground py-8 col-span-full">
             No reviews found.
           </p>
         ) : (
-          table.getFilteredRowModel().rows.map((row) => (
-            <ReviewCard
-              key={row.original.id}
-              review={row.original}
-              actionItems={getActionItems(row.original)}
-            />
-          ))
+          <>
+            {allFilteredRows.slice(0, visibleCount).map((row) => (
+              <ReviewCard
+                key={row.original.id}
+                review={row.original}
+                actionItems={getActionItems(row.original)}
+              />
+            ))}
+            {hasMore && (
+              <div
+                ref={sentinelRef as React.RefObject<HTMLDivElement>}
+                className="col-span-full flex justify-center py-4"
+              >
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -436,7 +465,7 @@ export default function ReviewModerationClient() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className={buttonVariants({ variant: "destructive" })}
               onClick={confirmDelete}
             >
               Delete

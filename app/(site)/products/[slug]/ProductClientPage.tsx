@@ -358,10 +358,12 @@ export default function ProductClientPage({
     { 768: 1, 1024: 1.3, 1280: 1.5 }, 1.3
   );
 
+  const hasMerchSpecs =
+    Array.isArray(product.details) && product.details.length > 0;
+  const hasMerchReviews =
+    product.reviewCount > 0 && product.averageRating != null;
   const hasMerchDetails =
-    !isCoffee &&
-    Array.isArray(product.details) &&
-    product.details.length > 0;
+    !isCoffee && (hasMerchSpecs || hasMerchReviews);
   const hasDetails = isCoffee || hasMerchDetails;
 
   // Build related products display
@@ -444,8 +446,7 @@ export default function ProductClientPage({
             />
           ) : (
             <dl className="space-y-3">
-              {(
-                product.details as Array<{
+              {((product.details || []) as Array<{
                   label: string;
                   value: string;
                 }>

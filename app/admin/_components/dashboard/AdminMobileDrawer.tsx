@@ -54,10 +54,10 @@ function NavChildLink({
         isChildActive && "bg-accent text-accent-foreground font-medium"
       )}
     >
-      <span className="flex items-center gap-1.5">
+      <span>
         {child.label}
         {showBadge && (
-          <span className="h-2 w-2 rounded-full bg-primary" aria-label="New reviews" />
+          <span className="relative -top-2 -ml-0.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" aria-label="New reviews" />
         )}
       </span>
     </Link>

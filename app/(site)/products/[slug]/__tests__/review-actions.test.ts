@@ -113,7 +113,7 @@ describe("submitReview", () => {
     });
     expect(result).toEqual({
       success: false,
-      error: "Invalid review data",
+      error: expect.stringContaining("rating"),
     });
   });
 
