@@ -187,7 +187,10 @@ export async function deleteProduct(id: string): Promise<ActionResult> {
   await requireAdmin();
 
   try {
-    await prisma.product.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      await tx.categoriesOnProducts.deleteMany({ where: { productId: id } });
+      await tx.product.delete({ where: { id } });
+    });
     revalidatePath("/admin/products");
     revalidatePath("/admin/merch");
     return { ok: true, data: null };

@@ -12,7 +12,7 @@ import type {
   ColumnFiltersState,
   FilterFn,
 } from "@tanstack/react-table";
-import { Pencil, Settings, SquarePen, Trash } from "lucide-react";
+import { Pencil, SquarePen, Trash } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 import { VariantCell } from "../_components/VariantCell";
@@ -77,8 +77,8 @@ const COLUMN_VISIBILITY_KEY = "products-table-column-visibility";
 // Columns that are always hidden (used for filtering only)
 const ALWAYS_HIDDEN = { price: false, stock: false };
 
-// Togglable columns shown in the Show/Hide sub-menu
-const TOGGLABLE_COLUMNS = [
+// Togglable columns exposed to the action bar's column visibility toggle
+export const TOGGLABLE_COLUMNS = [
   { id: "categories", label: "Categories" },
   { id: "addOns", label: "Add-ons" },
   { id: "variants", label: "Variants" },
@@ -343,17 +343,6 @@ export function useProductsTable({
               icon: Pencil,
               onClick: () => onEditVariants(product),
             },
-            {
-              type: "sub-menu",
-              label: "Show/Hide Columns",
-              icon: Settings,
-              items: TOGGLABLE_COLUMNS.map((col) => ({
-                label: col.label,
-                checked: columnVisibility[col.id] !== false,
-                onCheckedChange: (checked: boolean) =>
-                  handleVisibilityChange(col.id, checked),
-              })),
-            },
             { type: "separator" },
             {
               type: "item",
@@ -367,7 +356,7 @@ export function useProductsTable({
         },
       },
     ],
-    [onStockUpdate, onPriceUpdate, onEditProduct, onEditVariants, onDeleteProduct, columnVisibility, handleVisibilityChange]
+    [onStockUpdate, onPriceUpdate, onEditProduct, onEditVariants, onDeleteProduct]
   );
 
   const filterConfigs = useMemo<FilterConfig[]>(
@@ -389,7 +378,7 @@ export function useProductsTable({
     []
   );
 
-  return useDataTable({
+  const dataTable = useDataTable({
     data: products,
     columns,
     filterConfigs,
@@ -397,4 +386,10 @@ export function useProductsTable({
     globalFilterFn: multiFieldFilter,
     filterToColumnFilters: stableFilterToColumnFilters,
   });
+
+  return {
+    ...dataTable,
+    columnVisibility,
+    handleVisibilityChange,
+  };
 }

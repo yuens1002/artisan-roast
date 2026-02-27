@@ -35,9 +35,17 @@ export function ProductQuantityCart({
   const isOutOfStock = stockQuantity <= 0;
   const isDisabled = isOutOfStock || !hasSelectedPurchaseOption;
 
+  if (isOutOfStock) {
+    return (
+      <p className={cn("text-lg font-medium text-foreground", `mt-${spacing}`)}>
+        Out of Stock
+      </p>
+    );
+  }
+
   return (
     <div className={cn(
-      "w-full flex flex-col",
+      "w-full flex flex-col @container/cta",
       `gap-${spacing}`
     )}>
       {/* +/- stepper */}
@@ -72,27 +80,18 @@ export function ProductQuantityCart({
       </ButtonGroup>
 
       <div>
-        {isOutOfStock ? (
-          <Button
-            size="lg"
-            className="h-14 w-full text-lg"
-            disabled
-          >
-            Out of Stock
-          </Button>
-        ) : (
-          <AddToCartButton
-            buttonState={buttonState}
-            onAddToCart={onAddToCart}
-            onActionClick={onActionClick || (() => {})}
-            disabled={isDisabled}
-            isProcessing={isProcessing}
-            size="lg"
-            className="h-14 w-full text-lg"
-            priceInCents={priceInCents}
-            originalPriceInCents={originalPriceInCents}
-          />
-        )}
+        <AddToCartButton
+          buttonState={buttonState}
+          onAddToCart={onAddToCart}
+          onActionClick={onActionClick || (() => {})}
+          disabled={isDisabled}
+          isProcessing={isProcessing}
+          size="lg"
+          className="h-14 w-full text-lg"
+          priceInCents={priceInCents}
+          originalPriceInCents={originalPriceInCents}
+          containerAware="cta"
+        />
       </div>
     </div>
   );

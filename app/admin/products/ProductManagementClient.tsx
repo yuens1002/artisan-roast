@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ColumnVisibilityToggle,
   DataTable,
   DataTableActionBar,
   type ActionBarConfig,
@@ -35,7 +36,7 @@ import { updateOption, deleteOption } from "./actions/options";
 import { deleteProduct } from "./actions/products";
 import { updateVariant } from "./actions/variants";
 import { EditVariantDialog } from "./_components/EditVariantDialog";
-import { type Product, useProductsTable } from "./hooks/useProductsTable";
+import { type Product, TOGGLABLE_COLUMNS, useProductsTable } from "./hooks/useProductsTable";
 
 interface ProductManagementClientProps {
   title?: string;
@@ -239,6 +240,8 @@ export default function ProductManagementClient({
     activeFilter,
     setActiveFilter,
     filterConfigs,
+    columnVisibility,
+    handleVisibilityChange,
   } = useProductsTable({
     products,
     onStockUpdate: handleStockUpdate,
@@ -275,6 +278,16 @@ export default function ProductManagementClient({
       ],
       right: [
         {
+          type: "custom",
+          content: (
+            <ColumnVisibilityToggle
+              columns={TOGGLABLE_COLUMNS}
+              columnVisibility={columnVisibility}
+              onVisibilityChange={handleVisibilityChange}
+            />
+          ),
+        },
+        {
           type: "recordCount",
           count: table.getFilteredRowModel().rows.length,
           label: "products",
@@ -289,7 +302,7 @@ export default function ProductManagementClient({
         },
       ],
     }),
-    [searchQuery, basePath, filterConfigs, activeFilter, setSearchQuery, setActiveFilter, table]
+    [searchQuery, basePath, filterConfigs, activeFilter, setSearchQuery, setActiveFilter, table, columnVisibility, handleVisibilityChange]
   );
 
   if (loading) {

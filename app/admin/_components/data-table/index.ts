@@ -1,3 +1,4 @@
+export { ColumnVisibilityToggle } from "./ColumnVisibilityToggle";
 export { DataTable } from "./DataTable";
 export { DataTableActionBar } from "./DataTableActionBar";
 export { DataTableFilter } from "./DataTableFilter";

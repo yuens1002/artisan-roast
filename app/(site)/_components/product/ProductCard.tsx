@@ -59,7 +59,8 @@ export default function ProductCard({
   const hasSalePrice = oneTimePrice?.salePriceInCents != null;
   const displayPrice = effectivePrice
     ? (effectivePrice / 100).toFixed(2)
-    : "N/A";
+    : null;
+  const isOutOfStock = displayVariant ? displayVariant.stockQuantity <= 0 : true;
 
   // Use product name as seed for consistent placeholder image selection
   // Merch products use culture images (cups, equipment), coffee products use bean images
@@ -150,56 +151,64 @@ export default function ProductCard({
             <CardFooter
               className={clsx(
                 "pb-6 flex items-center",
-                compact && hidePrice
+                isOutOfStock || !displayPrice
                   ? "justify-center"
-                  : compact && hidePriceOnMobile
-                    ? "justify-center md:justify-between"
-                    : "justify-between",
+                  : compact && hidePrice
+                    ? "justify-center"
+                    : compact && hidePriceOnMobile
+                      ? "justify-center md:justify-between"
+                      : "justify-between",
                 hoverRevealFooter &&
                   "hidden md:flex lg:opacity-0 lg:translate-y-2 lg:group-hover:opacity-100 lg:group-hover:translate-y-0 transition-all duration-300 ease-out"
               )}
             >
-              <AddToCartButton
-                buttonState={buttonState}
-                onAddToCart={handleAdd}
-                onActionClick={handleAction}
-                disabled={!displayVariant || !oneTimePrice}
-                isProcessing={isCheckingOut}
-                containerAware
-                className="cursor-pointer @max-[300px]/card:text-xs @max-[300px]/card:h-8 @max-[300px]/card:px-2.5"
-              />
-              {!hidePrice && (
-                <div className={cn(
-                  "text-right",
-                  hidePriceOnMobile ? "hidden md:block" : "",
-                )}>
-                  {hasSalePrice && oneTimePrice ? (
-                    <div>
-                      {/* Vertical stack (compact, < 300px) */}
-                      <div className="@min-[300px]/card:hidden">
-                        <p className="text-xs text-muted-foreground line-through">
-                          ${formatPrice(oneTimePrice.priceInCents)}
-                        </p>
-                        <p className="text-sm font-bold text-foreground">
+              {isOutOfStock || !displayPrice ? (
+                <p className="text-sm font-medium text-foreground h-9 flex items-center">Out of Stock</p>
+              ) : (
+                <>
+                  <AddToCartButton
+                    buttonState={buttonState}
+                    onAddToCart={handleAdd}
+                    onActionClick={handleAction}
+                    disabled={!displayVariant || !oneTimePrice}
+                    isProcessing={isCheckingOut}
+                    containerAware
+                    className="cursor-pointer @max-[300px]/card:text-xs @max-[300px]/card:h-8 @max-[300px]/card:px-2.5"
+                  />
+                  {!hidePrice && (
+                    <div className={cn(
+                      "text-right",
+                      hidePriceOnMobile ? "hidden md:block" : "",
+                    )}>
+                      {hasSalePrice && oneTimePrice ? (
+                        <div>
+                          {/* Vertical stack (compact, < 300px) */}
+                          <div className="@min-[300px]/card:hidden">
+                            <p className="text-xs text-muted-foreground line-through">
+                              ${formatPrice(oneTimePrice.priceInCents)}
+                            </p>
+                            <p className="text-sm font-bold text-foreground">
+                              ${displayPrice}
+                            </p>
+                          </div>
+                          {/* Horizontal (>= 300px) */}
+                          <div className="hidden @min-[300px]/card:flex items-center gap-2">
+                            <p className="text-sm text-muted-foreground line-through">
+                              ${formatPrice(oneTimePrice.priceInCents)}
+                            </p>
+                            <p className="text-lg font-bold text-foreground">
+                              ${displayPrice}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="font-bold text-foreground @max-[300px]/card:text-sm @min-[300px]/card:text-lg">
                           ${displayPrice}
                         </p>
-                      </div>
-                      {/* Horizontal (>= 300px) */}
-                      <div className="hidden @min-[300px]/card:flex items-center gap-2">
-                        <p className="text-sm text-muted-foreground line-through">
-                          ${formatPrice(oneTimePrice.priceInCents)}
-                        </p>
-                        <p className="text-lg font-bold text-foreground">
-                          ${displayPrice}
-                        </p>
-                      </div>
+                      )}
                     </div>
-                  ) : (
-                    <p className="font-bold text-foreground @max-[300px]/card:text-sm @min-[300px]/card:text-lg">
-                      ${displayPrice}
-                    </p>
                   )}
-                </div>
+                </>
               )}
             </CardFooter>
           )}

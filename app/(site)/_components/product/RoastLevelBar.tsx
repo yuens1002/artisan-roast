@@ -11,8 +11,8 @@ const roastSegments: RoastLevel[] = ["LIGHT", "MEDIUM", "DARK"];
 
 const roastActiveColor: Record<RoastLevel, string> = {
   LIGHT: "bg-yellow-600",
-  MEDIUM: "bg-yellow-800",
-  DARK: "bg-yellow-950",
+  MEDIUM: "bg-yellow-700",
+  DARK: "bg-amber-900",
 };
 
 interface RoastLevelBarProps {
@@ -34,13 +34,13 @@ export function RoastLevelBar({
             key={level}
             className={cn(
               "h-1.5 flex-1 rounded-full",
-              level === roastLevel ? roastActiveColor[level] : "bg-muted"
+              level === roastLevel ? roastActiveColor[level] : "bg-foreground/20"
             )}
           />
         ))}
       </div>
       {showLabel && (
-        <span className="text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">{roastLabels[roastLevel]}</span>
+        <span className="text-xs text-foreground whitespace-nowrap overflow-hidden text-ellipsis">{roastLabels[roastLevel]}</span>
       )}
     </div>
   );

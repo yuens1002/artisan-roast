@@ -146,7 +146,7 @@ function PageSizeSelectorSlotRenderer({
 
 function RecordCountSlotRenderer({ slot }: { slot: RecordCountSlot }) {
   return (
-    <span className="text-sm text-muted-foreground whitespace-nowrap pr-4">
+    <span className="hidden md:inline text-sm text-muted-foreground whitespace-nowrap pr-4">
       {slot.label ? `${slot.count} ${slot.label}` : slot.count}
     </span>
   );
