@@ -52,7 +52,7 @@ export default async function ProductPage({
 
   const product = await getProductBySlug(slug);
 
-  if (!product) {
+  if (!product || product.variants.length === 0) {
     notFound();
   }
 

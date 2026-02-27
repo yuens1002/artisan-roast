@@ -55,7 +55,7 @@ export function DataTablePagination<TData>({
   const pages = pageCount <= 1 ? [0] : getPageRange(pageIndex, pageCount);
 
   return (
-    <Pagination className="mx-0 w-auto">
+    <Pagination className="mx-0 w-auto hidden md:flex">
       <PaginationContent className="gap-0.5">
         <PaginationItem>
           <PaginationPrevious

@@ -29,6 +29,7 @@ jest.mock("@/lib/prisma", () => ({
           product: {
             create: mockCreate,
             update: mockUpdate,
+            delete: mockDelete,
           },
           categoriesOnProducts: {
             createMany: mockCreateMany,
@@ -237,16 +238,19 @@ describe("updateProduct", () => {
 });
 
 describe("deleteProduct", () => {
-  it("should delete a product", async () => {
+  it("should delete a product and its category associations", async () => {
+    mockDeleteMany.mockResolvedValue({ count: 2 });
     mockDelete.mockResolvedValue({ id: "prod-1" });
 
     const result = await deleteProduct("prod-1");
 
     expect(result.ok).toBe(true);
+    expect(mockDeleteMany).toHaveBeenCalledWith({ where: { productId: "prod-1" } });
     expect(mockDelete).toHaveBeenCalledWith({ where: { id: "prod-1" } });
   });
 
   it("should return error on delete failure", async () => {
+    mockDeleteMany.mockResolvedValue({ count: 0 });
     mockDelete.mockRejectedValue(new Error("FK constraint"));
 
     const result = await deleteProduct("prod-1");

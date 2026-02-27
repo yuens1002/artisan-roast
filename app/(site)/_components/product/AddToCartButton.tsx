@@ -22,8 +22,10 @@ interface AddToCartButtonProps {
   priceInCents?: number | null;
   /** Original price before sale — shown with strikethrough when present */
   originalPriceInCents?: number;
-  /** When true, idle text responds to @container/card width: "Add" < 300px, "Add to Cart" >= 300px */
-  containerAware?: boolean;
+  /** When true, idle text responds to container width, collapsing "Add to Cart" → "Add".
+   *  - "card" uses @container/card at 300px (product cards)
+   *  - "cta" uses @container/cta at 370px (product detail button with price) */
+  containerAware?: "card" | "cta" | boolean;
 }
 
 const stateConfig: Record<
@@ -115,10 +117,17 @@ export function AddToCartButton({
           )}
         />
         {buttonState === "idle" && containerAware ? (
-          <>
-            <span className="hidden @min-[300px]/card:inline">Add to Cart</span>
-            <span className="@min-[300px]/card:hidden">Add</span>
-          </>
+          containerAware === "cta" ? (
+            <>
+              <span className="hidden @min-[370px]/cta:inline">Add to Cart</span>
+              <span className="@min-[370px]/cta:hidden">Add</span>
+            </>
+          ) : (
+            <>
+              <span className="hidden @min-[300px]/card:inline">Add to Cart</span>
+              <span className="@min-[300px]/card:hidden">Add</span>
+            </>
+          )
         ) : (
           <span>{config.text}</span>
         )}
