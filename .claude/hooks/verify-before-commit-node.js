@@ -86,11 +86,28 @@ function main(input) {
   const total = entry.acs_total || 0;
 
   switch (status) {
-    case "verified":
+    case "verified": {
+      // Verified — but check QC quality if ACs doc exists
+      const acsDoc = entry.acs_doc || "";
+      if (acsDoc) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { validateQC } = require("./qc-validator");
+        const qcResult = validateQC(projectDir, acsDoc);
+        if (!qcResult.valid) {
+          deny(
+            `BLOCKED: QC validation failed for "${branch}" (${qcResult.issues.length} issue(s)):\n` +
+              qcResult.issues.map((i) => `  • ${i}`).join("\n") +
+              `\n\nFix the QC column in ${acsDoc} with substantive, independent evidence before committing.`
+          );
+        }
+      }
+      process.exit(0);
+      break;
+    }
     case "planned":
     case "implementing":
     case "planning":
-      // Allow: verified is final, planned/implementing/planning allow intermediate commits
+      // Allow: planned/implementing/planning allow intermediate commits
       process.exit(0);
       break;
     case "partial":
