@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.92.6 - 2026-02-27
+
+### Added
+
+- **QC validator in hooks**: Wire `qc-validator.js` into commit and stop hooks to block rubber-stamp QC entries
+- **Product reviews implementation plan**: Add 7-phase plan for reviews & ratings feature
+
 ## 0.92.2 - 2026-02-26
 
 ### Fixed
