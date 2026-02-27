@@ -33,7 +33,7 @@ export function ColumnVisibilityToggle({
             <Columns3 className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
           {columns.map((col) => (
             <DropdownMenuCheckboxItem
               key={col.id}
