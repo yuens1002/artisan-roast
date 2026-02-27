@@ -22,7 +22,7 @@ export const defaultSettings: SiteSettings = {
   storeName: "",
   storeTagline: "",
   storeDescription: "",
-  storeLogoUrl: "",
+  storeLogoUrl: "/logo.svg",
   contactEmail: "",
   // Marketing Content defaults
   homepageFeaturedHeading: "Our Small Batch Collection",

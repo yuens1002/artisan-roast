@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.92.2 - 2026-02-26
+
+### Fixed
+
+- **Product images invisible on desktop**: Responsive aspect-ratio classes were built via template literal — Tailwind couldn't detect them at build time, producing 0-height image containers on md+ screens
+- **Auth SSR crash (window is not defined)**: Remove `window.location.origin` usage in signin/signup `useMemo` — build relative URLs directly instead
+- **Auth redirect to localhost on LAN**: Add `trustHost: true` to NextAuth config so redirects use the request's Host header
+- **Empty src warning on storefront images**: Default `storeLogoUrl` to `/logo.svg` so `<Image>` never renders with `src=""`
+- **Admin reviews action bar overflow**: Stack action bar rows on mobile with tighter spacing and aligned record count
+
 ## 0.92.1 - 2026-02-26
 
 ### Fixed

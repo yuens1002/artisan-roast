@@ -96,6 +96,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
     maxAge: 7 * 24 * 60 * 60, // 7 days
   },
+  // Trust the Host header so auth works when accessed via LAN IP, proxies, etc.
+  trustHost: true,
   // Add secret explicitly to ensure consistency across restarts
   secret: process.env.AUTH_SECRET,
 });

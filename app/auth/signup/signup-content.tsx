@@ -25,11 +25,10 @@ function SignupContentInner() {
   const callbackUrl = searchParams.get("callbackUrl") || "/account";
 
   const signInHref = useMemo(() => {
-    const url = new URL("/auth/signin", window.location.origin);
     if (callbackUrl !== "/account") {
-      url.searchParams.set("callbackUrl", callbackUrl);
+      return `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
     }
-    return url.pathname + url.search;
+    return "/auth/signin";
   }, [callbackUrl]);
 
   const [state, action, isPending] = useActionState<State, FormData>(

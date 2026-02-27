@@ -267,9 +267,12 @@ export default function ReviewModerationClient() {
     ],
     right: [
       {
-        type: "recordCount",
-        count: table.getFilteredRowModel().rows.length,
-        label: "Reviews",
+        type: "custom",
+        content: (
+          <span className="text-sm text-muted-foreground whitespace-nowrap pr-4 pl-[11px] md:pl-0">
+            {table.getFilteredRowModel().rows.length} Reviews
+          </span>
+        ),
       },
       {
         type: "custom",
@@ -300,7 +303,7 @@ export default function ReviewModerationClient() {
 
   return (
     <div>
-      <DataTableActionBar config={actionBarConfig} />
+      <DataTableActionBar config={actionBarConfig} className="flex-col-reverse items-start gap-1 md:flex-row md:items-center" />
 
       {/* Desktop table */}
       <div className="hidden md:block">

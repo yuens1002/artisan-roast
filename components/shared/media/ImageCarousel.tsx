@@ -46,21 +46,34 @@ export function ImageCarousel({
   );
   const hasImages = images && images.length > 0;
 
-  const desktopAspectMap = {
+  // Static class maps — Tailwind must see full class strings at build time (no template literals)
+  const baseAspectMap = {
     "4/3": "aspect-4/3",
     "16/9": "aspect-video",
     square: "aspect-square",
   } as const;
 
-  const mobileAspectMap = {
-    "4/3": "max-md:aspect-4/3",
-    "16/9": "max-md:aspect-video",
-    "2/1": "max-md:aspect-[2/1]",
-  } as const;
+  const responsiveAspectMap: Record<string, Record<string, string>> = {
+    "2/1": {
+      "4/3": "max-md:aspect-[2/1] md:aspect-4/3",
+      "16/9": "max-md:aspect-[2/1] md:aspect-video",
+      square: "max-md:aspect-[2/1] md:aspect-square",
+    },
+    "4/3": {
+      "4/3": "max-md:aspect-4/3 md:aspect-4/3",
+      "16/9": "max-md:aspect-4/3 md:aspect-video",
+      square: "max-md:aspect-4/3 md:aspect-square",
+    },
+    "16/9": {
+      "4/3": "max-md:aspect-video md:aspect-4/3",
+      "16/9": "max-md:aspect-video md:aspect-video",
+      square: "max-md:aspect-video md:aspect-square",
+    },
+  };
 
   const aspectRatioClass = mobileAspectRatio
-    ? `${mobileAspectMap[mobileAspectRatio]} md:${desktopAspectMap[aspectRatio]}`
-    : desktopAspectMap[aspectRatio];
+    ? responsiveAspectMap[mobileAspectRatio]?.[aspectRatio] ?? baseAspectMap[aspectRatio]
+    : baseAspectMap[aspectRatio];
 
   useEffect(() => {
     if (!emblaApi) return;

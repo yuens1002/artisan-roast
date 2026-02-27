@@ -16,11 +16,10 @@ function SignInContentInner() {
   const callbackUrl = searchParams.get("callbackUrl") || "/account";
 
   const signUpHref = useMemo(() => {
-    const url = new URL("/auth/signup", window.location.origin);
     if (callbackUrl !== "/account") {
-      url.searchParams.set("callbackUrl", callbackUrl);
+      return `/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
     }
-    return url.pathname + url.search;
+    return "/auth/signup";
   }, [callbackUrl]);
 
   const [checkoutNotice] = useState(() => {
