@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { writeFile } from "fs/promises";
-import path from "path";
+import { uploadToBlob } from "@/lib/blob";
 
 export async function POST(request: NextRequest) {
   const { authorized, error } = await requireAdminApi();
@@ -41,20 +40,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique filename
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `${timestamp}-${originalName}`;
-
-    // Save to public/images
-    const publicPath = path.join(process.cwd(), "public", "images", filename);
-    await writeFile(publicPath, buffer);
-
-    // Return the public URL
-    const url = `/images/${filename}`;
+    const { url } = await uploadToBlob({
+      file,
+      filename: file.name,
+      folder: "icons",
+    });
 
     return NextResponse.json({ url });
   } catch (error) {

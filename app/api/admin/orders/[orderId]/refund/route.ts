@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/admin";
 import { stripe } from "@/lib/services/stripe";
 import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/components";
+import { getEmailBranding } from "@/lib/config/app-settings";
 import RefundNotificationEmail from "@/emails/RefundNotificationEmail";
 
 /**
@@ -122,13 +123,12 @@ export async function POST(
     // Send refund notification email (non-blocking)
     try {
       if (order.customerEmail) {
-        const [storeNameSetting, supportEmailSetting] = await Promise.all([
-          prisma.siteSettings.findUnique({ where: { key: "store_name" } }),
-          prisma.siteSettings.findUnique({ where: { key: "support_email" } }),
+        const [{ storeName, logoUrl }, contactEmailSetting] = await Promise.all([
+          getEmailBranding(),
+          prisma.siteSettings.findUnique({ where: { key: "contactEmail" } }),
         ]);
-        const storeName = storeNameSetting?.value || "Artisan Roast";
         const supportEmail =
-          supportEmailSetting?.value || process.env.RESEND_FROM_EMAIL;
+          contactEmailSetting?.value || process.env.RESEND_FROM_EMAIL;
 
         const isFullRefund =
           updatedOrder.refundedAmountInCents >= order.totalInCents;
@@ -160,6 +160,7 @@ export async function POST(
             refundReason: reason.trim(),
             orderId: order.id,
             storeName,
+            logoUrl,
             supportEmail,
             items: emailItems,
             taxRefundFormatted,

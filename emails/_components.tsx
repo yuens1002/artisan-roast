@@ -140,7 +140,9 @@ export function Footer({
           />
         </Link>
       ) : (
-        <Text style={s.footerStoreName}>{storeName}</Text>
+        <Link href={appUrl} style={{ textDecoration: "none" }}>
+          <Text style={s.footerStoreName}>{storeName}</Text>
+        </Link>
       )}
       <Link href={appUrl} style={s.footerUrl}>
         {domain}

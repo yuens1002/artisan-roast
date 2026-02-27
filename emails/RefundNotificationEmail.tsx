@@ -1,16 +1,13 @@
 import {
-  Body,
   Button,
-  Container,
-  Head,
   Heading,
   Hr,
-  Html,
-  Link,
-  Preview,
   Section,
   Text,
 } from "@react-email/components";
+import type { EmailBranding } from "./_components";
+import { APP_URL, ContainedSection, Divider, EmailLayout } from "./_components";
+import * as s from "./_styles";
 
 interface RefundItem {
   name: string;
@@ -19,14 +16,13 @@ interface RefundItem {
   amountFormatted: string;
 }
 
-interface RefundNotificationEmailProps {
+interface RefundNotificationEmailProps extends EmailBranding {
   orderNumber: string;
   customerName: string;
   refundAmountFormatted: string;
   isFullRefund: boolean;
   refundReason: string;
   orderId: string;
-  storeName?: string;
   supportEmail?: string;
   items?: RefundItem[];
   taxRefundFormatted?: string;
@@ -39,170 +35,117 @@ export default function RefundNotificationEmail({
   isFullRefund,
   refundReason,
   orderId,
-  storeName = "Artisan Roast",
   supportEmail = "support@artisanroast.com",
   items,
   taxRefundFormatted,
+  ...branding
 }: RefundNotificationEmailProps) {
-  const orderUrl = `${process.env.NEXT_PUBLIC_APP_URL}/orders/${orderId}`;
+  const orderUrl = `${APP_URL}/orders/${orderId}`;
 
   return (
-    <Html>
-      <Head />
-      <Preview>
-        Your refund of {refundAmountFormatted} for order #{orderNumber} has been
-        processed
-      </Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={h1}>Refund Processed</Heading>
+    <EmailLayout
+      preview={`Your refund of ${refundAmountFormatted} for order #${orderNumber} has been processed`}
+      {...branding}
+    >
+      <Heading style={s.h1}>Refund Processed</Heading>
 
-          <Section style={alertBanner}>
-            <Text style={alertBannerText}>
-              {isFullRefund ? "Full refund" : "Partial refund"} of{" "}
-              {refundAmountFormatted} issued
+      <ContainedSection innerStyle={infoBanner}>
+        <Text style={infoBannerText}>
+          {isFullRefund ? "Full refund" : "Partial refund"} of{" "}
+          {refundAmountFormatted} issued
+        </Text>
+      </ContainedSection>
+
+      <Text style={s.text}>Hi {customerName},</Text>
+
+      <Text style={s.text}>
+        A {isFullRefund ? "full" : "partial"} refund of{" "}
+        <strong>{refundAmountFormatted}</strong> has been processed for your
+        order <strong>#{orderNumber}</strong>.
+      </Text>
+
+      <ContainedSection innerStyle={reasonBox}>
+        <Text style={reasonLabel}>Reason</Text>
+        <Text style={reasonText}>{refundReason}</Text>
+      </ContainedSection>
+
+      {items && items.length > 0 && (
+        <ContainedSection innerStyle={s.infoBox}>
+          <Text style={s.infoBoxLabel}>Items Refunded</Text>
+          {items.map((item, i) => (
+            <Text key={i} style={breakdownItem}>
+              {item.name} — {item.variant}
+              {item.quantity > 1 ? ` ×${item.quantity}` : ""}
+              {"  "}
+              {item.amountFormatted}
             </Text>
-          </Section>
-
-          <Text style={text}>Hi {customerName},</Text>
-
-          <Text style={text}>
-            A {isFullRefund ? "full" : "partial"} refund of{" "}
-            <strong>{refundAmountFormatted}</strong> has been processed for your
-            order <strong>#{orderNumber}</strong>.
-          </Text>
-
-          <Section style={reasonBox}>
-            <Text style={reasonLabel}>Reason</Text>
-            <Text style={reasonText}>{refundReason}</Text>
-          </Section>
-
-          {items && items.length > 0 && (
-            <Section style={breakdownBox}>
-              <Text style={breakdownLabel}>Items Refunded</Text>
-              {items.map((item, i) => (
-                <Text key={i} style={breakdownItem}>
-                  {item.name} — {item.variant}
-                  {item.quantity > 1 ? ` ×${item.quantity}` : ""}
-                  {"  "}
-                  {item.amountFormatted}
-                </Text>
-              ))}
-              {taxRefundFormatted && (
-                <Text style={breakdownItem}>
-                  Tax{"  "}{taxRefundFormatted}
-                </Text>
-              )}
-              <Hr style={breakdownDivider} />
-              <Text style={breakdownTotal}>
-                Total Refund{"  "}{refundAmountFormatted}
-              </Text>
-            </Section>
+          ))}
+          {taxRefundFormatted && (
+            <Text style={breakdownItem}>
+              Tax{"  "}{taxRefundFormatted}
+            </Text>
           )}
-
-          <Text style={text}>
-            The refund will appear on your original payment method within 5-10
-            business days.
+          <Hr style={breakdownDivider} />
+          <Text style={breakdownTotal}>
+            Total Refund{"  "}{refundAmountFormatted}
           </Text>
+        </ContainedSection>
+      )}
 
-          <Section style={buttonContainer}>
-            <Button style={button} href={orderUrl}>
-              View Order Details
-            </Button>
-          </Section>
+      <Text style={s.text}>
+        The refund will appear on your original payment method within 5-10
+        business days.
+      </Text>
 
-          <Hr style={hr} />
+      <Section style={s.buttonSection}>
+        <Button style={s.button} href={orderUrl}>
+          View Order Details
+        </Button>
+      </Section>
 
-          <Text style={text}>
-            If you have any questions about this refund, please don&apos;t
-            hesitate to reach out.
-          </Text>
+      <Divider />
 
-          <Section style={buttonContainer}>
-            <Button style={buttonSecondary} href={`mailto:${supportEmail}`}>
-              Contact Support
-            </Button>
-          </Section>
+      <Text style={s.text}>
+        If you have any questions about this refund, please don&apos;t
+        hesitate to reach out.
+      </Text>
 
-          <Text style={footer}>
-            Thank you for your patience.
-            <br />
-            <Link href={process.env.NEXT_PUBLIC_APP_URL} style={link}>
-              {storeName}
-            </Link>
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+      <Section style={s.buttonSection}>
+        <Button style={s.buttonSecondary} href={`mailto:${supportEmail}`}>
+          Contact Support
+        </Button>
+      </Section>
+    </EmailLayout>
   );
 }
 
-// Styles
-const main = {
-  backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
-
-const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-  maxWidth: "600px",
-  width: "100%",
-  boxSizing: "border-box" as const,
-};
-
-const h1 = {
-  color: "#333",
-  fontSize: "24px",
-  fontWeight: "bold",
-  margin: "40px 0 16px 0",
-  padding: "0",
-  textAlign: "center" as const,
-};
-
-const alertBanner = {
+// Styles specific to this template
+const infoBanner = {
   backgroundColor: "#eff6ff",
   borderLeft: "4px solid #2563eb",
-  padding: "12px 24px",
-  margin: "16px 24px 24px 24px",
+  padding: "12px 20px",
   borderRadius: "4px",
 };
 
-const alertBannerText = {
+const infoBannerText = {
   color: "#1e40af",
   fontSize: "16px",
   fontWeight: "600" as const,
   lineHeight: "24px",
   margin: "0",
-  textAlign: "center" as const,
-};
-
-const text = {
-  color: "#333",
-  fontSize: "16px",
-  lineHeight: "26px",
-  margin: "16px 24px",
 };
 
 const reasonBox = {
   backgroundColor: "#eff6ff",
   border: "1px solid #bfdbfe",
   borderRadius: "8px",
-  margin: "24px 24px",
   padding: "24px",
-  textAlign: "center" as const,
-  width: "auto",
-  maxWidth: "100%",
-  boxSizing: "border-box" as const,
 };
 
 const reasonLabel = {
   color: "#1e40af",
   fontSize: "12px",
-  fontWeight: "600",
+  fontWeight: "600" as const,
   textTransform: "uppercase" as const,
   letterSpacing: "0.5px",
   margin: "0 0 8px 0",
@@ -211,68 +154,9 @@ const reasonLabel = {
 const reasonText = {
   color: "#1e3a8a",
   fontSize: "16px",
-  fontWeight: "500",
+  fontWeight: "500" as const,
   margin: "0",
   lineHeight: "24px",
-};
-
-const buttonContainer = {
-  textAlign: "center" as const,
-  margin: "24px 0",
-};
-
-const button = {
-  backgroundColor: "#8B4513",
-  borderRadius: "5px",
-  color: "#fff",
-  fontSize: "16px",
-  fontWeight: "bold",
-  textDecoration: "none",
-  textAlign: "center" as const,
-  display: "inline-block",
-  padding: "12px 24px",
-};
-
-const buttonSecondary = {
-  backgroundColor: "#6c757d",
-  borderRadius: "5px",
-  color: "#fff",
-  fontSize: "14px",
-  fontWeight: "bold",
-  textDecoration: "none",
-  textAlign: "center" as const,
-  display: "inline-block",
-  padding: "10px 20px",
-};
-
-const hr = {
-  borderColor: "#e6ebf1",
-  margin: "32px 24px",
-};
-
-const link = {
-  color: "#8B4513",
-  textDecoration: "underline",
-};
-
-const breakdownBox = {
-  backgroundColor: "#f8f9fa",
-  border: "1px solid #e9ecef",
-  borderRadius: "8px",
-  margin: "24px 24px",
-  padding: "16px 20px",
-  width: "auto",
-  maxWidth: "100%",
-  boxSizing: "border-box" as const,
-};
-
-const breakdownLabel = {
-  color: "#6c757d",
-  fontSize: "12px",
-  fontWeight: "600",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.5px",
-  margin: "0 0 12px 0",
 };
 
 const breakdownItem = {
@@ -292,17 +176,9 @@ const breakdownDivider = {
 const breakdownTotal = {
   color: "#333",
   fontSize: "14px",
-  fontWeight: "600",
+  fontWeight: "600" as const,
   lineHeight: "22px",
   margin: "0",
   display: "flex" as const,
   justifyContent: "space-between" as const,
-};
-
-const footer = {
-  color: "#8898aa",
-  fontSize: "14px",
-  lineHeight: "24px",
-  textAlign: "center" as const,
-  margin: "32px 0",
 };

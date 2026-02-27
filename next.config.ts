@@ -67,14 +67,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
-      // When you add a real image host (like S3 or Cloudinary),
-      // you will add its hostname here as well.
-      // {
-      //   protocol: 'https',
-      //   hostname: 'your-s3-bucket-name.s3.amazonaws.com',
-      //   port: '',
-      //   pathname: '/**',
-      // }
+      {
+        protocol: "https",
+        hostname: "*.blob.vercel-storage.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };

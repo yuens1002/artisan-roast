@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, unlink, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { uploadToBlob, deleteFromBlob, isBlobUrl } from "@/lib/blob";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +12,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       return NextResponse.json(
         { error: "File must be an image" },
@@ -22,46 +19,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `${timestamp}-${sanitizedName}`;
+    const folder = pageSlug ? "pages" : "products";
+    const subfolder = pageSlug || undefined;
 
-    // Determine directory: /pages/[pageSlug]/ if provided, otherwise /images/
-    const subDir = pageSlug ? `pages/${pageSlug}` : "images";
-    const dirPath = path.join(process.cwd(), "public", subDir);
+    const { url } = await uploadToBlob({
+      file,
+      filename: file.name,
+      folder,
+      subfolder,
+    });
 
-    // Ensure directory exists
-    if (!existsSync(dirPath)) {
-      await mkdir(dirPath, { recursive: true });
-    }
-
-    const filepath = path.join(dirPath, filename);
-
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
-
-    // Delete old file if it exists and is in our managed directories
-    if (
-      oldPath &&
-      (oldPath.startsWith("/pages/") || oldPath.startsWith("/images/"))
-    ) {
-      const oldFilepath = path.join(process.cwd(), "public", oldPath);
-      if (existsSync(oldFilepath)) {
-        try {
-          await unlink(oldFilepath);
-        } catch (error) {
-          console.error("Failed to delete old file:", error);
-          // Don't fail the upload if cleanup fails
-        }
-      }
+    // Clean up old blob if replacing
+    if (oldPath && isBlobUrl(oldPath)) {
+      await deleteFromBlob(oldPath);
     }
 
     return NextResponse.json({
       success: true,
-      path: `/${subDir}/${filename}`,
+      path: url,
     });
   } catch (error) {
     console.error("Upload error:", error);
@@ -77,22 +52,19 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const imagePath = searchParams.get("path");
 
-    // Allow deletion from /pages/ or /images/ directories
-    if (
-      !imagePath ||
-      (!imagePath.startsWith("/images/") && !imagePath.startsWith("/pages/"))
-    ) {
+    if (!imagePath) {
       return NextResponse.json({ error: "Invalid path" }, { status: 400 });
     }
 
-    const filepath = path.join(process.cwd(), "public", imagePath);
-
-    if (existsSync(filepath)) {
-      await unlink(filepath);
-      return NextResponse.json({ success: true });
-    } else {
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    if (!isBlobUrl(imagePath)) {
+      return NextResponse.json(
+        { error: "Can only delete blob-stored images" },
+        { status: 400 }
+      );
     }
+
+    await deleteFromBlob(imagePath);
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete error:", error);
     return NextResponse.json(

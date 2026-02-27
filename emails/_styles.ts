@@ -241,7 +241,7 @@ export const footerLogo = {
 };
 
 export const footerStoreName = {
-  color: "#8898aa",
+  color: "#333",
   fontSize: "14px",
   margin: "0 0 4px 0",
 };

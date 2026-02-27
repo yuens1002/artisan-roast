@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { uploadToBlob } from "@/lib/blob";
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: "File too large. Maximum size is 5MB." },
@@ -56,27 +55,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `wizard-hero-${timestamp}-${originalName}`;
-
-    // Ensure directory exists
-    const uploadDir = path.join(process.cwd(), "public", "images");
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist, which is fine
-    }
-
-    // Write file to public/images
-    const filepath = path.join(uploadDir, filename);
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
-
-    // Return the public URL
-    const url = `/images/${filename}`;
+    const { url } = await uploadToBlob({
+      file,
+      filename: `wizard-hero-${file.name}`,
+      folder: "hero",
+    });
 
     return NextResponse.json({ url });
   } catch (error) {

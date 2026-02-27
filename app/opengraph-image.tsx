@@ -13,7 +13,7 @@ export const alt = isDemoMode
   : "Artisan Roast — Specialty Coffee E-Commerce";
 
 export default async function Image() {
-  const [{ storeName, storeTagline }, fonts] = await Promise.all([
+  const [{ storeName, storeTagline, storeLogoUrl }, fonts] = await Promise.all([
     getSiteMetadata(),
     loadOgFonts(),
   ]);
@@ -28,6 +28,7 @@ export default async function Image() {
         : storeTagline,
       badge: isDemoMode ? "LIVE DEMO" : undefined,
       siteUrl: appUrl,
+      logoUrl: storeLogoUrl,
     }),
     { ...size, fonts }
   );

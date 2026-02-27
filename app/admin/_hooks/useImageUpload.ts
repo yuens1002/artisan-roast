@@ -118,8 +118,12 @@ export function useImageUpload({
       formData.append("pageSlug", pageSlug);
     }
 
-    // Pass original URL for cleanup (only local files, not external URLs)
-    if (originalUrl && originalUrl.startsWith("/")) {
+    // Pass original URL for cleanup (local files or blob URLs)
+    if (
+      originalUrl &&
+      (originalUrl.startsWith("/") ||
+        originalUrl.includes(".blob.vercel-storage.com"))
+    ) {
       formData.append("oldPath", originalUrl);
     }
 
@@ -463,8 +467,12 @@ export function useMultiImageUpload({
           formData.append("pageSlug", pageSlug);
         }
 
-        // Pass original URL for cleanup (only local files)
-        if (img.originalUrl && img.originalUrl.startsWith("/")) {
+        // Pass original URL for cleanup (local files or blob URLs)
+        if (
+          img.originalUrl &&
+          (img.originalUrl.startsWith("/") ||
+            img.originalUrl.includes(".blob.vercel-storage.com"))
+        ) {
           formData.append("oldPath", img.originalUrl);
         }
 

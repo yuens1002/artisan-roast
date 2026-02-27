@@ -6,6 +6,7 @@ interface OgLayoutProps {
   subtitle: string;
   badge?: string;
   siteUrl?: string;
+  logoUrl?: string;
 }
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -23,14 +24,20 @@ export async function loadOgFonts() {
   ];
 }
 
-export async function renderOgLayout({ title, subtitle, badge, siteUrl }: OgLayoutProps) {
-  const logoSvg = await readFile(
-    join(process.cwd(), "public", "logo.svg"),
-    "utf-8"
-  );
+export async function renderOgLayout({ title, subtitle, badge, siteUrl, logoUrl }: OgLayoutProps) {
+  let logoSrc: string;
 
-  // Use original logo colors (designed for light backgrounds)
-  const logoSrc = `data:image/svg+xml;base64,${Buffer.from(logoSvg).toString("base64")}`;
+  if (logoUrl && logoUrl.startsWith("https://")) {
+    // External URL (blob storage, CDN) — use directly
+    logoSrc = logoUrl;
+  } else {
+    // Fallback: read default SVG from filesystem
+    const logoSvg = await readFile(
+      join(process.cwd(), "public", "logo.svg"),
+      "utf-8"
+    );
+    logoSrc = `data:image/svg+xml;base64,${Buffer.from(logoSvg).toString("base64")}`;
+  }
 
   return (
     <div
