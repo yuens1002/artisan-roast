@@ -16,6 +16,9 @@
 //     b. New commits pushed AFTER the Copilot review (feedback addressed)
 //     c. Ack file exists: .claude/.copilot-ack-{pr}.json (reviewed, no changes needed)
 //
+// Error policy: API failures BLOCK the merge (fail-closed). If the hook can't
+// verify Copilot's review status, it's safer to block than to silently allow.
+//
 // Exit 0 = allow, Exit 2 = block (stderr shown to model)
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -85,22 +88,11 @@ function main(input) {
     try {
       prNumber = exec("gh pr view --json number -q .number", projectDir);
     } catch {
-      process.exit(0); // No PR for this branch
+      process.exit(0); // No PR for this branch — not a merge scenario
     }
   }
 
   if (!prNumber) {
-    process.exit(0);
-  }
-
-  // Bypass: ack file means Claude already reviewed this PR's comments
-  const ackFile = path.join(claudeDir, `.copilot-ack-${prNumber}.json`);
-  if (fs.existsSync(ackFile)) {
-    try {
-      fs.unlinkSync(ackFile);
-    } catch {
-      /* ignore cleanup errors */
-    }
     process.exit(0);
   }
 
@@ -112,7 +104,10 @@ function main(input) {
       projectDir
     );
   } catch {
-    process.exit(0); // Can't determine repo — allow
+    deny(
+      `BLOCKED: Could not determine repository for PR #${prNumber}.\n` +
+        "Check your network connection and gh auth status, then retry.\n"
+    );
   }
 
   // ── Gate 1: Wait for Copilot review on code PRs ──────────────────────
@@ -120,32 +115,32 @@ function main(input) {
   // Check if Copilot has submitted any review
   let copilotHasReviewed = false;
   try {
-    const reviewLogins = exec(
-      `gh api repos/${repo}/pulls/${prNumber}/reviews --jq '[.[].user.login] | unique | .[]'`,
+    const rawReviews = exec(
+      `gh api --paginate repos/${repo}/pulls/${prNumber}/reviews`,
       projectDir
     );
-    copilotHasReviewed = reviewLogins
-      .split("\n")
-      .some((login) => /copilot/i.test(login));
+    const reviews = rawReviews ? JSON.parse(rawReviews) : [];
+    copilotHasReviewed = reviews.some((r) => /copilot/i.test(r.user?.login || ""));
   } catch {
-    // API failure — skip this gate (don't block on network issues)
-    copilotHasReviewed = true;
+    // API failure — block (fail-closed)
+    deny(
+      `BLOCKED: Could not check Copilot review status for PR #${prNumber}.\n` +
+        "The API call to fetch reviews failed. Check your network and retry.\n"
+    );
   }
 
   if (!copilotHasReviewed) {
     // Check if the PR has code file changes (not just docs)
     let hasCodeChanges = false;
     try {
-      const files = exec(
-        `gh api repos/${repo}/pulls/${prNumber}/files --jq '.[].filename'`,
+      const rawFiles = exec(
+        `gh api --paginate repos/${repo}/pulls/${prNumber}/files`,
         projectDir
       );
-      hasCodeChanges = files
-        .split("\n")
-        .filter(Boolean)
-        .some((f) => !isDocsFile(f));
+      const prFiles = rawFiles ? JSON.parse(rawFiles) : [];
+      hasCodeChanges = prFiles.some((f) => !isDocsFile(f.filename || ""));
     } catch {
-      // Can't determine files — assume code changes exist
+      // Can't determine files — assume code changes exist (fail-closed)
       hasCodeChanges = true;
     }
 
@@ -162,22 +157,39 @@ function main(input) {
 
   // ── Gate 2: Address Copilot feedback ─────────────────────────────────
 
+  // Ack file bypasses Gate 2 only (Gate 1 already passed above)
+  const ackFile = path.join(claudeDir, `.copilot-ack-${prNumber}.json`);
+  if (fs.existsSync(ackFile)) {
+    try {
+      fs.unlinkSync(ackFile);
+    } catch {
+      /* ignore cleanup errors */
+    }
+    process.exit(0);
+  }
+
   // Fetch Copilot inline comments
   let comments = [];
   try {
-    const raw = exec(
-      `gh api repos/${repo}/pulls/${prNumber}/comments ` +
-        `--jq '.[] | select(.user.login == "${COPILOT_LOGIN}") | {id: .id, path: .path, line: (.line // .original_line), body: .body}'`,
+    const rawComments = exec(
+      `gh api --paginate repos/${repo}/pulls/${prNumber}/comments`,
       projectDir
     );
-    if (raw) {
-      comments = raw
-        .split("\n")
-        .filter((l) => l.startsWith("{"))
-        .map((l) => JSON.parse(l));
-    }
+    const allComments = rawComments ? JSON.parse(rawComments) : [];
+    comments = allComments
+      .filter((c) => c.user?.login === COPILOT_LOGIN)
+      .map((c) => ({
+        id: c.id,
+        path: c.path,
+        line: c.line || c.original_line,
+        body: c.body,
+      }));
   } catch {
-    process.exit(0); // API failure — don't block on network issues
+    // API failure — block (fail-closed)
+    deny(
+      `BLOCKED: Could not fetch Copilot review comments for PR #${prNumber}.\n` +
+        "The API call failed. Check your network and retry.\n"
+    );
   }
 
   if (comments.length === 0) {
@@ -186,15 +198,25 @@ function main(input) {
 
   // Check if commits were pushed after the Copilot review (feedback addressed)
   try {
-    const reviewTime = exec(
-      `gh api repos/${repo}/pulls/${prNumber}/reviews ` +
-        `--jq '[.[] | select(.user.login | test("copilot";"i")) | .submitted_at] | sort | last'`,
+    const rawReviewsForTime = exec(
+      `gh api --paginate repos/${repo}/pulls/${prNumber}/reviews`,
       projectDir
     );
-    const lastCommitTime = exec(
-      `gh api repos/${repo}/pulls/${prNumber}/commits --jq 'last | .commit.committer.date'`,
+    const reviewsForTime = rawReviewsForTime ? JSON.parse(rawReviewsForTime) : [];
+    const copilotTimes = reviewsForTime
+      .filter((r) => /copilot/i.test(r.user?.login || ""))
+      .map((r) => r.submitted_at)
+      .sort();
+    const reviewTime = copilotTimes[copilotTimes.length - 1];
+
+    const rawCommits = exec(
+      `gh api --paginate repos/${repo}/pulls/${prNumber}/commits`,
       projectDir
     );
+    const commits = rawCommits ? JSON.parse(rawCommits) : [];
+    const lastCommitTime = commits.length > 0
+      ? commits[commits.length - 1].commit?.committer?.date
+      : null;
 
     if (
       reviewTime &&
@@ -205,7 +227,7 @@ function main(input) {
       process.exit(0);
     }
   } catch {
-    // Timestamp comparison failed — fall through to block
+    // Timestamp comparison failed — fall through to block (fail-closed)
   }
 
   // Block: Copilot left unaddressed comments

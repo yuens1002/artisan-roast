@@ -19,8 +19,8 @@ export async function POST(
     const auth = await requireAdminApi();
     if (!auth.authorized) {
       return NextResponse.json(
-        { error: "Admin access required" },
-        { status: 403 }
+        { error: auth.error },
+        { status: 401 }
       );
     }
 
