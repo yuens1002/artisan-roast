@@ -251,9 +251,19 @@ export async function getEmailBranding(): Promise<{
   const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
 
   let logoUrl = map.store_logo_url || null;
-  if (logoUrl && logoUrl.startsWith("/")) {
+  if (logoUrl) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    logoUrl = appUrl ? `${appUrl.replace(/\/$/, "")}${logoUrl}` : null;
+    if (appUrl) {
+      const base = appUrl.replace(/\/$/, "");
+      // Email clients block SVG — route through on-the-fly PNG converter
+      logoUrl = logoUrl.endsWith(".svg")
+        ? `${base}/api/email-assets/logo.png`
+        : logoUrl.startsWith("/")
+          ? `${base}${logoUrl}`
+          : logoUrl;
+    } else if (logoUrl.startsWith("/")) {
+      logoUrl = null;
+    }
   }
 
   return {
