@@ -19,7 +19,9 @@ import * as s from "./_styles";
 // Shared constants — single source of truth for all email templates
 // ---------------------------------------------------------------------------
 
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
+export const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
 // ---------------------------------------------------------------------------
 // EmailBranding — every template extends this so branding props are declared
@@ -140,9 +142,11 @@ export function Footer({
           />
         </Link>
       ) : (
-        <Link href={appUrl} style={{ textDecoration: "none" }}>
-          <Text style={s.footerStoreName}>{storeName}</Text>
-        </Link>
+        <Text style={s.footerStoreName}>
+          <Link href={appUrl} style={{ color: "inherit", textDecoration: "none" }}>
+            {storeName}
+          </Link>
+        </Text>
       )}
       <Link href={appUrl} style={s.footerUrl}>
         {domain}
