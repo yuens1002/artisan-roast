@@ -1,14 +1,20 @@
 #!/usr/bin/env node
 // .claude/hooks/review-before-merge-node.js
 //
-// Claude Code PreToolUse hook — intercepts `gh pr merge` and checks for
-// unaddressed Copilot review comments. Blocks the merge until feedback
-// has been reviewed and acted on.
+// Claude Code PreToolUse hook — intercepts `gh pr merge` and ensures Copilot
+// has reviewed code PRs before allowing merge, then checks for unaddressed
+// review comments.
 //
-// Bypass conditions (merge is allowed when ANY is true):
-//   1. No Copilot inline comments on the PR
-//   2. New commits pushed AFTER the Copilot review (feedback addressed)
-//   3. Ack file exists: .claude/.copilot-ack-{pr}.json (reviewed, no changes needed)
+// Gate 1 — Wait for Copilot review (code PRs only):
+//   Blocks if the PR changes code files and Copilot hasn't reviewed yet.
+//   Docs-only PRs (.md, .txt, docs/**, etc.) skip this gate.
+//
+// Gate 2 — Address Copilot feedback:
+//   Blocks if Copilot left inline comments that haven't been addressed.
+//   Bypass conditions (merge allowed when ANY is true):
+//     a. No Copilot inline comments on the PR
+//     b. New commits pushed AFTER the Copilot review (feedback addressed)
+//     c. Ack file exists: .claude/.copilot-ack-{pr}.json (reviewed, no changes needed)
 //
 // Exit 0 = allow, Exit 2 = block (stderr shown to model)
 
@@ -20,6 +26,21 @@ const path = require("path");
 const { execSync } = require("child_process");
 
 const COPILOT_LOGIN = "Copilot";
+
+// Files matching these patterns are non-code (no Copilot review needed)
+const DOCS_ONLY_PATTERNS = [
+  /\.md$/i,
+  /\.txt$/i,
+  /^docs\//,
+  /^\.archive\//,
+  /^LICENSE$/,
+  /^\.gitignore$/,
+  /^CHANGELOG\.md$/i,
+];
+
+function isDocsFile(filepath) {
+  return DOCS_ONLY_PATTERNS.some((p) => p.test(filepath));
+}
 
 function deny(reason) {
   process.stderr.write(reason);
@@ -94,6 +115,53 @@ function main(input) {
     process.exit(0); // Can't determine repo — allow
   }
 
+  // ── Gate 1: Wait for Copilot review on code PRs ──────────────────────
+
+  // Check if Copilot has submitted any review
+  let copilotHasReviewed = false;
+  try {
+    const reviewLogins = exec(
+      `gh api repos/${repo}/pulls/${prNumber}/reviews --jq '[.[].user.login] | unique | .[]'`,
+      projectDir
+    );
+    copilotHasReviewed = reviewLogins
+      .split("\n")
+      .some((login) => /copilot/i.test(login));
+  } catch {
+    // API failure — skip this gate (don't block on network issues)
+    copilotHasReviewed = true;
+  }
+
+  if (!copilotHasReviewed) {
+    // Check if the PR has code file changes (not just docs)
+    let hasCodeChanges = false;
+    try {
+      const files = exec(
+        `gh api repos/${repo}/pulls/${prNumber}/files --jq '.[].filename'`,
+        projectDir
+      );
+      hasCodeChanges = files
+        .split("\n")
+        .filter(Boolean)
+        .some((f) => !isDocsFile(f));
+    } catch {
+      // Can't determine files — assume code changes exist
+      hasCodeChanges = true;
+    }
+
+    if (hasCodeChanges) {
+      deny(
+        `BLOCKED: Copilot has not reviewed PR #${prNumber} yet.\n\n` +
+          "This PR contains code changes — wait for the Copilot review before merging.\n" +
+          "Re-attempt the merge after Copilot's review appears on the PR.\n"
+      );
+    }
+    // Docs-only PR with no Copilot review — allow
+    process.exit(0);
+  }
+
+  // ── Gate 2: Address Copilot feedback ─────────────────────────────────
+
   // Fetch Copilot inline comments
   let comments = [];
   try {
@@ -113,7 +181,7 @@ function main(input) {
   }
 
   if (comments.length === 0) {
-    process.exit(0); // No Copilot comments — nothing to review
+    process.exit(0); // Copilot reviewed but left no inline comments — allow
   }
 
   // Check if commits were pushed after the Copilot review (feedback addressed)
