@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
     const formData = await request.formData();
@@ -66,7 +66,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
