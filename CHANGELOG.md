@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.92.14 - 2026-03-01
+
+### Changed
+
+- **Trim CLAUDE.md**: Reduce from 827 to ~165 lines — remove stale context, redundant agent framing, and generic instructions
+- **Add pre-PR precheck hook**: Block `gh pr create` until `npm run precheck` passes (stamp-based gate)
+- **Add pre-migration backup hook**: Block `prisma migrate dev` until `npm run db:backup` runs (stamp-based gate)
+- **Gitignore runtime stamp files**: Exclude `.claude/hooks/.*-stamp*.json` from version control
+
 ## 0.92.6 - 2026-02-27
 
 ### Added

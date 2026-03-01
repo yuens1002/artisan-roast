@@ -129,6 +129,33 @@
             "type": "command",
             "command": "node .claude/hooks/review-before-merge-node.js",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pre-pr-precheck-node.js",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pre-migrate-backup-node.js",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/post-precheck-stamp-node.js",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/post-backup-stamp-node.js",
+            "timeout": 10
           }
         ]
       }
