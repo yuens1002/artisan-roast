@@ -58,7 +58,7 @@ Types: `feat` `fix` `docs` `refactor` `test` `chore` `perf`
 1. Branch from `main`
 2. Implement + commit (conventional format)
 3. Update `CHANGELOG.md` + `package.json` version in your PR
-4. Push → create PR (pre-PR hook runs precheck + tests automatically)
+4. Push → create PR (pre-PR hook enforces `npm run precheck` + `npm run test:ci`)
 5. After merge → run `/release` or `npm run release:patch -- -y --push --sync-package`
 
 ### Release

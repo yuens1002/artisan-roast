@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // .claude/hooks/pre-pr-precheck-node.js
 //
-// Claude Code PreToolUse hook — blocks `gh pr create` until a fresh precheck
-// stamp exists. The stamp is written by post-precheck-stamp-node.js (PostToolUse)
-// whenever `npm run precheck` completes successfully.
+// Claude Code PreToolUse hook — blocks `gh pr create` until fresh stamps exist
+// for both `npm run precheck` AND `npm run test:ci`. Stamps are written by
+// post-precheck-stamp-node.js (PostToolUse) after each command succeeds.
 //
 // Exit 0 = allow. Exit 2 = block (message injected to Claude via stderr).
 
@@ -12,7 +12,8 @@ const fs = require("fs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require("path");
 
-const STAMP_FILE = path.join(__dirname, ".precheck-stamp.json");
+const PRECHECK_STAMP = path.join(__dirname, ".precheck-stamp.json");
+const TEST_STAMP = path.join(__dirname, ".test-stamp.json");
 const STAMP_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 function allow() {
@@ -22,6 +23,17 @@ function allow() {
 function block(reason) {
   process.stderr.write(reason);
   process.exit(2);
+}
+
+function isFreshStamp(stampFile) {
+  if (!fs.existsSync(stampFile)) return false;
+  try {
+    const stamp = JSON.parse(fs.readFileSync(stampFile, "utf8"));
+    const age = Date.now() - (stamp.ts || 0);
+    return stamp.passed === true && age < STAMP_TTL_MS;
+  } catch {
+    return false;
+  }
 }
 
 function main(input) {
@@ -39,23 +51,23 @@ function main(input) {
     allow();
   }
 
-  // Check for a fresh precheck stamp
-  if (fs.existsSync(STAMP_FILE)) {
-    try {
-      const stamp = JSON.parse(fs.readFileSync(STAMP_FILE, "utf8"));
-      const age = Date.now() - (stamp.ts || 0);
-      if (stamp.passed === true && age < STAMP_TTL_MS) {
-        allow();
-      }
-    } catch {
-      // Corrupt stamp — fall through to block
-    }
+  const precheckOk = isFreshStamp(PRECHECK_STAMP);
+  const testOk = isFreshStamp(TEST_STAMP);
+
+  if (precheckOk && testOk) {
+    allow();
   }
 
+  // Build specific message about what's missing
+  const missing = [];
+  if (!precheckOk) missing.push("npm run precheck");
+  if (!testOk) missing.push("npm run test:ci");
+
   block(
-    `GATE: precheck has not passed yet this session.\n\n` +
-      `Run both of the following and fix any errors, then re-run the PR command:\n\n` +
-      `  npm run precheck && npm run test:ci\n\n` +
+    `GATE: PR creation requires both precheck and tests to pass.\n\n` +
+      `Missing: ${missing.join(" and ")}\n\n` +
+      `Run the following and fix any errors, then re-run the PR command:\n\n` +
+      `  ${missing.join(" && ")}\n\n` +
       `Once they pass, re-run: ${command.trim()}`
   );
 }

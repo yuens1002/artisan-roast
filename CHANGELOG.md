@@ -4,8 +4,8 @@
 
 ### Changed
 
-- **Trim CLAUDE.md**: Reduce from 827 to ~165 lines — remove stale context, redundant agent framing, and generic instructions
-- **Add pre-PR precheck hook**: Block `gh pr create` until `npm run precheck` passes (stamp-based gate)
+- **Trim claude.md**: Reduce from 827 to ~165 lines — remove stale context, redundant agent framing, and generic instructions
+- **Add pre-PR precheck hook**: Block `gh pr create` until both `npm run precheck` and `npm run test:ci` pass (stamp-based gate)
 - **Add pre-migration backup hook**: Block `prisma migrate dev` until `npm run db:backup` runs (stamp-based gate)
 - **Gitignore runtime stamp files**: Exclude `.claude/hooks/.*-stamp*.json` from version control
 

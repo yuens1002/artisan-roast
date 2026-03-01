@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // .claude/hooks/post-precheck-stamp-node.js
 //
-// Claude Code PostToolUse hook — writes a timestamp stamp when `npm run precheck`
-// completes successfully. The stamp is read by pre-pr-precheck-node.js to allow
-// `gh pr create` without re-running precheck every time.
+// Claude Code PostToolUse hook — writes timestamp stamps when `npm run precheck`
+// or `npm run test:ci` complete successfully. The stamps are read by
+// pre-pr-precheck-node.js to allow `gh pr create` only after both pass.
 //
 // Exit 0 always (PostToolUse hooks are advisory, not blocking).
 
@@ -12,7 +12,28 @@ const fs = require("fs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require("path");
 
-const STAMP_FILE = path.join(__dirname, ".precheck-stamp.json");
+const PRECHECK_STAMP = path.join(__dirname, ".precheck-stamp.json");
+const TEST_STAMP = path.join(__dirname, ".test-stamp.json");
+
+function writeStamp(file, command) {
+  try {
+    fs.writeFileSync(
+      file,
+      JSON.stringify({ passed: true, ts: Date.now(), command }),
+      "utf8"
+    );
+  } catch {
+    // Non-fatal
+  }
+}
+
+function clearStamp(file) {
+  try {
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+  } catch {
+    // Ignore
+  }
+}
 
 function main(input) {
   let parsed;
@@ -25,30 +46,27 @@ function main(input) {
   const command = (parsed.tool_input && parsed.tool_input.command) || "";
   const isError = parsed.tool_response && parsed.tool_response.is_error;
 
-  // Only stamp when `npm run precheck` succeeds
-  if (!/npm\s+run\s+precheck/i.test(command)) {
+  const isPrecheck = /npm\s+run\s+precheck/i.test(command);
+  const isTestCi = /npm\s+run\s+test:ci/i.test(command);
+
+  if (!isPrecheck && !isTestCi) {
     process.exit(0);
   }
 
-  if (isError) {
-    // Precheck failed — clear any existing stamp so the PR gate blocks
-    try {
-      if (fs.existsSync(STAMP_FILE)) fs.unlinkSync(STAMP_FILE);
-    } catch {
-      // Ignore
+  if (isPrecheck) {
+    if (isError) {
+      clearStamp(PRECHECK_STAMP);
+    } else {
+      writeStamp(PRECHECK_STAMP, command);
     }
-    process.exit(0);
   }
 
-  // Write stamp
-  try {
-    fs.writeFileSync(
-      STAMP_FILE,
-      JSON.stringify({ passed: true, ts: Date.now(), command }),
-      "utf8"
-    );
-  } catch {
-    // Non-fatal — hook is advisory
+  if (isTestCi) {
+    if (isError) {
+      clearStamp(TEST_STAMP);
+    } else {
+      writeStamp(TEST_STAMP, command);
+    }
   }
 
   process.exit(0);
