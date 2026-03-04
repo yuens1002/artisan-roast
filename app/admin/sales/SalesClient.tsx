@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react";
 import useSWR from "swr";
+import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
+import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import {
   DollarSign,
   ShoppingCart,
@@ -22,31 +24,167 @@ import {
   SplitComparison,
   SkeletonDashboard,
 } from "@/app/admin/_components/analytics";
+import { DataTable, DataTablePagination } from "@/app/admin/_components/data-table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type {
   PeriodPreset,
   CompareMode,
   SalesResponse,
+  SalesRow,
 } from "@/lib/admin/analytics/contracts";
 import { computeDelta } from "@/lib/admin/analytics/metrics-registry";
-import { formatWeight } from "@/lib/admin/analytics/formatters";
+import { formatWeight, formatCurrency } from "@/lib/admin/analytics/formatters";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+// ── Column definitions (stable, no deps) ────────────────────────────
+const salesColumns: ColumnDef<SalesRow, unknown>[] = [
+  {
+    accessorKey: "orderNumber",
+    header: "Order #",
+    size: 100,
+    cell: ({ row }) => (
+      <span className="font-mono text-xs">{row.original.orderNumber}</span>
+    ),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Date",
+    size: 110,
+    enableSorting: true,
+    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+  },
+  {
+    accessorKey: "customerEmail",
+    header: "Customer",
+    size: 180,
+    cell: ({ row }) =>
+      row.original.customerName ?? row.original.customerEmail ?? "—",
+  },
+  {
+    accessorKey: "itemCount",
+    header: "Items",
+    size: 70,
+    enableSorting: true,
+    cell: ({ row }) => row.original.itemCount,
+  },
+  {
+    accessorKey: "orderType",
+    header: "Type",
+    size: 110,
+    cell: ({ row }) => (
+      <Badge
+        variant={
+          row.original.orderType === "SUBSCRIPTION" ? "default" : "secondary"
+        }
+        className="text-xs"
+      >
+        {row.original.orderType === "SUBSCRIPTION" ? "Sub" : "One-time"}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    size: 110,
+    enableSorting: true,
+    cell: ({ row }) => (
+      <Badge variant="outline" className="text-xs">
+        {row.original.status}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "total",
+    header: "Total",
+    size: 100,
+    enableSorting: true,
+    cell: ({ row }) => formatCurrency(row.original.total),
+  },
+  {
+    accessorKey: "refunded",
+    header: "Refunded",
+    size: 100,
+    cell: ({ row }) =>
+      row.original.refunded > 0 ? formatCurrency(row.original.refunded) : "—",
+  },
+  {
+    id: "location",
+    header: "Location",
+    size: 140,
+    cell: ({ row }) =>
+      [row.original.city, row.original.state].filter(Boolean).join(", ") ||
+      "—",
+  },
+];
+
+// ── Component ────────────────────────────────────────────────────────
 
 export default function SalesClient() {
   const [period, setPeriod] = useState<PeriodPreset>("30d");
   const [compare, setCompare] = useState<CompareMode>("previous");
 
-  const apiUrl = `/api/admin/sales?period=${period}&compare=${compare}`;
+  // Server-side table state — directly drives the SWR URL
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "createdAt", desc: true },
+  ]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 25,
+  });
+
+  const sortCol = sorting[0]?.id ?? "createdAt";
+  const sortDir = sorting[0]?.desc ? "desc" : "asc";
+
+  const apiUrl = `/api/admin/sales?period=${period}&compare=${compare}&page=${pagination.pageIndex}&pageSize=${pagination.pageSize}&sort=${sortCol}&dir=${sortDir}`;
 
   const { data, isLoading } = useSWR<SalesResponse>(apiUrl, fetcher, {
     keepPreviousData: true,
   });
 
   const handleExportCsv = useCallback(() => {
-    window.open(`${apiUrl}&export=csv`, "_blank");
-  }, [apiUrl]);
+    window.open(
+      `/api/admin/sales?period=${period}&compare=${compare}&export=csv`,
+      "_blank"
+    );
+  }, [period, compare]);
 
+  // Reset pagination when period/compare changes
+  const handlePeriodChange = useCallback((p: PeriodPreset) => {
+    setPeriod(p);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, []);
+
+  const handleCompareChange = useCallback((c: CompareMode) => {
+    setCompare(c);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, []);
+
+  // Reset to page 0 when sorting changes
+  const handleSortingChange = useCallback(
+    (updater: SortingState | ((old: SortingState) => SortingState)) => {
+      setSorting(updater);
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    },
+    []
+  );
+
+  // Server-side table — manual pagination/sorting, no client-side row models
+  const salesTable = useReactTable<SalesRow>({
+    data: data?.table.rows ?? [],
+    columns: salesColumns,
+    state: { sorting, pagination },
+    onSortingChange: handleSortingChange,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    manualSorting: true,
+    manualFiltering: true,
+    rowCount: data?.table.total ?? 0,
+  });
+
+  // ── Loading / error states ─────────────────────────────────────
   if (isLoading && !data) {
     return (
       <>
@@ -109,7 +247,10 @@ export default function SalesClient() {
       value: kpis.subscriptionPercent,
       format: "percent" as const,
       delta: comparisonKpis
-        ? computeDelta(kpis.subscriptionPercent, comparisonKpis.subscriptionPercent)
+        ? computeDelta(
+            kpis.subscriptionPercent,
+            comparisonKpis.subscriptionPercent
+          )
         : undefined,
       icon: Repeat,
     },
@@ -132,8 +273,8 @@ export default function SalesClient() {
           mode="state"
           value={period}
           compare={compare}
-          onChange={setPeriod}
-          onCompareChange={setCompare}
+          onChange={handlePeriodChange}
+          onCompareChange={handleCompareChange}
         />
 
         {/* KPI cards */}
@@ -216,6 +357,15 @@ export default function SalesClient() {
             )}
           </ChartCard>
         </div>
+
+        {/* Sales orders table */}
+        <ChartCard
+          title="Orders"
+          description={`${data.table.total} orders in period`}
+        >
+          <DataTable table={salesTable} />
+          <DataTablePagination table={salesTable} />
+        </ChartCard>
       </div>
     </>
   );
