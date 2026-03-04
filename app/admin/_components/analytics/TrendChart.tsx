@@ -1,0 +1,132 @@
+"use client";
+
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import { formatCompactCurrency } from "@/lib/admin/analytics/formatters";
+import type { ChartDataPoint } from "@/lib/admin/analytics/contracts";
+
+interface TrendChartProps {
+  data: ChartDataPoint[];
+  primaryLabel: string;
+  secondaryLabel?: string;
+  comparisonData?: ChartDataPoint[];
+  className?: string;
+}
+
+const chartConfig = {
+  primary: { label: "Primary", color: "var(--chart-1)" },
+  secondary: { label: "Secondary", color: "var(--chart-2)" },
+  comparison: { label: "Comparison", color: "var(--chart-3)" },
+} satisfies ChartConfig;
+
+export function TrendChart({
+  data,
+  primaryLabel,
+  secondaryLabel,
+  comparisonData,
+  className,
+}: TrendChartProps) {
+  // Merge comparison data onto main data if present
+  const mergedData = data.map((point) => {
+    const compPoint = comparisonData?.find((c) => c.date === point.date);
+    return {
+      ...point,
+      comparison: compPoint?.primary,
+    };
+  });
+
+  const config: ChartConfig = {
+    primary: { label: primaryLabel, color: "var(--chart-1)" },
+    ...(secondaryLabel
+      ? { secondary: { label: secondaryLabel, color: "var(--chart-2)" } }
+      : {}),
+    ...(comparisonData
+      ? { comparison: { label: `${primaryLabel} (prev)`, color: "var(--chart-3)" } }
+      : {}),
+  };
+
+  return (
+    <ChartContainer config={config} className={className}>
+      <AreaChart data={mergedData} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="date"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          tickFormatter={(v: string) => {
+            const d = new Date(v + "T00:00:00Z");
+            return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          }}
+          minTickGap={32}
+        />
+        <YAxis
+          yAxisId="left"
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={(v: number) => formatCompactCurrency(v)}
+          width={60}
+        />
+        {secondaryLabel && (
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            tickLine={false}
+            axisLine={false}
+            width={40}
+          />
+        )}
+        <ChartTooltip content={<ChartTooltipContent />} />
+        <Area
+          yAxisId="left"
+          type="monotone"
+          dataKey="primary"
+          name={primaryLabel}
+          stroke="var(--color-primary)"
+          fill="var(--color-primary)"
+          fillOpacity={0.1}
+          strokeWidth={2}
+        />
+        {secondaryLabel && (
+          <Area
+            yAxisId="right"
+            type="monotone"
+            dataKey="secondary"
+            name={secondaryLabel}
+            stroke="var(--color-secondary)"
+            fill="var(--color-secondary)"
+            fillOpacity={0.05}
+            strokeWidth={1.5}
+          />
+        )}
+        {comparisonData && (
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="comparison"
+            name={`${primaryLabel} (prev)`}
+            stroke="var(--color-comparison)"
+            strokeDasharray="4 4"
+            strokeWidth={1.5}
+            dot={false}
+          />
+        )}
+      </AreaChart>
+    </ChartContainer>
+  );
+}
+
+// Prevent unused import warning
+void chartConfig;
