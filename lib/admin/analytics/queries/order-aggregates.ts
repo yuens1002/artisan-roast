@@ -283,6 +283,240 @@ export async function getPromoOrderCount(
 // Fulfilled order count (for fulfillment rate)
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Category breakdown by revenue
+// ---------------------------------------------------------------------------
+
+export interface CategoryBreakdownRaw {
+  category: string;
+  kind: "COFFEE" | "MERCH" | "BOTH";
+  revenue: number;
+  orders: number;
+}
+
+export async function getCategoryBreakdown(
+  where: Prisma.OrderWhereInput
+): Promise<CategoryBreakdownRaw[]> {
+  const items = await prisma.orderItem.findMany({
+    where: { order: where },
+    select: {
+      quantity: true,
+      priceInCents: true,
+      purchaseOption: {
+        select: {
+          variant: {
+            select: {
+              product: {
+                select: {
+                  categories: {
+                    select: {
+                      category: {
+                        select: { name: true, kind: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const catMap = new Map<string, { kind: "COFFEE" | "MERCH" | "BOTH"; revenue: number; orders: Set<string> }>();
+
+  for (const item of items) {
+    const lineTotal = item.priceInCents * item.quantity;
+    const categories = item.purchaseOption.variant.product.categories;
+    if (categories.length === 0) continue;
+    // Use the first category
+    const cat = categories[0].category;
+    const existing = catMap.get(cat.name) ?? {
+      kind: cat.kind,
+      revenue: 0,
+      orders: new Set<string>(),
+    };
+    existing.revenue += lineTotal;
+    catMap.set(cat.name, existing);
+  }
+
+  return Array.from(catMap.entries())
+    .map(([category, data]) => ({
+      category,
+      kind: data.kind,
+      revenue: data.revenue,
+      orders: data.orders.size,
+    }))
+    .sort((a, b) => b.revenue - a.revenue);
+}
+
+// ---------------------------------------------------------------------------
+// Coffee products by weight sold
+// ---------------------------------------------------------------------------
+
+export interface CoffeeWeightRaw {
+  product: string;
+  weightSoldGrams: number;
+  quantity: number;
+}
+
+export async function getCoffeeByWeight(
+  where: Prisma.OrderWhereInput
+): Promise<CoffeeWeightRaw[]> {
+  const items = await prisma.orderItem.findMany({
+    where: { order: where },
+    select: {
+      quantity: true,
+      purchaseOption: {
+        select: {
+          variant: {
+            select: {
+              weight: true,
+              product: {
+                select: {
+                  name: true,
+                  type: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const productMap = new Map<string, { weight: number; quantity: number }>();
+
+  for (const item of items) {
+    const variant = item.purchaseOption.variant;
+    if (variant.product.type !== "COFFEE") continue;
+    if (!variant.weight) continue;
+
+    const name = variant.product.name;
+    const existing = productMap.get(name) ?? { weight: 0, quantity: 0 };
+    existing.weight += variant.weight * item.quantity;
+    existing.quantity += item.quantity;
+    productMap.set(name, existing);
+  }
+
+  return Array.from(productMap.entries())
+    .map(([product, data]) => ({
+      product,
+      weightSoldGrams: data.weight,
+      quantity: data.quantity,
+    }))
+    .sort((a, b) => b.weightSoldGrams - a.weightSoldGrams);
+}
+
+// ---------------------------------------------------------------------------
+// Paginated sales table
+// ---------------------------------------------------------------------------
+
+export interface SalesTableParams {
+  where: Prisma.OrderWhereInput;
+  page: number;
+  pageSize: number;
+  sort: string;
+  dir: "asc" | "desc";
+}
+
+export interface SalesTableRow {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  customerEmail: string | null;
+  customerName: string | null;
+  itemCount: number;
+  orderType: "ONE_TIME" | "SUBSCRIPTION";
+  promoCode: string | null;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  shipping: number;
+  total: number;
+  refunded: number;
+  status: string;
+  city: string | null;
+  state: string | null;
+}
+
+export interface SalesTableResult {
+  rows: SalesTableRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+const SORT_MAP: Record<string, string> = {
+  createdAt: "createdAt",
+  total: "totalInCents",
+  status: "status",
+  customerEmail: "customerEmail",
+};
+
+export async function getSalesTable(
+  params: SalesTableParams
+): Promise<SalesTableResult> {
+  const orderBy = SORT_MAP[params.sort] ?? "createdAt";
+
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where: params.where,
+      orderBy: { [orderBy]: params.dir },
+      skip: params.page * params.pageSize,
+      take: params.pageSize,
+      select: {
+        id: true,
+        totalInCents: true,
+        discountAmountInCents: true,
+        taxAmountInCents: true,
+        shippingAmountInCents: true,
+        refundedAmountInCents: true,
+        promoCode: true,
+        status: true,
+        customerEmail: true,
+        recipientName: true,
+        shippingCity: true,
+        shippingState: true,
+        createdAt: true,
+        stripeSubscriptionId: true,
+        items: {
+          select: { quantity: true },
+        },
+      },
+    }),
+    prisma.order.count({ where: params.where }),
+  ]);
+
+  const rows: SalesTableRow[] = orders.map((o) => ({
+    id: o.id,
+    orderNumber: o.id.slice(-8).toUpperCase(),
+    createdAt: o.createdAt.toISOString(),
+    customerEmail: o.customerEmail,
+    customerName: o.recipientName,
+    itemCount: o.items.reduce((sum, i) => sum + i.quantity, 0),
+    orderType: o.stripeSubscriptionId ? "SUBSCRIPTION" : "ONE_TIME",
+    promoCode: o.promoCode,
+    subtotal: o.totalInCents - o.taxAmountInCents - o.shippingAmountInCents,
+    discount: o.discountAmountInCents,
+    tax: o.taxAmountInCents,
+    shipping: o.shippingAmountInCents,
+    total: o.totalInCents,
+    refunded: o.refundedAmountInCents,
+    status: o.status,
+    city: o.shippingCity,
+    state: o.shippingState,
+  }));
+
+  return {
+    rows,
+    total,
+    page: params.page,
+    pageSize: params.pageSize,
+  };
+}
+
 const FULFILLED_STATUSES = ["DELIVERED", "PICKED_UP", "SHIPPED", "OUT_FOR_DELIVERY"];
 
 export async function getFulfilledCount(
