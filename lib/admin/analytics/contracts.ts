@@ -252,6 +252,35 @@ export interface SalesResponse {
   };
 }
 
+// ---------------------------------------------------------------------------
+// User Analytics API response
+// ---------------------------------------------------------------------------
+
+export interface UserAnalyticsKpis {
+  totalProductViews: number;
+  totalAddToCart: number;
+  totalOrders: number;
+  /** Ratio 0..1 — views to orders */
+  conversionRate: number;
+  /** Ratio 0..1 — cart to orders */
+  cartConversionRate: number;
+  totalSearches: number;
+}
+
+export interface UserAnalyticsResponse {
+  period: DateRangeDTO;
+  kpis: UserAnalyticsKpis;
+  behaviorFunnel: FunnelStep[];
+  trendingProducts: RankedItem[];
+  topSearches: RankedItem[];
+  activityByDay: ChartDataPoint[];
+  activityBreakdown: { label: string; value: number }[];
+}
+
+// ---------------------------------------------------------------------------
+// Sales query params
+// ---------------------------------------------------------------------------
+
 export interface SalesQueryParams {
   from: string;
   to: string;

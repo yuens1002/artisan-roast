@@ -1,16 +1,14 @@
-"use client";
-
-import AnalyticsView from "./AnalyticsView";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
+import UserAnalyticsClient from "./UserAnalyticsClient";
 
 export default function AdminAnalyticsPage() {
   return (
     <>
       <PageTitle
-        title="Analytics"
-        subtitle="User behavior and product performance insights"
+        title="Trends & User Analytics"
+        subtitle="Behavior funnel, search trends & daily activity"
       />
-      <AnalyticsView embedded />
+      <UserAnalyticsClient />
     </>
   );
 }

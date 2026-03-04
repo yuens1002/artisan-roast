@@ -1,12 +1,14 @@
 /**
  * UserActivity queries for analytics dashboards.
  *
- * Provides behavior funnel data and search analytics.
+ * Provides behavior funnel data, search analytics, trending products,
+ * and daily activity metrics.
  */
 
 import { prisma } from "@/lib/prisma";
-import type { FunnelStep, RankedItem } from "../contracts";
+import type { FunnelStep, RankedItem, ChartDataPoint } from "../contracts";
 import type { DateRange } from "../time";
+import { toDateKey, generateDateKeys } from "../time";
 import { computeConversionRate } from "../metrics-registry";
 
 // ---------------------------------------------------------------------------
@@ -75,4 +77,109 @@ export async function getTopSearches(
     value: s._count,
     href: `/admin/analytics?search=${encodeURIComponent(s.searchQuery ?? "")}`,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Trending products (most viewed)
+// ---------------------------------------------------------------------------
+
+export async function getTrendingProducts(
+  range: DateRange,
+  limit = 10
+): Promise<RankedItem[]> {
+  const dateFilter = { gte: range.from, lt: range.to };
+
+  const productViews = await prisma.userActivity.groupBy({
+    by: ["productId"],
+    where: {
+      activityType: "PRODUCT_VIEW",
+      productId: { not: null },
+      createdAt: dateFilter,
+    },
+    _count: { productId: true },
+    orderBy: { _count: { productId: "desc" } },
+    take: limit,
+  });
+
+  const productIds = productViews
+    .map((pv) => pv.productId)
+    .filter((id): id is string => id !== null);
+
+  if (productIds.length === 0) return [];
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    select: { id: true, name: true, slug: true },
+  });
+
+  const nameMap = new Map(products.map((p) => [p.id, { name: p.name, slug: p.slug }]));
+
+  return productViews
+    .map((pv, i) => {
+      const product = pv.productId ? nameMap.get(pv.productId) : null;
+      return {
+        rank: i + 1,
+        label: product?.name ?? "Unknown",
+        value: pv._count.productId,
+        href: product?.slug ? `/products/${product.slug}` : undefined,
+      };
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Daily activity trend
+// ---------------------------------------------------------------------------
+
+export async function getActivityByDay(
+  range: DateRange
+): Promise<ChartDataPoint[]> {
+  const activities = await prisma.userActivity.findMany({
+    where: { createdAt: { gte: range.from, lt: range.to } },
+    select: { createdAt: true },
+  });
+
+  // Bucket counts by day
+  const countByDay = new Map<string, number>();
+  for (const a of activities) {
+    const key = toDateKey(a.createdAt);
+    countByDay.set(key, (countByDay.get(key) ?? 0) + 1);
+  }
+
+  // Fill all days in range
+  return generateDateKeys(range).map((date) => ({
+    date,
+    primary: countByDay.get(date) ?? 0,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Activity breakdown by type
+// ---------------------------------------------------------------------------
+
+export async function getActivityBreakdown(
+  range: DateRange
+): Promise<{ label: string; value: number }[]> {
+  const breakdown = await prisma.userActivity.groupBy({
+    by: ["activityType"],
+    where: { createdAt: { gte: range.from, lt: range.to } },
+    _count: { activityType: true },
+  });
+
+  return breakdown.map((b) => ({
+    label: b.activityType.replace(/_/g, " "),
+    value: b._count.activityType,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Search count
+// ---------------------------------------------------------------------------
+
+export async function getSearchCount(range: DateRange): Promise<number> {
+  return prisma.userActivity.count({
+    where: {
+      activityType: "SEARCH",
+      createdAt: { gte: range.from, lt: range.to },
+    },
+  });
 }
