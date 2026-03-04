@@ -9,6 +9,9 @@ import {
   getPromoOrderCount,
   getFulfilledCount,
   getPurchaseTypeSplit,
+  getCategoryBreakdown,
+  getCoffeeByWeight,
+  getSalesTable,
 } from "../queries/order-aggregates";
 import {
   ORDERS,
@@ -214,5 +217,223 @@ describe("getFulfilledCount", () => {
     prisma.order.count.mockResolvedValue(EXPECTED.fulfilledCount);
     const result = await getFulfilledCount({});
     expect(result).toBe(EXPECTED.fulfilledCount);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// New sales-specific queries
+// ---------------------------------------------------------------------------
+
+describe("getCategoryBreakdown", () => {
+  const categoryItems = [
+    {
+      quantity: 2,
+      priceInCents: 6000,
+      purchaseOption: {
+        variant: {
+          product: {
+            categories: [{ category: { name: "Single Origin", kind: "COFFEE" } }],
+          },
+        },
+      },
+    },
+    {
+      quantity: 1,
+      priceInCents: 3000,
+      purchaseOption: {
+        variant: {
+          product: {
+            categories: [{ category: { name: "Single Origin", kind: "COFFEE" } }],
+          },
+        },
+      },
+    },
+    {
+      quantity: 1,
+      priceInCents: 12000,
+      purchaseOption: {
+        variant: {
+          product: {
+            categories: [{ category: { name: "Accessories", kind: "MERCH" } }],
+          },
+        },
+      },
+    },
+  ];
+
+  it("aggregates revenue by category", async () => {
+    prisma.orderItem.findMany.mockResolvedValue(categoryItems);
+
+    const result = await getCategoryBreakdown({});
+    expect(result).toHaveLength(2);
+    // Single Origin: 6000*2 + 3000*1 = 15000
+    expect(result[0].category).toBe("Single Origin");
+    expect(result[0].revenue).toBe(15000);
+    expect(result[0].kind).toBe("COFFEE");
+  });
+
+  it("sorts by revenue descending", async () => {
+    prisma.orderItem.findMany.mockResolvedValue(categoryItems);
+
+    const result = await getCategoryBreakdown({});
+    for (let i = 1; i < result.length; i++) {
+      expect(result[i].revenue).toBeLessThanOrEqual(result[i - 1].revenue);
+    }
+  });
+
+  it("skips items with no categories", async () => {
+    prisma.orderItem.findMany.mockResolvedValue([
+      {
+        quantity: 1,
+        priceInCents: 5000,
+        purchaseOption: {
+          variant: { product: { categories: [] } },
+        },
+      },
+    ]);
+
+    const result = await getCategoryBreakdown({});
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe("getCoffeeByWeight", () => {
+  const weightItems = [
+    {
+      quantity: 2,
+      purchaseOption: {
+        variant: {
+          weight: 340,
+          product: { name: "Ethiopian Yirgacheffe", type: "COFFEE" },
+        },
+      },
+    },
+    {
+      quantity: 1,
+      purchaseOption: {
+        variant: {
+          weight: 340,
+          product: { name: "Ethiopian Yirgacheffe", type: "COFFEE" },
+        },
+      },
+    },
+    {
+      quantity: 1,
+      purchaseOption: {
+        variant: {
+          weight: null,
+          product: { name: "Artisan Mug", type: "MERCH" },
+        },
+      },
+    },
+  ];
+
+  it("aggregates weight by coffee product, excludes merch", async () => {
+    prisma.orderItem.findMany.mockResolvedValue(weightItems);
+
+    const result = await getCoffeeByWeight({});
+    expect(result).toHaveLength(1);
+    expect(result[0].product).toBe("Ethiopian Yirgacheffe");
+    // 340*2 + 340*1 = 1020
+    expect(result[0].weightSoldGrams).toBe(1020);
+    expect(result[0].quantity).toBe(3);
+  });
+
+  it("returns empty for non-coffee orders", async () => {
+    prisma.orderItem.findMany.mockResolvedValue([
+      {
+        quantity: 1,
+        purchaseOption: {
+          variant: {
+            weight: null,
+            product: { name: "T-Shirt", type: "MERCH" },
+          },
+        },
+      },
+    ]);
+
+    const result = await getCoffeeByWeight({});
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe("getSalesTable", () => {
+  const mockOrders = [
+    {
+      id: "cuid123456789abc",
+      totalInCents: 15000,
+      discountAmountInCents: 0,
+      taxAmountInCents: 1200,
+      shippingAmountInCents: 500,
+      refundedAmountInCents: 0,
+      promoCode: null,
+      status: "DELIVERED",
+      customerEmail: "user@example.com",
+      recipientName: "John Doe",
+      shippingCity: "Los Angeles",
+      shippingState: "CA",
+      createdAt: new Date("2026-03-01T10:00:00Z"),
+      stripeSubscriptionId: null,
+      items: [{ quantity: 2 }, { quantity: 1 }],
+    },
+  ];
+
+  it("returns paginated rows with correct shape", async () => {
+    prisma.order.findMany.mockResolvedValue(mockOrders);
+    prisma.order.count.mockResolvedValue(1);
+
+    const result = await getSalesTable({
+      where: {},
+      page: 0,
+      pageSize: 25,
+      sort: "createdAt",
+      dir: "desc",
+    });
+
+    expect(result.rows).toHaveLength(1);
+    expect(result.total).toBe(1);
+    expect(result.page).toBe(0);
+    expect(result.pageSize).toBe(25);
+
+    const row = result.rows[0];
+    expect(row.total).toBe(15000);
+    expect(row.itemCount).toBe(3); // 2 + 1
+    expect(row.orderType).toBe("ONE_TIME"); // no stripeSubscriptionId
+    expect(row.customerEmail).toBe("user@example.com");
+    expect(row.state).toBe("CA");
+  });
+
+  it("identifies subscription orders by stripeSubscriptionId", async () => {
+    prisma.order.findMany.mockResolvedValue([
+      { ...mockOrders[0], stripeSubscriptionId: "sub_123" },
+    ]);
+    prisma.order.count.mockResolvedValue(1);
+
+    const result = await getSalesTable({
+      where: {},
+      page: 0,
+      pageSize: 25,
+      sort: "createdAt",
+      dir: "desc",
+    });
+
+    expect(result.rows[0].orderType).toBe("SUBSCRIPTION");
+  });
+
+  it("calculates subtotal correctly", async () => {
+    prisma.order.findMany.mockResolvedValue(mockOrders);
+    prisma.order.count.mockResolvedValue(1);
+
+    const result = await getSalesTable({
+      where: {},
+      page: 0,
+      pageSize: 25,
+      sort: "createdAt",
+      dir: "desc",
+    });
+
+    // subtotal = totalInCents - taxAmountInCents - shippingAmountInCents
+    // 15000 - 1200 - 500 = 13300
+    expect(result.rows[0].subtotal).toBe(13300);
   });
 });
