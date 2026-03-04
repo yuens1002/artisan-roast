@@ -7,6 +7,7 @@ import {
   Users,
   Settings,
   LifeBuoy,
+  DollarSign,
   type LucideIcon,
 } from "lucide-react";
 
@@ -34,6 +35,7 @@ export const adminNavConfig: NavItem[] = [
     icon: LayoutDashboard,
     children: [
       { label: "Overview", href: "/admin" },
+      { label: "Sales", href: "/admin/sales", icon: DollarSign },
       { label: "Analytics", href: "/admin/analytics" },
     ],
   },
@@ -281,6 +283,7 @@ export const mobileNavConfig: NavItem[] = [
     icon: LayoutDashboard,
     children: [
       { label: "Overview", href: "/admin" },
+      { label: "Sales", href: "/admin/sales", icon: DollarSign },
       { label: "Analytics", href: "/admin/analytics" },
     ],
   },

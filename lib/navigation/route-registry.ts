@@ -50,6 +50,14 @@ const routeEntries: RouteEntry[] = [
     isNavigable: true,
   },
   {
+    id: "admin.dashboard.sales",
+    pathname: "/admin/sales",
+    matchMode: "exact",
+    label: "Sales",
+    parentId: "admin.dashboard",
+    isNavigable: true,
+  },
+  {
     id: "admin.dashboard.analytics",
     pathname: "/admin/analytics",
     matchMode: "exact",
