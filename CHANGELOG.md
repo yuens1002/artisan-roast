@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.93.2 - 2026-03-05
+
+### Changed
+
+- Disable Claude Code attribution on commits and PRs
+- Tighten GitHub ruleset: require review thread resolution before merge
+
 ## 0.93.1 - 2026-03-05
 
 ### Fixed
