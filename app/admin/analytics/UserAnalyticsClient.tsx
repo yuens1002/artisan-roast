@@ -160,13 +160,12 @@ export default function UserAnalyticsClient() {
         />
       </div>
 
-      {/* Row 1: Behavior Funnel (full width) */}
-      <ChartCard title="Behavior Funnel" description="Views → Cart → Orders">
-        <FunnelChart steps={behaviorFunnel} />
-      </ChartCard>
+      {/* Row 1: Funnel + Trending Products + Top Searches */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ChartCard title="Behavior Funnel" description="Views → Cart → Orders">
+          <FunnelChart steps={behaviorFunnel} />
+        </ChartCard>
 
-      {/* Row 2: Trending Products + Top Searches (icons left of title) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
           title="Trending Products"
           description="Most viewed products"
@@ -190,7 +189,7 @@ export default function UserAnalyticsClient() {
         description="Activity breakdown by type"
         titleIcon={Activity}
       >
-        <ChartContainer config={activityChartConfig} className="h-75 w-full">
+        <ChartContainer config={activityChartConfig} className="h-100 w-full">
           <AreaChart data={data.activityByDay} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
             <CartesianGrid vertical={false} />
             <XAxis

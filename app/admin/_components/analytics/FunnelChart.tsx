@@ -87,7 +87,7 @@ export function FunnelChart({ steps, className }: FunnelChartProps) {
               dataKey="name"
               position="center"
               fill="#fff"
-              className="text-sm font-medium"
+              className="text-xs font-medium"
             />
           </Funnel>
         </RechartsFunnelChart>
