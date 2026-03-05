@@ -1,59 +1,109 @@
 "use client";
 
+import { useMemo } from "react";
+import {
+  FunnelChart as RechartsFunnelChart,
+  Funnel,
+  LabelList,
+  Tooltip,
+} from "recharts";
+import {
+  ChartContainer,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { formatNumber, formatPercent } from "@/lib/admin/analytics/formatters";
 import type { FunnelStep } from "@/lib/admin/analytics/contracts";
-import { ArrowDown } from "lucide-react";
 
 interface FunnelChartProps {
   steps: FunnelStep[];
   className?: string;
 }
 
-const STEP_COLORS = [
-  "bg-chart-1",
-  "bg-chart-2",
-  "bg-chart-3",
-  "bg-chart-4",
+const STEP_FILLS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
 ];
 
 export function FunnelChart({ steps, className }: FunnelChartProps) {
+  const chartData = useMemo(
+    () =>
+      steps.map((step, i) => ({
+        name: step.label,
+        value: step.value,
+        conversionFromPrevious: step.conversionFromPrevious,
+        fill: STEP_FILLS[i % STEP_FILLS.length],
+      })),
+    [steps]
+  );
+
+  const chartConfig = useMemo(() => {
+    const cfg: Record<string, { label: string; color: string }> = {};
+    steps.forEach((step, i) => {
+      const key = step.label.toLowerCase().replace(/\s+/g, "_");
+      cfg[key] = {
+        label: step.label,
+        color: STEP_FILLS[i % STEP_FILLS.length],
+      };
+    });
+    return cfg satisfies ChartConfig;
+  }, [steps]);
+
   if (steps.length === 0) return null;
 
-  const maxValue = Math.max(...steps.map((s) => s.value), 1);
-
   return (
-    <div className={cn("flex flex-col items-center gap-0", className)}>
-      {steps.map((step, i) => {
-        // Width tapers from 100% down proportionally, with a 20% minimum
-        const widthPct = Math.max((step.value / maxValue) * 100, 20);
-        return (
-          <div key={step.label} className="w-full flex flex-col items-center">
-            {i > 0 && step.conversionFromPrevious != null && (
-              <div className="flex items-center gap-1 py-1 text-xs text-muted-foreground">
-                <ArrowDown className="h-3 w-3" />
-                {formatPercent(step.conversionFromPrevious)}
-              </div>
-            )}
-            <div
-              className={cn(
-                "relative flex items-center justify-center rounded-md py-3 transition-all",
-                STEP_COLORS[i % STEP_COLORS.length]
-              )}
-              style={{ width: `${widthPct}%`, opacity: 0.85 }}
-            >
-              <div className="flex items-baseline gap-2 text-sm">
-                <span className="font-medium text-white whitespace-nowrap">
-                  {step.label}
-                </span>
-                <span className="text-white/80 text-xs whitespace-nowrap">
-                  {formatNumber(step.value)}
-                </span>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+    <div className={cn("flex flex-col gap-2", className)}>
+      <ChartContainer config={chartConfig} className="h-45 w-full">
+        <RechartsFunnelChart>
+          <Tooltip
+            content={({ payload }) => {
+              if (!payload?.length) return null;
+              const item = payload[0]?.payload as (typeof chartData)[number] | undefined;
+              if (!item) return null;
+              return (
+                <div className="rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">
+                  <div className="font-medium">{item.name}</div>
+                  <div className="text-muted-foreground mt-0.5">
+                    {formatNumber(item.value)}
+                    {item.conversionFromPrevious != null && (
+                      <span className="ml-2">
+                        ({formatPercent(item.conversionFromPrevious)} from prev)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            }}
+          />
+          <Funnel
+            dataKey="value"
+            data={chartData}
+            isAnimationActive
+          >
+            <LabelList
+              dataKey="name"
+              position="center"
+              fill="#fff"
+              className="text-sm font-medium"
+            />
+          </Funnel>
+        </RechartsFunnelChart>
+      </ChartContainer>
+
+      {/* Conversion rates between steps */}
+      <div className="flex justify-center gap-8 text-xs text-muted-foreground">
+        {steps.slice(1).map(
+          (step) =>
+            step.conversionFromPrevious != null && (
+              <span key={step.label}>
+                → {step.label}: {formatPercent(step.conversionFromPrevious)}
+              </span>
+            )
+        )}
+      </div>
     </div>
   );
 }

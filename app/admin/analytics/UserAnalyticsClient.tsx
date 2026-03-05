@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import useSWR from "swr";
 import {
   Eye,
@@ -44,12 +44,11 @@ import { formatCompactNumber } from "@/lib/admin/analytics/formatters";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const activityChartConfig = {
-  total: { label: "Total", color: "var(--chart-1)" },
-  productView: { label: "Product Views", color: "var(--chart-2)" },
-  addToCart: { label: "Add to Cart", color: "var(--chart-3)" },
+  productView: { label: "Product Views", color: "var(--chart-1)" },
+  addToCart: { label: "Add to Cart", color: "var(--chart-2)" },
   search: { label: "Searches", color: "var(--chart-4)" },
   pageView: { label: "Page Views", color: "var(--chart-5)" },
-  removeFromCart: { label: "Remove from Cart", color: "oklch(0.645 0.246 16.439)" },
+  removeFromCart: { label: "Remove from Cart", color: "oklch(0.627 0.265 303.9)" },
 } satisfies ChartConfig;
 
 export default function UserAnalyticsClient() {
@@ -89,16 +88,6 @@ export default function UserAnalyticsClient() {
       : `/api/admin/analytics?period=${period}&compare=${compare}&export=csv`;
     window.open(exportUrl, "_blank");
   }, [period, compare, isCustom, customFrom, customTo]);
-
-  // Add total column for the overlay line (must be before early returns)
-  const chartData = useMemo(
-    () =>
-      (data?.activityByDay ?? []).map((d) => ({
-        ...d,
-        total: d.pageView + d.productView + d.search + d.addToCart + d.removeFromCart,
-      })),
-    [data?.activityByDay]
-  );
 
   if (isLoading && !data) {
     return <SkeletonDashboard sections={4} />;
@@ -202,7 +191,7 @@ export default function UserAnalyticsClient() {
         titleIcon={Activity}
       >
         <ChartContainer config={activityChartConfig} className="h-75 w-full">
-          <AreaChart data={chartData} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
+          <AreaChart data={data.activityByDay} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="date"
@@ -223,14 +212,16 @@ export default function UserAnalyticsClient() {
             />
             <ChartTooltip content={<ChartTooltipContent />} />
             <ChartLegend content={<ChartLegendContent />} />
+            {/* Stacked areas — removeFromCart first (bottom) to hide stroke when 0 */}
             <Area
               type="monotone"
-              dataKey="total"
-              name="Total"
-              stroke="var(--color-total)"
-              fill="none"
-              strokeWidth={2}
-              strokeDasharray="4 4"
+              dataKey="removeFromCart"
+              name="Remove from Cart"
+              stackId="activity"
+              stroke="var(--color-removeFromCart)"
+              fill="var(--color-removeFromCart)"
+              fillOpacity={0.4}
+              strokeWidth={0}
             />
             <Area
               type="monotone"
@@ -269,16 +260,6 @@ export default function UserAnalyticsClient() {
               stackId="activity"
               stroke="var(--color-pageView)"
               fill="var(--color-pageView)"
-              fillOpacity={0.4}
-              strokeWidth={1.5}
-            />
-            <Area
-              type="monotone"
-              dataKey="removeFromCart"
-              name="Remove from Cart"
-              stackId="activity"
-              stroke="var(--color-removeFromCart)"
-              fill="var(--color-removeFromCart)"
               fillOpacity={0.4}
               strokeWidth={1.5}
             />
