@@ -23,28 +23,30 @@ export function FunnelChart({ steps, className }: FunnelChartProps) {
   const maxValue = Math.max(...steps.map((s) => s.value), 1);
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div className={cn("flex flex-col items-center gap-0", className)}>
       {steps.map((step, i) => {
-        const widthPct = Math.max((step.value / maxValue) * 100, 8);
+        // Width tapers from 100% down proportionally, with a 20% minimum
+        const widthPct = Math.max((step.value / maxValue) * 100, 20);
         return (
-          <div key={step.label}>
+          <div key={step.label} className="w-full flex flex-col items-center">
             {i > 0 && step.conversionFromPrevious != null && (
-              <div className="flex items-center gap-1.5 py-1 pl-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 py-1 text-xs text-muted-foreground">
                 <ArrowDown className="h-3 w-3" />
                 {formatPercent(step.conversionFromPrevious)}
               </div>
             )}
-            <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  "h-8 rounded-md transition-all",
-                  STEP_COLORS[i % STEP_COLORS.length]
-                )}
-                style={{ width: `${widthPct}%`, opacity: 0.8 }}
-              />
-              <div className="flex flex-col text-sm">
-                <span className="font-medium">{step.label}</span>
-                <span className="text-xs text-muted-foreground">
+            <div
+              className={cn(
+                "relative flex items-center justify-center rounded-md py-3 transition-all",
+                STEP_COLORS[i % STEP_COLORS.length]
+              )}
+              style={{ width: `${widthPct}%`, opacity: 0.85 }}
+            >
+              <div className="flex items-baseline gap-2 text-sm">
+                <span className="font-medium text-white whitespace-nowrap">
+                  {step.label}
+                </span>
+                <span className="text-white/80 text-xs whitespace-nowrap">
                   {formatNumber(step.value)}
                 </span>
               </div>

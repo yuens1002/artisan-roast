@@ -55,19 +55,40 @@ const activityChartConfig = {
 export default function UserAnalyticsClient() {
   const [period, setPeriod] = useState<PeriodPreset>("30d");
   const [compare, setCompare] = useState<CompareMode>("previous");
+  const [customFrom, setCustomFrom] = useState<string | undefined>();
+  const [customTo, setCustomTo] = useState<string | undefined>();
+
+  const isCustom = !!(customFrom && customTo);
+
+  // Build API URL — use from/to for custom ranges, period for presets
+  const apiUrl = isCustom
+    ? `/api/admin/analytics?from=${customFrom}&to=${customTo}&compare=${compare}`
+    : `/api/admin/analytics?period=${period}&compare=${compare}`;
 
   const { data, isLoading } = useSWR<UserAnalyticsResponse>(
-    `/api/admin/analytics?period=${period}&compare=${compare}`,
+    apiUrl,
     fetcher,
     { keepPreviousData: true }
   );
 
+  const handlePeriodChange = useCallback((preset: PeriodPreset) => {
+    setPeriod(preset);
+    // Clear custom range when switching to a preset
+    setCustomFrom(undefined);
+    setCustomTo(undefined);
+  }, []);
+
+  const handleCustomRangeChange = useCallback((from: string, to: string) => {
+    setCustomFrom(from);
+    setCustomTo(to);
+  }, []);
+
   const handleExportCsv = useCallback(() => {
-    window.open(
-      `/api/admin/analytics?period=${period}&compare=${compare}&export=csv`,
-      "_blank"
-    );
-  }, [period, compare]);
+    const exportUrl = isCustom
+      ? `/api/admin/analytics?from=${customFrom}&to=${customTo}&compare=${compare}&export=csv`
+      : `/api/admin/analytics?period=${period}&compare=${compare}&export=csv`;
+    window.open(exportUrl, "_blank");
+  }, [period, compare, isCustom, customFrom, customTo]);
 
   // Add total column for the overlay line (must be before early returns)
   const chartData = useMemo(
@@ -101,18 +122,20 @@ export default function UserAnalyticsClient() {
     ? computeDelta(kpis.totalPageViews, comparisonKpis.totalPageViews)
     : undefined;
 
-  const deltaLabel = compare === "lastYear" ? "vs last yr" : compare === "previous" ? "vs prev" : undefined;
-
   return (
     <div className="space-y-6">
-      {/* Toolbar — period + compare + export */}
+      {/* Toolbar — period + export (compare only in calendar popover) */}
       <DashboardToolbar onExport={handleExportCsv}>
         <DateRangePicker
           mode="state"
           period={period}
           compare={compare}
-          onPeriodChange={setPeriod}
+          onPeriodChange={handlePeriodChange}
           onCompareChange={setCompare}
+          customFrom={customFrom}
+          customTo={customTo}
+          onCustomRangeChange={handleCustomRangeChange}
+          hideCompare
         />
       </DashboardToolbar>
 
@@ -124,7 +147,6 @@ export default function UserAnalyticsClient() {
           format="percent"
           icon={TrendingUp}
           delta={conversionDelta}
-          deltaLabel={deltaLabel}
         />
         <KpiCard
           label="Cart Conversion"
@@ -132,7 +154,6 @@ export default function UserAnalyticsClient() {
           format="percent"
           icon={ShoppingCart}
           delta={cartConversionDelta}
-          deltaLabel={deltaLabel}
         />
         <KpiCard
           label="Total Searches"
@@ -140,7 +161,6 @@ export default function UserAnalyticsClient() {
           format="number"
           icon={Search}
           delta={searchesDelta}
-          deltaLabel={deltaLabel}
         />
         <KpiCard
           label="Page Views"
@@ -148,11 +168,10 @@ export default function UserAnalyticsClient() {
           format="number"
           icon={Eye}
           delta={pageViewsDelta}
-          deltaLabel={deltaLabel}
         />
       </div>
 
-      {/* Row 1: Behavior Funnel (full width, no breakdown card) */}
+      {/* Row 1: Behavior Funnel (full width) */}
       <ChartCard title="Behavior Funnel" description="Views → Cart → Orders">
         <FunnelChart steps={behaviorFunnel} />
       </ChartCard>

@@ -39,6 +39,9 @@ interface UrlModeDateRangePickerProps extends DateRangePickerBaseProps {
   compare?: never;
   onPeriodChange?: never;
   onCompareChange?: never;
+  customFrom?: never;
+  customTo?: never;
+  onCustomRangeChange?: never;
 }
 
 interface StateModeDateRangePickerProps extends DateRangePickerBaseProps {
@@ -47,6 +50,12 @@ interface StateModeDateRangePickerProps extends DateRangePickerBaseProps {
   compare: CompareMode;
   onPeriodChange: (preset: PeriodPreset) => void;
   onCompareChange: (mode: CompareMode) => void;
+  /** ISO date string when a custom range is active. */
+  customFrom?: string;
+  /** ISO date string when a custom range is active. */
+  customTo?: string;
+  /** Called when user selects a custom date range via the calendar. */
+  onCustomRangeChange?: (from: string, to: string) => void;
 }
 
 type DateRangePickerProps =
@@ -74,6 +83,9 @@ export function DateRangePicker(props: DateRangePickerProps) {
       compare={props.compare}
       onPeriodChange={props.onPeriodChange}
       onCompareChange={props.onCompareChange}
+      customFrom={props.customFrom}
+      customTo={props.customTo}
+      onCustomRangeChange={props.onCustomRangeChange}
       className={props.className}
       hideCompare={props.hideCompare}
     />
@@ -129,6 +141,9 @@ interface DateRangePickerViewProps {
   compare: CompareMode;
   onPeriodChange: (preset: PeriodPreset) => void;
   onCompareChange: (mode: CompareMode) => void;
+  customFrom?: string;
+  customTo?: string;
+  onCustomRangeChange?: (from: string, to: string) => void;
   className?: string;
   hideCompare?: boolean;
 }
@@ -138,38 +153,74 @@ function DateRangePickerView({
   compare,
   onPeriodChange,
   onCompareChange,
+  customFrom,
+  customTo,
+  onCustomRangeChange,
   className,
   hideCompare,
 }: DateRangePickerViewProps) {
   const [open, setOpen] = useState(false);
-  const [pendingPreset, setPendingPreset] = useState<PeriodPreset>(period);
+  const [pendingPreset, setPendingPreset] = useState<PeriodPreset | null>(period);
   const [pendingCompare, setPendingCompare] = useState<CompareMode>(compare);
+  const [pendingCustomFrom, setPendingCustomFrom] = useState<Date | undefined>();
+  const [pendingCustomTo, setPendingCustomTo] = useState<Date | undefined>();
 
-  // Compute the displayed date range from the current period
-  const dateRange = getDateRange(period);
-  const presetLabel = PERIOD_PRESETS.find((p) => p.key === period)?.label;
+  // Determine if currently showing a custom range
+  const isCustom = !!(customFrom && customTo);
+
+  // Compute the displayed date range
+  const displayFrom = isCustom ? new Date(customFrom) : getDateRange(period).from;
+  const displayTo = isCustom ? new Date(customTo) : getDateRange(period).to;
+  const presetLabel = !isCustom ? PERIOD_PRESETS.find((p) => p.key === period)?.label : null;
   const triggerPreset = presetLabel ? `Last ${presetLabel}` : "Custom";
-  const triggerDates = `${format(dateRange.from, "MMM d")} – ${format(
-    dateRange.to,
-    "MMM d, yyyy"
-  )}`;
+  const triggerDates = `${format(displayFrom, "MMM d")} – ${format(displayTo, "MMM d, yyyy")}`;
 
-  // Calendar selection from the pending preset
-  const pendingRange = getDateRange(pendingPreset);
-  const calendarRange: DayPickerRange = {
-    from: pendingRange.from,
-    to: pendingRange.to,
-  };
+  // Calendar selection — show pending custom range or pending preset range
+  const calendarRange: DayPickerRange = pendingCustomFrom
+    ? { from: pendingCustomFrom, to: pendingCustomTo }
+    : pendingPreset
+      ? (() => { const r = getDateRange(pendingPreset); return { from: r.from, to: r.to }; })()
+      : { from: displayFrom, to: displayTo };
+
+  const calendarDefaultMonth = pendingCustomFrom ?? calendarRange.from;
 
   const handlePresetClick = (preset: PeriodPreset) => {
     setPendingPreset(preset);
+    // Clear custom selection when a preset is clicked
+    setPendingCustomFrom(undefined);
+    setPendingCustomTo(undefined);
+  };
+
+  const handleCalendarSelect = (range: DayPickerRange | undefined) => {
+    if (range?.from) {
+      setPendingCustomFrom(range.from);
+      setPendingCustomTo(range.to);
+      // Clear preset selection when calendar is used
+      setPendingPreset(null);
+    }
   };
 
   const handleApply = () => {
-    onPeriodChange(pendingPreset);
     if (pendingCompare !== compare) {
       onCompareChange(pendingCompare);
     }
+
+    if (pendingPreset) {
+      // Apply a preset
+      onPeriodChange(pendingPreset);
+      // Clear custom range if there was one
+      if (isCustom && onCustomRangeChange) {
+        // Signal to parent that we're back on a preset
+        // (parent should clear customFrom/customTo when onPeriodChange is called)
+      }
+    } else if (pendingCustomFrom && pendingCustomTo && onCustomRangeChange) {
+      // Apply custom date range
+      onCustomRangeChange(
+        pendingCustomFrom.toISOString(),
+        pendingCustomTo.toISOString()
+      );
+    }
+
     setOpen(false);
   };
 
@@ -177,10 +228,21 @@ function DateRangePickerView({
     setOpen(isOpen);
     if (isOpen) {
       // Reset pending state to current values when opening
-      setPendingPreset(period);
+      if (isCustom) {
+        setPendingPreset(null);
+        setPendingCustomFrom(new Date(customFrom));
+        setPendingCustomTo(new Date(customTo));
+      } else {
+        setPendingPreset(period);
+        setPendingCustomFrom(undefined);
+        setPendingCustomTo(undefined);
+      }
       setPendingCompare(compare);
     }
   };
+
+  // Determine which preset is visually selected in sidebar
+  const activePresetKey = pendingPreset;
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
@@ -203,7 +265,7 @@ function DateRangePickerView({
               {PERIOD_PRESETS.map((preset) => (
                 <Button
                   key={preset.key}
-                  variant={pendingPreset === preset.key ? "default" : "ghost"}
+                  variant={activePresetKey === preset.key ? "default" : "ghost"}
                   size="sm"
                   className="justify-start h-7 text-xs"
                   onClick={() => handlePresetClick(preset.key)}
@@ -218,8 +280,9 @@ function DateRangePickerView({
               <Calendar
                 mode="range"
                 selected={calendarRange}
+                onSelect={handleCalendarSelect}
                 numberOfMonths={2}
-                defaultMonth={pendingRange.from}
+                defaultMonth={calendarDefaultMonth}
                 disabled={{ after: new Date() }}
               />
 

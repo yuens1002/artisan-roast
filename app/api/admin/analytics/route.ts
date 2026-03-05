@@ -12,10 +12,22 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const period = parsePeriodParam(searchParams.get("period"));
     const compare = parseCompareParam(searchParams.get("compare"));
 
-    const data = await getUserAnalytics({ period, compare });
+    // Support custom from/to or preset period
+    const fromParam = searchParams.get("from");
+    const toParam = searchParams.get("to");
+
+    const data = fromParam && toParam
+      ? await getUserAnalytics({
+          customFrom: fromParam,
+          customTo: toParam,
+          compare,
+        })
+      : await getUserAnalytics({
+          period: parsePeriodParam(searchParams.get("period")),
+          compare,
+        });
 
     // CSV export
     if (searchParams.get("export") === "csv") {
@@ -34,7 +46,7 @@ export async function GET(request: Request) {
       return new Response(csv, {
         headers: {
           "Content-Type": "text/csv",
-          "Content-Disposition": `attachment; filename="user-analytics-${period}.csv"`,
+          "Content-Disposition": "attachment; filename=\"user-analytics.csv\"",
         },
       });
     }

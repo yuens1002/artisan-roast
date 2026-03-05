@@ -29,10 +29,9 @@ import {
   getPageViewCount,
 } from "../queries/activity-queries";
 
-export interface GetUserAnalyticsParams {
-  period: PeriodPreset;
-  compare: CompareMode;
-}
+export type GetUserAnalyticsParams =
+  | { period: PeriodPreset; compare: CompareMode }
+  | { customFrom: string; customTo: string; compare: CompareMode };
 
 const VALID_ORDER_STATUSES = ["SHIPPED", "PICKED_UP", "PENDING", "DELIVERED"] as const;
 
@@ -75,10 +74,20 @@ async function buildKpisForRange(range: DateRange): Promise<UserAnalyticsKpis> {
   return kpisFromFunnel(funnel, totalSearches, totalPageViews);
 }
 
+function resolveRange(params: GetUserAnalyticsParams): DateRange {
+  if ("customFrom" in params) {
+    return {
+      from: new Date(params.customFrom),
+      to: new Date(params.customTo),
+    };
+  }
+  return getDateRange(params.period);
+}
+
 export async function getUserAnalytics(
   params: GetUserAnalyticsParams
 ): Promise<UserAnalyticsResponse> {
-  const range = getDateRange(params.period);
+  const range = resolveRange(params);
   const compRange = getComparisonRange(range, params.compare);
 
   // Order count needed for funnel
