@@ -139,6 +139,58 @@ unset DATABASE_ADAPTER
 npm run dev
 ```
 
+## Telemetry
+
+Artisan Roast collects **anonymous usage data** to help the maintainers understand how the platform is used. No personal information, customer data, revenue, or product details are ever collected.
+
+### What is collected
+
+- A random instance UUID (not linked to you or your store)
+- App version and edition
+- Aggregate counts: number of products, users, and orders
+- Server environment: Node.js version and OS platform
+
+### When events are sent
+
+| Event | Trigger | Description |
+|-------|---------|-------------|
+| `install` | First database seed | Confirms a new instance was set up |
+| `heartbeat` | Daily cron (`/api/cron/heartbeat`) | Reports aggregate usage stats |
+
+### How to opt out
+
+Three options (checked in priority order):
+
+1. **Environment variable** (highest priority):
+
+   ```env
+   TELEMETRY_DISABLED=true
+   ```
+
+2. **Database setting**: Set `telemetry_enabled` to `"false"` in the `siteSettings` table.
+
+3. **Admin UI**: Go to **Admin > Support > Data Privacy** and toggle "Share Anonymous Usage Data" off.
+
+### Override the telemetry endpoint
+
+Self-hosters running a fork can point telemetry at their own server:
+
+```env
+TELEMETRY_ENDPOINT="https://your-server.com/api/telemetry/events"
+```
+
+If unset, events are sent to the default platform endpoint.
+
+## Google Analytics (Optional)
+
+Google Analytics 4 is supported but **disabled by default**. To enable it, add your GA4 Measurement ID to `.env.local`:
+
+```env
+NEXT_PUBLIC_GA4_ID="G-XXXXXXXXXX"
+```
+
+This tracks **your storefront visitors** using your own GA4 property — it is completely separate from the platform telemetry above. No admin UI toggle exists for this; it is controlled entirely via the environment variable.
+
 ## Troubleshooting
 
 - `DATABASE_URL is required`: confirm `.env.local` is loaded and the URL is reachable.
