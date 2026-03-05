@@ -18,16 +18,29 @@ export async function GET(request: Request) {
     const fromParam = searchParams.get("from");
     const toParam = searchParams.get("to");
 
-    const data = fromParam && toParam
-      ? await getUserAnalytics({
-          customFrom: fromParam,
-          customTo: toParam,
-          compare,
-        })
-      : await getUserAnalytics({
-          period: parsePeriodParam(searchParams.get("period")),
-          compare,
-        });
+    let data;
+    if (fromParam && toParam) {
+      // Validate ISO dates
+      const fromDate = new Date(fromParam);
+      const toDate = new Date(toParam);
+      if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+        return NextResponse.json({ error: "Invalid date format — use ISO 8601" }, { status: 400 });
+      }
+      if (fromDate >= toDate) {
+        return NextResponse.json({ error: "from must be before to" }, { status: 400 });
+      }
+      // Enforce max 366-day range
+      const daySpan = (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daySpan > 366) {
+        return NextResponse.json({ error: "Date range must not exceed 366 days" }, { status: 400 });
+      }
+      data = await getUserAnalytics({ customFrom: fromParam, customTo: toParam, compare });
+    } else {
+      data = await getUserAnalytics({
+        period: parsePeriodParam(searchParams.get("period")),
+        compare,
+      });
+    }
 
     // CSV export
     if (searchParams.get("export") === "csv") {

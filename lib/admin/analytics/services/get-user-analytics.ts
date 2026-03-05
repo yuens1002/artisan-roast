@@ -33,7 +33,7 @@ export type GetUserAnalyticsParams =
   | { period: PeriodPreset; compare: CompareMode }
   | { customFrom: string; customTo: string; compare: CompareMode };
 
-const VALID_ORDER_STATUSES = ["SHIPPED", "PICKED_UP", "PENDING", "DELIVERED"] as const;
+const VALID_ORDER_STATUSES = ["SHIPPED", "PICKED_UP", "PENDING", "DELIVERED", "OUT_FOR_DELIVERY"] as const;
 
 function kpisFromFunnel(
   funnel: FunnelStep[],
@@ -76,10 +76,14 @@ async function buildKpisForRange(range: DateRange): Promise<UserAnalyticsKpis> {
 
 function resolveRange(params: GetUserAnalyticsParams): DateRange {
   if ("customFrom" in params) {
-    return {
-      from: new Date(params.customFrom),
-      to: new Date(params.customTo),
-    };
+    const from = new Date(params.customFrom);
+    const to = new Date(params.customTo);
+    if (isNaN(from.getTime()) || isNaN(to.getTime()) || from >= to) {
+      return getDateRange("30d");
+    }
+    from.setUTCHours(0, 0, 0, 0);
+    to.setUTCHours(0, 0, 0, 0);
+    return { from, to };
   }
   return getDateRange(params.period);
 }

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.93.1 - 2026-03-05
+
+### Fixed
+
+- **DateRangePicker**: Custom range follows [from, to) convention; display date no longer off-by-one
+- **DateRangePicker/PeriodSelector**: URL params validated instead of unsafe casts
+- **Analytics API**: Custom date params validated (ISO format, from < to, max 366 days)
+- **buildOrderWhere**: Statuses typed as `OrderStatus[]` with runtime validation
+- **CSV export**: Stable UTC `YYYY-MM-DD` date format instead of locale-dependent
+- **DonutChart**: Tooltip swatch uses payload fill color (fixes labels with spaces)
+- **chart.tsx**: Tooltip renders zero values correctly
+- **Trending products**: Links use admin routes instead of storefront
+- **User analytics**: Added `OUT_FOR_DELIVERY` to valid order statuses; custom date validation
+- **Dashboard fulfillment chip**: Correct denominator using total orders
+- **Activity queries**: DB-level aggregation via `date_trunc` instead of loading all rows
+
 ## 0.93.0 - 2026-03-05
 
 ### Added

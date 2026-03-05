@@ -5,13 +5,13 @@
  * between data routes and export routes.
  */
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma, OrderStatus } from "@prisma/client";
 import type { DateRange } from "../time";
 
 export interface OrderFilterParams {
   range: DateRange;
   /** Restrict to these statuses (undefined = no filter) */
-  statuses?: string[];
+  statuses?: OrderStatus[];
   /** Filter by purchase type via order items */
   orderType?: "ALL" | "ONE_TIME" | "SUBSCRIPTION";
   /** Filter by promo code */
@@ -43,7 +43,7 @@ export function buildOrderWhere(
   };
 
   if (params.statuses && params.statuses.length > 0) {
-    where.status = { in: params.statuses as Prisma.EnumOrderStatusFilter["in"] };
+    where.status = { in: params.statuses };
   }
 
   if (params.promoCode) {

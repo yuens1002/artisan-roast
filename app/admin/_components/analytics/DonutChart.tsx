@@ -63,12 +63,12 @@ export function DonutChart({
               <ChartTooltipContent
                 formatter={
                   valueFormat === "currency"
-                    ? (value, name) => (
+                    ? (value, name, item) => (
                         <>
                           <div
                             className="h-2.5 w-2.5 shrink-0 rounded-sm"
                             style={{
-                              background: `var(--color-${name})`,
+                              background: item?.payload?.fill ?? item?.color,
                             }}
                           />
                           <div className="flex flex-1 justify-between items-center gap-4 leading-none">

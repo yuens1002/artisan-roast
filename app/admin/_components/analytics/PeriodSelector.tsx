@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { PeriodPreset, CompareMode } from "@/lib/admin/analytics/contracts";
-import { PERIOD_PRESETS } from "@/lib/admin/analytics/time";
+import { PERIOD_PRESETS, parsePeriodParam, parseCompareParam } from "@/lib/admin/analytics/time";
 
 interface PeriodSelectorBaseProps {
   className?: string;
@@ -67,8 +67,8 @@ export function PeriodSelector(props: PeriodSelectorProps) {
 function UrlSyncedPeriodSelector({ className }: { className?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentPeriod = (searchParams.get("period") ?? "30d") as PeriodPreset;
-  const currentCompare = (searchParams.get("compare") ?? "previous") as CompareMode;
+  const currentPeriod = parsePeriodParam(searchParams.get("period"));
+  const currentCompare = parseCompareParam(searchParams.get("compare"));
 
   const handlePeriodChange = useCallback(
     (preset: PeriodPreset) => {
