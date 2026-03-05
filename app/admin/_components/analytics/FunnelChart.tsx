@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import {
   FunnelChart as RechartsFunnelChart,
   Funnel,
-  LabelList,
   Tooltip,
 } from "recharts";
 import {
@@ -56,7 +55,8 @@ export function FunnelChart({ steps, className }: FunnelChartProps) {
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <ChartContainer config={chartConfig} className="h-45 w-full">
+      {/* Funnel visual */}
+      <ChartContainer config={chartConfig} className="h-40 w-full">
         <RechartsFunnelChart>
           <Tooltip
             content={({ payload }) => {
@@ -78,31 +78,29 @@ export function FunnelChart({ steps, className }: FunnelChartProps) {
               );
             }}
           />
-          <Funnel
-            dataKey="value"
-            data={chartData}
-            isAnimationActive
-          >
-            <LabelList
-              dataKey="name"
-              position="center"
-              fill="#fff"
-              className="text-xs font-medium"
-            />
-          </Funnel>
+          <Funnel dataKey="value" data={chartData} isAnimationActive />
         </RechartsFunnelChart>
       </ChartContainer>
 
-      {/* Conversion rates between steps */}
-      <div className="flex justify-center gap-8 text-xs text-muted-foreground">
-        {steps.slice(1).map(
-          (step) =>
-            step.conversionFromPrevious != null && (
-              <span key={step.label}>
-                → {step.label}: {formatPercent(step.conversionFromPrevious)}
+      {/* Legend — below funnel */}
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+        {steps.map((step, i) => (
+          <div key={step.label} className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-2 w-2 shrink-0 rounded-sm"
+              style={{ background: STEP_FILLS[i % STEP_FILLS.length] }}
+            />
+            <span className="font-medium">{step.label}</span>
+            <span className="text-muted-foreground">
+              {formatNumber(step.value)}
+            </span>
+            {step.conversionFromPrevious != null && (
+              <span className="text-muted-foreground">
+                ({formatPercent(step.conversionFromPrevious)})
               </span>
-            )
-        )}
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
