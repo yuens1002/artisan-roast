@@ -5,10 +5,12 @@ import { useCallback, useRef, useState } from "react";
 
 interface DataTableShellProps {
   children: React.ReactNode;
+  /** When true, table fits its container instead of expanding to content width. */
+  fitContainer?: boolean;
   className?: string;
 }
 
-export function DataTableShell({ children, className }: DataTableShellProps) {
+export function DataTableShell({ children, fitContainer, className }: DataTableShellProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragState = useRef({ startX: 0, scrollLeft: 0 });
@@ -16,9 +18,7 @@ export function DataTableShell({ children, className }: DataTableShellProps) {
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     const container = containerRef.current;
     if (!container) return;
-    // Only drag with primary mouse button
     if (e.button !== 0) return;
-    // Don't start drag on interactive elements
     const target = e.target as HTMLElement;
     if (target.closest("button, input, a, [role=button], .cursor-col-resize")) return;
 
@@ -50,7 +50,7 @@ export function DataTableShell({ children, className }: DataTableShellProps) {
     <div
       ref={containerRef}
       className={cn(
-        "relative w-full overflow-x-auto rounded-l-lg",
+        "relative w-full rounded-l-lg overflow-x-auto",
         isDragging && "select-none",
         className
       )}
@@ -60,7 +60,8 @@ export function DataTableShell({ children, className }: DataTableShellProps) {
       onMouseLeave={handleMouseUp}
     >
       <table className={cn(
-        "w-full min-w-max table-fixed caption-bottom text-sm",
+        "w-full caption-bottom text-sm",
+        fitContainer ? "table-auto overflow-clip" : "min-w-max table-fixed",
         isDragging && "[&_td]:cursor-grabbing [&_th]:cursor-grabbing"
       )}>
         {children}

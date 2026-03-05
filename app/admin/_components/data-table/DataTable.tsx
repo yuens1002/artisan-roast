@@ -15,6 +15,10 @@ interface DataTableProps<TData> {
   table: Table<TData>;
   onRowDoubleClick?: (row: TData) => void;
   emptyMessage?: string;
+  /** Enable sticky header with a scrollable table body. */
+  stickyHeader?: boolean;
+  /** When true, table fits its container instead of expanding to content width. */
+  fitContainer?: boolean;
 }
 
 const PIN_LEFT_CLASS = "sticky left-0 z-30 bg-background after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border";
@@ -37,6 +41,8 @@ export function DataTable<TData>({
   table,
   onRowDoubleClick,
   emptyMessage = "No results found.",
+  stickyHeader = false,
+  fitContainer = false,
 }: DataTableProps<TData>) {
   const isMobile = useMediaQuery("(max-width: 767px)");
 
@@ -65,10 +71,10 @@ export function DataTable<TData>({
   const rows = isMobile ? allRows.slice(0, visibleCount) : paginatedRows;
 
   return (
-    <DataTableShell>
-      <thead>
+    <DataTableShell fitContainer={fitContainer} className={stickyHeader ? "max-h-128 overflow-y-auto" : undefined}>
+      <thead className={stickyHeader ? "sticky top-0 z-20 bg-card" : undefined}>
         {table.getHeaderGroups().map((headerGroup) => (
-          <tr key={headerGroup.id} className="hover:bg-transparent group/hrow border-b-2 border-border">
+          <tr key={headerGroup.id} className="hover:bg-transparent group/hrow">
             {headerGroup.headers.map((header) => {
               if (!header.column.getIsVisible()) return null;
               const meta = header.column.columnDef.meta as
@@ -78,6 +84,7 @@ export function DataTable<TData>({
                 <DataTableHeaderCell
                   key={header.id}
                   header={header}
+                  useMinWidth={fitContainer}
                   className={getMetaClasses(meta)}
                 />
               );
@@ -123,7 +130,10 @@ export function DataTable<TData>({
                         getMetaClasses(meta),
                         meta?.cellClassName
                       )}
-                      style={{ width: cell.column.getSize() }}
+                      style={fitContainer
+                        ? { minWidth: cell.column.getSize() }
+                        : { width: cell.column.getSize() }
+                      }
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

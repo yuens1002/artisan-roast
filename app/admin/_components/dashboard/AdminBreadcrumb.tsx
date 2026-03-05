@@ -48,7 +48,7 @@ export function AdminBreadcrumb() {
   const navBreadcrumbs = useBreadcrumbTrail();
   const customItems = useBreadcrumbItems();
 
-  // Hide breadcrumb on overview page (/admin)
+  // Hide breadcrumb on overview page (/admin) — tab nav replaces it there
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length <= 1) {
     return null;

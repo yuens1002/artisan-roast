@@ -124,6 +124,22 @@
       "acs_total": 18,
       "tasks": [],
       "notes": "Iteration 3: 18/18 ACs verified. 7 FN via code review, 8 UI via code review (screenshots blocked by transient DB issue), 3 REG via precheck (0 errors) + test:ci (888 tests, 0 failures). 0 iterations needed."
+    },
+    "feat/sales-analytics": {
+      "status": "verified",
+      "acs_passed": 50,
+      "acs_total": 50,
+      "tasks": [],
+      "acs_doc": "docs/plans/admin-overview-makeover-ACs.md, docs/plans/sales-analytics-page-ACs.md",
+      "notes": "50/50 ACs verified (25 overview + 25 sales). Overview: 12 FN + 10 UI + 3 REG. Sales: 13 FN + 8 UI + 4 REG. All verified via Puppeteer screenshots (36 total) + code review + API validation + precheck (0 errors) + test:ci (995 tests). 0 iterations needed."
+    },
+    "feat/analytics-page-restyle": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 25,
+      "tasks": [],
+      "acs_doc": "docs/plans/analytics-page-restyle-ACs.md",
+      "notes": "14 FN + 8 UI + 3 REG ACs. Nav renaming (Sales Analytics, Trends & User Analytics + descriptions), analytics page rewrite with shared components, DashboardToolbar onExport optional, delete legacy AnalyticsView."
     }
   }
 }

@@ -6,6 +6,7 @@ export interface DataTableColumnMeta {
   responsive?: "desktop" | "mobile";
   pin?: "left";
   cellClassName?: string;
+  align?: "left" | "center" | "right";
 }
 
 export interface CollapseConfig {

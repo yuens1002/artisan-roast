@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.93.0 - 2026-03-05
+
+### Added
+
+- **Admin analytics dashboard**: Three-tab dashboard (Overview, Sales Analytics, Trends & User Activities) with KPI cards, revenue trends, donut charts, funnel visualization, ranked lists, and stacked area charts
+- **Sales analytics page**: Revenue/orders/AOV KPIs with comparison deltas, top products, subscription vs one-time split, category breakdown, coffee sold by weight, orders table with server-side pagination/sorting/filtering
+- **User activity analytics page**: Conversion rate, cart conversion, searches, page views KPIs; behavior funnel; trending products; top searches; daily activity stacked area chart with 5 series
+- **Overview dashboard enhancements**: Revenue trend with comparison overlay, orders by status donut, conversion funnel, subscription/customer mix, reviews summary with star breakdown, top products/locations/searches/customers
+- **Shared analytics components**: ChartCard, KpiCard, TrendChart, DonutChart, HBarChart, FunnelChart, RankedList, StatGrid, SplitComparison, DateRangePicker, DashboardToolbar, ExportCsvButton, SkeletonDashboard
+- **DashboardPageTemplate**: Unified page shell with consistent spacing and tab navigation across all dashboard pages
+- **CSV export**: Export dashboard data from Sales and Analytics pages
+- **Analytics data layer**: Prisma queries for order aggregates, activity tracking, entity stats; time utilities; metrics registry with delta computation; formatters; CSV builder
+
+### Changed
+
+- **Dashboard page modularization**: Extract SalesClient into SalesChartsSection, SalesOrdersSection, and sales-table-config; extract DailyActivitySection from UserAnalyticsClient; update TopMoversSection for overview Row 4
+- **Shared formatters**: Consolidate duplicated `formatStatus` into `lib/admin/analytics/formatters.ts`
+- **Overview barrel export**: Add `app/admin/_components/overview/index.ts` for cleaner imports
+- **DataTable fitContainer mode**: Support `table-auto` layout with `minWidth` cells and `overflow-clip` for tables that fit their container width
+- **ChartCard improvements**: Add `titleIcon` prop, `ChartCardLinkAction` and `ChartCardToggleAction` reusable action components
+- **Admin navigation**: Add Sales Analytics and Trends & User Activities to sidebar and breadcrumbs
+
 ## 0.92.14 - 2026-03-01
 
 ### Changed

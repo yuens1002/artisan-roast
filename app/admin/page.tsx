@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import AdminDashboardClient from "./AdminDashboardClient";
 import { getSiteMetadata } from "@/lib/site-metadata";
+import { parsePeriodParam, parseCompareParam } from "@/lib/admin/analytics/time";
+import { getDashboardAnalytics } from "@/lib/admin/analytics/services/get-dashboard-analytics";
+import AdminDashboardClient from "./AdminDashboardClient";
 
 export async function generateMetadata() {
   const { storeName } = await getSiteMetadata();
@@ -12,58 +14,38 @@ export async function generateMetadata() {
   };
 }
 
-export default async function AdminDashboardPage() {
+interface AdminDashboardPageProps {
+  searchParams: Promise<{ period?: string; compare?: string }>;
+}
+
+export default async function AdminDashboardPage({
+  searchParams,
+}: AdminDashboardPageProps) {
   const session = await auth();
 
   if (!session?.user?.email) {
     redirect("/auth/signin?callbackUrl=/admin");
   }
 
-  // Fetch admin user data
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      isAdmin: true,
-    },
+    select: { id: true, name: true, email: true, isAdmin: true },
   });
 
   if (!user?.isAdmin) {
     redirect("/");
   }
 
-  // Fetch dashboard stats
-  const [
-    totalUsers,
-    totalOrders,
-    totalProducts,
-    adminCount,
-    newsletterTotal,
-    newsletterActive,
-  ] = await Promise.all([
-    prisma.user.count(),
-    prisma.order.count(),
-    prisma.product.count(),
-    prisma.user.count({ where: { isAdmin: true } }),
-    prisma.newsletterSubscriber.count(),
-    prisma.newsletterSubscriber.count({ where: { isActive: true } }),
-  ]);
+  const params = await searchParams;
+  const period = parsePeriodParam(params.period);
+  const compare = parseCompareParam(params.compare);
+
+  const data = await getDashboardAnalytics({ period, compare });
 
   return (
     <AdminDashboardClient
-      user={user}
-      stats={{
-        totalUsers,
-        totalOrders,
-        totalProducts,
-        adminCount,
-        newsletterTotal,
-        newsletterActive,
-        newsletterInactive: newsletterTotal - newsletterActive,
-      }}
+      userName={user.name || user.email || "Admin"}
+      data={data}
     />
   );
 }

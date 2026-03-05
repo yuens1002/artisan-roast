@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.92.14",
+  "version": "0.93.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -98,6 +98,7 @@
     "react-day-picker": "^9.13.2",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.66.1",
+    "recharts": "^2.15.4",
     "resend": "^6.4.2",
     "sharp": "^0.34.5",
     "stripe": "^20.3.1",

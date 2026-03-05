@@ -63,6 +63,11 @@ function validateRestoredFilter(
 // Hook
 // ---------------------------------------------------------------------------
 
+export interface ServerSideOptions {
+  /** Total number of rows across all pages (from API response) */
+  totalRows: number;
+}
+
 export interface UseDataTableOptions<TData> {
   data: TData[];
   columns: ColumnDef<TData, unknown>[];
@@ -75,6 +80,8 @@ export interface UseDataTableOptions<TData> {
   initialSorting?: SortingState;
   /** localStorage key — when set, search/filter/pageSize are persisted */
   storageKey?: string;
+  /** Enable server-side pagination, sorting, and filtering */
+  serverSide?: ServerSideOptions;
 }
 
 export function useDataTable<TData>({
@@ -88,6 +95,7 @@ export function useDataTable<TData>({
   enableColumnResizing = true,
   initialSorting,
   storageKey,
+  serverSide,
 }: UseDataTableOptions<TData>) {
   // Load persisted state once on mount
   const stored = useRef(storageKey ? loadTableState(storageKey) : null);
@@ -143,9 +151,19 @@ export function useDataTable<TData>({
     onPaginationChange: setPagination,
     globalFilterFn,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    // Server-side mode: skip client-side processing
+    ...(serverSide
+      ? {
+          manualPagination: true,
+          manualSorting: true,
+          manualFiltering: true,
+          rowCount: serverSide.totalRows,
+        }
+      : {
+          getSortedRowModel: getSortedRowModel(),
+          getFilteredRowModel: getFilteredRowModel(),
+          getPaginationRowModel: getPaginationRowModel(),
+        }),
     enableColumnResizing,
     columnResizeMode: "onChange",
   });
@@ -157,5 +175,7 @@ export function useDataTable<TData>({
     activeFilter,
     setActiveFilter,
     filterConfigs,
+    sorting,
+    pagination,
   };
 }

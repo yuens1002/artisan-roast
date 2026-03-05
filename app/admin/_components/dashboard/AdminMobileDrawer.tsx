@@ -56,6 +56,11 @@ function NavChildLink({
     >
       <span>
         {child.label}
+        {child.description && (
+          <span className="block text-xs text-muted-foreground font-normal">
+            {child.description}
+          </span>
+        )}
         {showBadge && (
           <span className="relative -top-2 -ml-0.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" aria-label="New reviews" />
         )}
