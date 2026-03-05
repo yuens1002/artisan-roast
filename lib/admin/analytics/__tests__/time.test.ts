@@ -6,6 +6,8 @@ import {
   toDateKey,
   generateDateKeys,
   bucketByDay,
+  validateCustomDateParams,
+  resolveRange,
 } from "../time";
 
 describe("parsePeriodParam", () => {
@@ -96,5 +98,97 @@ describe("bucketByDay", () => {
     const map = bucketByDay(items, (i) => i.createdAt);
     expect(map.get("2026-03-01")?.length).toBe(2);
     expect(map.get("2026-03-02")?.length).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateCustomDateParams
+// ---------------------------------------------------------------------------
+
+describe("validateCustomDateParams", () => {
+  it("returns null for valid date ranges", () => {
+    expect(validateCustomDateParams("2026-01-01T00:00:00Z", "2026-01-15T00:00:00Z")).toBeNull();
+    expect(validateCustomDateParams("2026-01-01", "2026-02-01")).toBeNull();
+  });
+
+  it("rejects invalid date strings", () => {
+    expect(validateCustomDateParams("not-a-date", "2026-01-15")).toBe(
+      "Invalid date format — use ISO 8601"
+    );
+    expect(validateCustomDateParams("2026-01-01", "nope")).toBe(
+      "Invalid date format — use ISO 8601"
+    );
+  });
+
+  it("rejects from >= to", () => {
+    expect(validateCustomDateParams("2026-03-10", "2026-03-01")).toBe(
+      "from must be before to"
+    );
+  });
+
+  it("rejects from equal to to", () => {
+    expect(validateCustomDateParams("2026-03-01", "2026-03-01")).toBe(
+      "from must be before to"
+    );
+  });
+
+  it("rejects ranges exceeding 366 days", () => {
+    expect(validateCustomDateParams("2024-01-01", "2025-01-03")).toBe(
+      "Date range must not exceed 366 days"
+    );
+  });
+
+  it("allows exactly 366 days (leap year boundary)", () => {
+    // 2024 is a leap year: Jan 1 2024 → Jan 1 2025 = exactly 366 days
+    expect(validateCustomDateParams("2024-01-01", "2025-01-01")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveRange
+// ---------------------------------------------------------------------------
+
+describe("resolveRange", () => {
+  it("resolves a preset period via getDateRange", () => {
+    const range = resolveRange({ period: "7d" });
+    const expected = getDateRange("7d");
+    expect(range.from.getTime()).toBe(expected.from.getTime());
+    expect(range.to.getTime()).toBe(expected.to.getTime());
+  });
+
+  it("resolves custom from/to into a DateRange with UTC midnight boundaries", () => {
+    const range = resolveRange({
+      customFrom: "2026-02-01T10:30:00Z",
+      customTo: "2026-02-15T18:45:00Z",
+    });
+    expect(toDateKey(range.from)).toBe("2026-02-01");
+    expect(range.from.getUTCHours()).toBe(0);
+    expect(toDateKey(range.to)).toBe("2026-02-15");
+    expect(range.to.getUTCHours()).toBe(0);
+  });
+
+  it("falls back to 30d for invalid custom from", () => {
+    const range = resolveRange({ customFrom: "bad", customTo: "2026-02-15" });
+    const fallback = getDateRange("30d");
+    expect(range.from.getTime()).toBe(fallback.from.getTime());
+    expect(range.to.getTime()).toBe(fallback.to.getTime());
+  });
+
+  it("falls back to 30d for invalid custom to", () => {
+    const range = resolveRange({ customFrom: "2026-02-01", customTo: "bad" });
+    const fallback = getDateRange("30d");
+    expect(range.from.getTime()).toBe(fallback.from.getTime());
+  });
+
+  it("falls back to 30d when from >= to", () => {
+    const range = resolveRange({ customFrom: "2026-03-10", customTo: "2026-03-01" });
+    const fallback = getDateRange("30d");
+    expect(range.from.getTime()).toBe(fallback.from.getTime());
+  });
+
+  it("handles ISO date strings without time component", () => {
+    const range = resolveRange({ customFrom: "2026-01-15", customTo: "2026-02-15" });
+    expect(toDateKey(range.from)).toBe("2026-01-15");
+    expect(toDateKey(range.to)).toBe("2026-02-15");
   });
 });

@@ -13,8 +13,8 @@ import type {
   CompareMode,
 } from "../contracts";
 import {
-  getDateRange,
   getComparisonRange,
+  resolveRange,
   toDateRangeDTO,
   type DateRange,
 } from "../time";
@@ -47,8 +47,7 @@ import {
   getSalesTable,
 } from "../queries/order-aggregates";
 
-export interface GetSalesParams {
-  period: PeriodPreset;
+export type GetSalesParams = {
   compare: CompareMode;
   orderType?: "ALL" | "ONE_TIME" | "SUBSCRIPTION";
   statuses?: OrderStatus[];
@@ -62,12 +61,14 @@ export interface GetSalesParams {
   pageSize?: number;
   sort?: string;
   dir?: "asc" | "desc";
-}
+} & ({ period: PeriodPreset } | { customFrom: string; customTo: string });
 
 export async function getSalesAnalytics(
   params: GetSalesParams
 ): Promise<SalesResponse> {
-  const range = getDateRange(params.period);
+  const range = "customFrom" in params
+    ? resolveRange({ customFrom: params.customFrom, customTo: params.customTo })
+    : resolveRange({ period: params.period });
   const compRange = getComparisonRange(range, params.compare);
 
   // Base params (period only) — KPIs and charts are unaffected by table filters

@@ -14,8 +14,8 @@ import type {
   CompareMode,
 } from "../contracts";
 import {
-  getDateRange,
   getComparisonRange,
+  resolveRange,
   toDateRangeDTO,
   type DateRange,
 } from "../time";
@@ -46,15 +46,16 @@ import {
   getCustomerSplit,
 } from "../queries/entity-queries";
 
-export interface GetDashboardParams {
-  period: PeriodPreset;
-  compare: CompareMode;
-}
+export type GetDashboardParams =
+  | { period: PeriodPreset; compare: CompareMode }
+  | { customFrom: string; customTo: string; compare: CompareMode };
 
 export async function getDashboardAnalytics(
   params: GetDashboardParams
 ): Promise<DashboardResponse> {
-  const range = getDateRange(params.period);
+  const range = "customFrom" in params
+    ? resolveRange({ customFrom: params.customFrom, customTo: params.customTo })
+    : resolveRange({ period: params.period });
   const compRange = getComparisonRange(range, params.compare);
 
   const kpiWhere = buildKpiOrderWhere({ range });

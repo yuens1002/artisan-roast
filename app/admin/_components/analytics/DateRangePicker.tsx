@@ -101,11 +101,15 @@ function UrlSyncedDateRangePicker({ className, hideCompare }: { className?: stri
   const searchParams = useSearchParams();
   const currentPeriod = parsePeriodParam(searchParams.get("period"));
   const currentCompare = parseCompareParam(searchParams.get("compare"));
+  const customFrom = searchParams.get("from") ?? undefined;
+  const customTo = searchParams.get("to") ?? undefined;
 
   const handlePeriodChange = useCallback(
     (preset: PeriodPreset) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("period", preset);
+      params.delete("from");
+      params.delete("to");
       router.push(`?${params.toString()}`);
     },
     [router, searchParams]
@@ -120,12 +124,26 @@ function UrlSyncedDateRangePicker({ className, hideCompare }: { className?: stri
     [router, searchParams]
   );
 
+  const handleCustomRangeChange = useCallback(
+    (from: string, to: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("from", from);
+      params.set("to", to);
+      params.delete("period");
+      router.push(`?${params.toString()}`);
+    },
+    [router, searchParams]
+  );
+
   return (
     <DateRangePickerView
       period={currentPeriod}
       compare={currentCompare}
       onPeriodChange={handlePeriodChange}
       onCompareChange={handleCompareChange}
+      customFrom={customFrom}
+      customTo={customTo}
+      onCustomRangeChange={handleCustomRangeChange}
       className={className}
       hideCompare={hideCompare}
     />
@@ -173,8 +191,8 @@ function DateRangePickerView({
   const displayTo = isCustom ? new Date(customTo) : getDateRange(period).to;
   const presetLabel = !isCustom ? PERIOD_PRESETS.find((p) => p.key === period)?.label : null;
   const triggerPreset = presetLabel ? `Last ${presetLabel}` : "Custom";
-  // displayTo is exclusive (start-of-next-day); show the inclusive end date
-  const displayToInclusive = isCustom ? displayTo : subDays(displayTo, 1);
+  // displayTo is always exclusive (start-of-next-day); show the inclusive end date
+  const displayToInclusive = subDays(displayTo, 1);
   const triggerDates = `${format(displayFrom, "MMM d")} – ${format(displayToInclusive, "MMM d, yyyy")}`;
 
   // Calendar selection — show pending custom range or pending preset range

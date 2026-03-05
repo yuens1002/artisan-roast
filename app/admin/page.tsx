@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getSiteMetadata } from "@/lib/site-metadata";
-import { parsePeriodParam, parseCompareParam } from "@/lib/admin/analytics/time";
+import { parsePeriodParam, parseCompareParam, validateCustomDateParams } from "@/lib/admin/analytics/time";
 import { getDashboardAnalytics } from "@/lib/admin/analytics/services/get-dashboard-analytics";
 import AdminDashboardClient from "./AdminDashboardClient";
 
@@ -15,7 +15,7 @@ export async function generateMetadata() {
 }
 
 interface AdminDashboardPageProps {
-  searchParams: Promise<{ period?: string; compare?: string }>;
+  searchParams: Promise<{ period?: string; compare?: string; from?: string; to?: string }>;
 }
 
 export default async function AdminDashboardPage({
@@ -37,10 +37,12 @@ export default async function AdminDashboardPage({
   }
 
   const params = await searchParams;
-  const period = parsePeriodParam(params.period);
   const compare = parseCompareParam(params.compare);
 
-  const data = await getDashboardAnalytics({ period, compare });
+  const isCustom = !!(params.from && params.to && !validateCustomDateParams(params.from, params.to));
+  const data = isCustom
+    ? await getDashboardAnalytics({ customFrom: params.from!, customTo: params.to!, compare })
+    : await getDashboardAnalytics({ period: parsePeriodParam(params.period), compare });
 
   return (
     <AdminDashboardClient

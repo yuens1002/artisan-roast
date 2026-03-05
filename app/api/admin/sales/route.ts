@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { OrderStatus } from "@prisma/client";
 import { requireAdminApi } from "@/lib/admin";
-import { parsePeriodParam, parseCompareParam } from "@/lib/admin/analytics/time";
+import { parsePeriodParam, parseCompareParam, validateCustomDateParams } from "@/lib/admin/analytics/time";
 import { getSalesAnalytics } from "@/lib/admin/analytics/services/get-sales-analytics";
 import { buildCsvString } from "@/lib/admin/analytics/csv-export";
 import { formatCurrency } from "@/lib/admin/analytics/formatters";
@@ -18,11 +18,23 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const period = parsePeriodParam(searchParams.get("period"));
     const compare = parseCompareParam(searchParams.get("compare"));
+    const fromParam = searchParams.get("from");
+    const toParam = searchParams.get("to");
+
+    if (fromParam && toParam) {
+      const dateError = validateCustomDateParams(fromParam, toParam);
+      if (dateError) {
+        return NextResponse.json({ error: dateError }, { status: 400 });
+      }
+    }
+
+    const dateParams = fromParam && toParam
+      ? { customFrom: fromParam, customTo: toParam } as const
+      : { period: parsePeriodParam(searchParams.get("period")) } as const;
 
     const data = await getSalesAnalytics({
-      period,
+      ...dateParams,
       compare,
       orderType: parseOrderType(searchParams.get("orderType")),
       statuses: parseStatuses(searchParams.get("status")),

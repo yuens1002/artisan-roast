@@ -13,8 +13,8 @@ import type {
   FunnelStep,
 } from "../contracts";
 import {
-  getDateRange,
   getComparisonRange,
+  resolveRange,
   toDateRangeDTO,
   type DateRange,
 } from "../time";
@@ -74,24 +74,12 @@ async function buildKpisForRange(range: DateRange): Promise<UserAnalyticsKpis> {
   return kpisFromFunnel(funnel, totalSearches, totalPageViews);
 }
 
-function resolveRange(params: GetUserAnalyticsParams): DateRange {
-  if ("customFrom" in params) {
-    const from = new Date(params.customFrom);
-    const to = new Date(params.customTo);
-    if (isNaN(from.getTime()) || isNaN(to.getTime()) || from >= to) {
-      return getDateRange("30d");
-    }
-    from.setUTCHours(0, 0, 0, 0);
-    to.setUTCHours(0, 0, 0, 0);
-    return { from, to };
-  }
-  return getDateRange(params.period);
-}
-
 export async function getUserAnalytics(
   params: GetUserAnalyticsParams
 ): Promise<UserAnalyticsResponse> {
-  const range = resolveRange(params);
+  const range = "customFrom" in params
+    ? resolveRange({ customFrom: params.customFrom, customTo: params.customTo })
+    : resolveRange({ period: params.period });
   const compRange = getComparisonRange(range, params.compare);
 
   // Order count needed for funnel

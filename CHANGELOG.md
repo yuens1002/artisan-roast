@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.93.3 - 2026-03-05
+
+### Fixed
+
+- **Custom date ranges**: Calendar date picker now works on all dashboard pages (Overview, Sales, User Analytics) — previously only User Analytics responded to custom selections
+- **Shared date utilities**: Extract `resolveRange` and `validateCustomDateParams` to eliminate duplication across 3 API routes and 3 services
+
+### Added
+
+- Unit tests for `resolveRange` and `validateCustomDateParams`
+
 ## 0.93.2 - 2026-03-05
 
 ### Changed

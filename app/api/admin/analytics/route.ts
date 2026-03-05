@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { parsePeriodParam, parseCompareParam } from "@/lib/admin/analytics/time";
+import { parsePeriodParam, parseCompareParam, validateCustomDateParams } from "@/lib/admin/analytics/time";
 import { getUserAnalytics } from "@/lib/admin/analytics/services/get-user-analytics";
 import { buildCsvString } from "@/lib/admin/analytics/csv-export";
 
@@ -20,19 +20,9 @@ export async function GET(request: Request) {
 
     let data;
     if (fromParam && toParam) {
-      // Validate ISO dates
-      const fromDate = new Date(fromParam);
-      const toDate = new Date(toParam);
-      if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-        return NextResponse.json({ error: "Invalid date format — use ISO 8601" }, { status: 400 });
-      }
-      if (fromDate >= toDate) {
-        return NextResponse.json({ error: "from must be before to" }, { status: 400 });
-      }
-      // Enforce max 366-day range
-      const daySpan = (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24);
-      if (daySpan > 366) {
-        return NextResponse.json({ error: "Date range must not exceed 366 days" }, { status: 400 });
+      const dateError = validateCustomDateParams(fromParam, toParam);
+      if (dateError) {
+        return NextResponse.json({ error: dateError }, { status: 400 });
       }
       data = await getUserAnalytics({ customFrom: fromParam, customTo: toParam, compare });
     } else {

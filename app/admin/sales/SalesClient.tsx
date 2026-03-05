@@ -48,6 +48,8 @@ interface SalesClientProps {
 export default function SalesClient({ weightUnit }: SalesClientProps) {
   const [period, setPeriod] = useState<PeriodPreset>("30d");
   const [compare, setCompare] = useState<CompareMode>("previous");
+  const [customFrom, setCustomFrom] = useState<string | undefined>();
+  const [customTo, setCustomTo] = useState<string | undefined>();
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
   const { columnVisibility, handleVisibilityChange } =
     useColumnVisibility("sales-table-cols");
@@ -66,23 +68,35 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
 
   // Build filter query params from activeFilter state
   const filterParams = buildFilterQueryParams(activeFilter);
+  const isCustom = !!(customFrom && customTo);
 
-  const apiUrl = `/api/admin/sales?period=${period}&compare=${compare}&page=${pagination.pageIndex}&pageSize=${pagination.pageSize}&sort=${sortCol}&dir=${sortDir}${filterParams}`;
+  const dateParams = isCustom
+    ? `from=${customFrom}&to=${customTo}&compare=${compare}`
+    : `period=${period}&compare=${compare}`;
+  const apiUrl = `/api/admin/sales?${dateParams}&page=${pagination.pageIndex}&pageSize=${pagination.pageSize}&sort=${sortCol}&dir=${sortDir}${filterParams}`;
 
   const { data, isLoading } = useSWR<SalesResponse>(apiUrl, fetcher, {
     keepPreviousData: true,
   });
 
   const handleExportCsv = useCallback(() => {
-    window.open(
-      `/api/admin/sales?period=${period}&compare=${compare}&export=csv`,
-      "_blank"
-    );
-  }, [period, compare]);
+    const exportDateParams = isCustom
+      ? `from=${customFrom}&to=${customTo}&compare=${compare}`
+      : `period=${period}&compare=${compare}`;
+    window.open(`/api/admin/sales?${exportDateParams}&export=csv`, "_blank");
+  }, [period, compare, isCustom, customFrom, customTo]);
 
   // Reset pagination when period/compare changes
   const handlePeriodChange = useCallback((p: PeriodPreset) => {
     setPeriod(p);
+    setCustomFrom(undefined);
+    setCustomTo(undefined);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, []);
+
+  const handleCustomRangeChange = useCallback((from: string, to: string) => {
+    setCustomFrom(from);
+    setCustomTo(to);
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, []);
 
@@ -215,6 +229,9 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
           compare={compare}
           onPeriodChange={handlePeriodChange}
           onCompareChange={handleCompareChange}
+          customFrom={customFrom}
+          customTo={customTo}
+          onCustomRangeChange={handleCustomRangeChange}
           hideCompare
         />
       </DashboardToolbar>

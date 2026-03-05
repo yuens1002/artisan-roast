@@ -60,7 +60,7 @@ export interface DateRange {
 }
 
 /** Start of day in UTC (zeroes hours/minutes/seconds/ms). */
-function startOfDayUTC(date: Date): Date {
+export function startOfDayUTC(date: Date): Date {
   const d = new Date(date);
   d.setUTCHours(0, 0, 0, 0);
   return d;
@@ -113,6 +113,50 @@ export function getComparisonRange(
     from: subDays(range.from, days),
     to: range.from,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Custom date range helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate custom date params for API routes.
+ * Returns an error message string or null if valid.
+ */
+export function validateCustomDateParams(from: string, to: string): string | null {
+  const fromDate = new Date(from);
+  const toDate = new Date(to);
+  if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+    return "Invalid date format — use ISO 8601";
+  }
+  if (fromDate >= toDate) {
+    return "from must be before to";
+  }
+  const daySpan = (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24);
+  if (daySpan > 366) {
+    return "Date range must not exceed 366 days";
+  }
+  return null;
+}
+
+/**
+ * Resolve a preset or custom from/to into a concrete DateRange.
+ * Falls back to 30d if custom dates are invalid.
+ */
+export function resolveRange(
+  params: { period: PeriodPreset } | { customFrom: string; customTo: string }
+): DateRange {
+  if ("customFrom" in params) {
+    const from = new Date(params.customFrom);
+    const to = new Date(params.customTo);
+    if (isNaN(from.getTime()) || isNaN(to.getTime()) || from >= to) {
+      return getDateRange("30d");
+    }
+    from.setUTCHours(0, 0, 0, 0);
+    to.setUTCHours(0, 0, 0, 0);
+    return { from, to };
+  }
+  return getDateRange(params.period);
 }
 
 // ---------------------------------------------------------------------------
