@@ -117,7 +117,7 @@ export function KpiCard({
           {Icon && <Icon className="h-4 w-4 text-muted-foreground shrink-0" />}
           <span
             className={cn(
-              "text-sm text-muted-foreground",
+              "text-sm text-muted-foreground whitespace-nowrap",
               labelTitle && "underline decoration-dashed cursor-help"
             )}
             title={labelTitle}
