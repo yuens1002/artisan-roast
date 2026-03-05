@@ -6,7 +6,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import type { FunnelStep, RankedItem, ChartDataPoint } from "../contracts";
+import type { FunnelStep, RankedItem, ChartDataPoint, ActivityByDayPoint } from "../contracts";
 import type { DateRange } from "../time";
 import { toDateKey, generateDateKeys } from "../time";
 import { computeConversionRate } from "../metrics-registry";
@@ -181,5 +181,52 @@ export async function getSearchCount(range: DateRange): Promise<number> {
       activityType: "SEARCH",
       createdAt: { gte: range.from, lt: range.to },
     },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Page view count
+// ---------------------------------------------------------------------------
+
+export async function getPageViewCount(range: DateRange): Promise<number> {
+  return prisma.userActivity.count({
+    where: {
+      activityType: "PAGE_VIEW",
+      createdAt: { gte: range.from, lt: range.to },
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Daily activity by type (stacked chart)
+// ---------------------------------------------------------------------------
+
+export async function getActivityByDayByType(
+  range: DateRange
+): Promise<ActivityByDayPoint[]> {
+  const activities = await prisma.userActivity.findMany({
+    where: { createdAt: { gte: range.from, lt: range.to } },
+    select: { createdAt: true, activityType: true },
+  });
+
+  // Bucket by day + type
+  const buckets = new Map<string, Record<string, number>>();
+  for (const a of activities) {
+    const key = toDateKey(a.createdAt);
+    const bucket = buckets.get(key) ?? {};
+    bucket[a.activityType] = (bucket[a.activityType] ?? 0) + 1;
+    buckets.set(key, bucket);
+  }
+
+  return generateDateKeys(range).map((date) => {
+    const b = buckets.get(date) ?? {};
+    return {
+      date,
+      pageView: b["PAGE_VIEW"] ?? 0,
+      productView: b["PRODUCT_VIEW"] ?? 0,
+      search: b["SEARCH"] ?? 0,
+      addToCart: b["ADD_TO_CART"] ?? 0,
+      removeFromCart: b["REMOVE_FROM_CART"] ?? 0,
+    };
   });
 }

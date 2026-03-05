@@ -265,16 +265,27 @@ export interface UserAnalyticsKpis {
   /** Ratio 0..1 — cart to orders */
   cartConversionRate: number;
   totalSearches: number;
+  totalPageViews: number;
+}
+
+export interface ActivityByDayPoint {
+  date: string;
+  pageView: number;
+  productView: number;
+  search: number;
+  addToCart: number;
+  removeFromCart: number;
 }
 
 export interface UserAnalyticsResponse {
   period: DateRangeDTO;
+  comparison: DateRangeDTO | null;
   kpis: UserAnalyticsKpis;
+  comparisonKpis: UserAnalyticsKpis | null;
   behaviorFunnel: FunnelStep[];
   trendingProducts: RankedItem[];
   topSearches: RankedItem[];
-  activityByDay: ChartDataPoint[];
-  activityBreakdown: { label: string; value: number }[];
+  activityByDay: ActivityByDayPoint[];
 }
 
 // ---------------------------------------------------------------------------
