@@ -117,7 +117,7 @@ export async function getDashboardAnalytics(
   // Build chips (supporting metrics)
   const chips: ChipPayload[] = [
     { label: "Net Revenue", value: computeNetRevenue(revenueAgg.revenue, revenueAgg.refunds), format: "currency" },
-    { label: "Fulfillment", value: fulfilledCount / Math.max(revenueAgg.orderCount + /* cancelled/failed from allWhere */ 0, 1), format: "percent" },
+    { label: "Fulfillment", value: fulfilledCount / Math.max(ordersByStatus.reduce((sum, s) => sum + s.count, 0), 1), format: "percent" },
     { label: "Promo Orders", value: promoCount, format: "number" },
     { label: "Newsletter", value: entityCounts.newsletterActive, format: "number" },
   ];

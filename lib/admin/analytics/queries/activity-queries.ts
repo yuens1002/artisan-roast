@@ -121,7 +121,7 @@ export async function getTrendingProducts(
         rank: i + 1,
         label: product?.name ?? "Unknown",
         value: pv._count.productId,
-        href: product?.slug ? `/products/${product.slug}` : undefined,
+        href: product?.slug ? `/admin/products/${product.slug}` : undefined,
       };
     });
 }
@@ -133,19 +133,19 @@ export async function getTrendingProducts(
 export async function getActivityByDay(
   range: DateRange
 ): Promise<ChartDataPoint[]> {
-  const activities = await prisma.userActivity.findMany({
-    where: { createdAt: { gte: range.from, lt: range.to } },
-    select: { createdAt: true },
-  });
+  const rows = await prisma.$queryRaw<{ day: Date; count: bigint }[]>`
+    SELECT date_trunc('day', "createdAt") AS day, COUNT(*)::bigint AS count
+    FROM "UserActivity"
+    WHERE "createdAt" >= ${range.from} AND "createdAt" < ${range.to}
+    GROUP BY day
+    ORDER BY day
+  `;
 
-  // Bucket counts by day
   const countByDay = new Map<string, number>();
-  for (const a of activities) {
-    const key = toDateKey(a.createdAt);
-    countByDay.set(key, (countByDay.get(key) ?? 0) + 1);
+  for (const r of rows) {
+    countByDay.set(toDateKey(r.day), Number(r.count));
   }
 
-  // Fill all days in range
   return generateDateKeys(range).map((date) => ({
     date,
     primary: countByDay.get(date) ?? 0,
@@ -204,17 +204,19 @@ export async function getPageViewCount(range: DateRange): Promise<number> {
 export async function getActivityByDayByType(
   range: DateRange
 ): Promise<ActivityByDayPoint[]> {
-  const activities = await prisma.userActivity.findMany({
-    where: { createdAt: { gte: range.from, lt: range.to } },
-    select: { createdAt: true, activityType: true },
-  });
+  const rows = await prisma.$queryRaw<{ day: Date; activity_type: string; count: bigint }[]>`
+    SELECT date_trunc('day', "createdAt") AS day, "activityType" AS activity_type, COUNT(*)::bigint AS count
+    FROM "UserActivity"
+    WHERE "createdAt" >= ${range.from} AND "createdAt" < ${range.to}
+    GROUP BY day, "activityType"
+    ORDER BY day
+  `;
 
-  // Bucket by day + type
   const buckets = new Map<string, Record<string, number>>();
-  for (const a of activities) {
-    const key = toDateKey(a.createdAt);
+  for (const r of rows) {
+    const key = toDateKey(r.day);
     const bucket = buckets.get(key) ?? {};
-    bucket[a.activityType] = (bucket[a.activityType] ?? 0) + 1;
+    bucket[r.activity_type] = Number(r.count);
     buckets.set(key, bucket);
   }
 

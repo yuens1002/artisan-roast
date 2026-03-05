@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { format } from "date-fns";
+import { format, subDays, addDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { PeriodPreset, CompareMode } from "@/lib/admin/analytics/contracts";
-import { PERIOD_PRESETS, getDateRange } from "@/lib/admin/analytics/time";
+import { PERIOD_PRESETS, getDateRange, parsePeriodParam, parseCompareParam } from "@/lib/admin/analytics/time";
 import type { DateRange as DayPickerRange } from "react-day-picker";
 
 // ---------------------------------------------------------------------------
@@ -99,8 +99,8 @@ export function DateRangePicker(props: DateRangePickerProps) {
 function UrlSyncedDateRangePicker({ className, hideCompare }: { className?: string; hideCompare?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentPeriod = (searchParams.get("period") ?? "30d") as PeriodPreset;
-  const currentCompare = (searchParams.get("compare") ?? "previous") as CompareMode;
+  const currentPeriod = parsePeriodParam(searchParams.get("period"));
+  const currentCompare = parseCompareParam(searchParams.get("compare"));
 
   const handlePeriodChange = useCallback(
     (preset: PeriodPreset) => {
@@ -173,7 +173,9 @@ function DateRangePickerView({
   const displayTo = isCustom ? new Date(customTo) : getDateRange(period).to;
   const presetLabel = !isCustom ? PERIOD_PRESETS.find((p) => p.key === period)?.label : null;
   const triggerPreset = presetLabel ? `Last ${presetLabel}` : "Custom";
-  const triggerDates = `${format(displayFrom, "MMM d")} – ${format(displayTo, "MMM d, yyyy")}`;
+  // displayTo is exclusive (start-of-next-day); show the inclusive end date
+  const displayToInclusive = isCustom ? displayTo : subDays(displayTo, 1);
+  const triggerDates = `${format(displayFrom, "MMM d")} – ${format(displayToInclusive, "MMM d, yyyy")}`;
 
   // Calendar selection — show pending custom range or pending preset range
   const calendarRange: DayPickerRange = pendingCustomFrom
@@ -214,10 +216,14 @@ function DateRangePickerView({
         // (parent should clear customFrom/customTo when onPeriodChange is called)
       }
     } else if (pendingCustomFrom && pendingCustomTo && onCustomRangeChange) {
-      // Apply custom date range
+      // Normalize to [fromInclusive, toExclusive) — start-of-day and start-of-next-day
+      const normalizedFrom = new Date(pendingCustomFrom);
+      normalizedFrom.setUTCHours(0, 0, 0, 0);
+      const normalizedTo = addDays(new Date(pendingCustomTo), 1);
+      normalizedTo.setUTCHours(0, 0, 0, 0);
       onCustomRangeChange(
-        pendingCustomFrom.toISOString(),
-        pendingCustomTo.toISOString()
+        normalizedFrom.toISOString(),
+        normalizedTo.toISOString()
       );
     }
 

@@ -5,6 +5,7 @@
  * Returns SalesResponse (see contracts.ts).
  */
 
+import type { OrderStatus } from "@prisma/client";
 import type {
   SalesResponse,
   SalesKpis,
@@ -50,7 +51,7 @@ export interface GetSalesParams {
   period: PeriodPreset;
   compare: CompareMode;
   orderType?: "ALL" | "ONE_TIME" | "SUBSCRIPTION";
-  statuses?: string[];
+  statuses?: OrderStatus[];
   productId?: string;
   categoryId?: string;
   promoCode?: string;

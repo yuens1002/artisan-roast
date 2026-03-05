@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
+import type { OrderStatus } from "@prisma/client";
 import { requireAdminApi } from "@/lib/admin";
 import { parsePeriodParam, parseCompareParam } from "@/lib/admin/analytics/time";
 import { getSalesAnalytics } from "@/lib/admin/analytics/services/get-sales-analytics";
 import { buildCsvString } from "@/lib/admin/analytics/csv-export";
 import { formatCurrency } from "@/lib/admin/analytics/formatters";
+
+const VALID_STATUSES = new Set<string>([
+  "PENDING", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "PICKED_UP", "CANCELLED", "FAILED",
+]);
 
 export async function GET(request: Request) {
   try {
@@ -41,7 +46,7 @@ export async function GET(request: Request) {
         ["Order #", "Date", "Email", "Items", "Type", "Status", "Total", "Refunded", "Location"],
         data.table.rows.map((r) => [
           r.orderNumber,
-          new Date(r.createdAt).toLocaleDateString(),
+          new Date(r.createdAt).toISOString().slice(0, 10),
           r.customerEmail ?? "",
           String(r.itemCount),
           r.orderType,
@@ -86,9 +91,9 @@ function parseOrderType(
   return undefined;
 }
 
-function parseStatuses(value: string | null): string[] | undefined {
+function parseStatuses(value: string | null): OrderStatus[] | undefined {
   if (!value) return undefined;
-  const parts = value.split(",").filter(Boolean);
+  const parts = value.split(",").filter((s) => VALID_STATUSES.has(s)) as OrderStatus[];
   return parts.length > 0 ? parts : undefined;
 }
 
