@@ -54,9 +54,9 @@ export function FunnelChart({ steps, className }: FunnelChartProps) {
   if (steps.length === 0) return null;
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
-      {/* Funnel visual */}
-      <ChartContainer config={chartConfig} className="h-40 w-full">
+    <div className={cn("flex h-full flex-col", className)}>
+      {/* Funnel visual — fills remaining height */}
+      <ChartContainer config={chartConfig} className="min-h-0 flex-1 w-full">
         <RechartsFunnelChart>
           <Tooltip
             content={({ payload }) => {
@@ -82,12 +82,12 @@ export function FunnelChart({ steps, className }: FunnelChartProps) {
         </RechartsFunnelChart>
       </ChartContainer>
 
-      {/* Legend — below funnel */}
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+      {/* Legend — stacked, pinned to bottom */}
+      <div className="mt-3 flex flex-col items-center gap-1.5 text-xs">
         {steps.map((step, i) => (
-          <div key={step.label} className="flex items-center gap-1.5">
+          <div key={step.label} className="flex items-center gap-2">
             <span
-              className="inline-block h-2 w-2 shrink-0 rounded-sm"
+              className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
               style={{ background: STEP_FILLS[i % STEP_FILLS.length] }}
             />
             <span className="font-medium">{step.label}</span>

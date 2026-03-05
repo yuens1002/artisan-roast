@@ -15,10 +15,10 @@ interface KpiCardProps {
   valueLabel?: string;
   /** Full text for valueLabel tooltip (e.g. "Total Revenue"). */
   valueLabelTitle?: string;
-  delta?: DeltaResult;
+  delta?: DeltaResult | null;
   deltaLabel?: string;
   /** Comparison delta for the secondary value (shown with "/" separator). */
-  secondaryDelta?: DeltaResult;
+  secondaryDelta?: DeltaResult | null;
   /** Secondary value shown after a "/" separator. */
   secondaryValue?: number;
   secondaryFormat?: "currency" | "number" | "percent";

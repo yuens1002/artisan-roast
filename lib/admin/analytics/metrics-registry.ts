@@ -13,15 +13,16 @@ import type { DeltaResult, SplitPayload } from "./contracts";
 
 /**
  * Compute the % change between current and previous values.
- * Returns a DeltaResult with normalized ratio (0..1) and direction.
+ * Returns a DeltaResult with normalized ratio (0..1) and direction,
+ * or null when no meaningful comparison exists (e.g. previous is 0).
  */
 export function computeDelta(
   current: number,
   previous: number | undefined | null
-): DeltaResult {
+): DeltaResult | null {
   if (previous == null || previous === 0) {
     if (current === 0) return { value: 0, direction: "flat" };
-    return { value: 1, direction: "up" }; // infinite increase capped at 100%
+    return null; // no baseline → comparison is meaningless
   }
 
   const change = (current - previous) / Math.abs(previous);

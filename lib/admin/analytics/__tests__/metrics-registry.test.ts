@@ -14,33 +14,30 @@ import {
 describe("computeDelta", () => {
   it("computes positive change", () => {
     const d = computeDelta(112, 100);
-    expect(d.direction).toBe("up");
-    expect(d.value).toBeCloseTo(0.12);
+    expect(d?.direction).toBe("up");
+    expect(d?.value).toBeCloseTo(0.12);
   });
 
   it("computes negative change", () => {
     const d = computeDelta(90, 100);
-    expect(d.direction).toBe("down");
-    expect(d.value).toBeCloseTo(0.1);
+    expect(d?.direction).toBe("down");
+    expect(d?.value).toBeCloseTo(0.1);
   });
 
   it("returns flat for tiny change", () => {
-    expect(computeDelta(100, 100).direction).toBe("flat");
+    expect(computeDelta(100, 100)?.direction).toBe("flat");
   });
 
   it("returns flat when both zero", () => {
-    expect(computeDelta(0, 0).direction).toBe("flat");
+    expect(computeDelta(0, 0)?.direction).toBe("flat");
   });
 
-  it("caps at 100% when previous is 0 and current is positive", () => {
-    const d = computeDelta(500, 0);
-    expect(d.direction).toBe("up");
-    expect(d.value).toBe(1);
+  it("returns null when previous is 0 (no baseline)", () => {
+    expect(computeDelta(500, 0)).toBeNull();
   });
 
-  it("handles null previous", () => {
-    const d = computeDelta(100, null);
-    expect(d.direction).toBe("up");
+  it("returns null when previous is null (no baseline)", () => {
+    expect(computeDelta(100, null)).toBeNull();
   });
 });
 

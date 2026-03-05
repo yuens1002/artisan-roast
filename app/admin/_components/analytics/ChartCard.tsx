@@ -42,7 +42,7 @@ export function ChartCard({
   className,
 }: ChartCardProps) {
   return (
-    <Card className={cn("overflow-hidden shadow-none", className)}>
+    <Card className={cn("flex flex-col overflow-hidden shadow-none", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
           <CardTitle className="text-base font-medium flex items-center gap-1.5">
@@ -71,7 +71,7 @@ export function ChartCard({
           <div className="text-sm">{action}</div>
         ) : null}
       </CardHeader>
-      <CardContent className="pb-4">
+      <CardContent className="flex-1 pb-4">
         {loading ? (
           <Skeleton className="h-[250px] w-full rounded-md" />
         ) : (
