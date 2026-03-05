@@ -37,20 +37,29 @@ describe("buildOrderWhere", () => {
     expect(where.shippingState).toBe("CA");
   });
 
-  it("adds order type filter via items.some", () => {
+  it("filters SUBSCRIPTION orders by stripeSubscriptionId not-null", () => {
     const where = buildOrderWhere({
       ...baseParams,
       orderType: "SUBSCRIPTION",
     });
-    expect(where.items).toEqual({
-      some: {
-        purchaseOption: { type: "SUBSCRIPTION" },
-      },
-    });
+    // Uses indexed stripeSubscriptionId field on Order, not purchaseOption.type
+    expect(where.stripeSubscriptionId).toEqual({ not: null });
+    // orderType alone should NOT create an items filter
+    expect(where.items).toBeUndefined();
   });
 
-  it("skips items filter when orderType is ALL", () => {
+  it("filters ONE_TIME orders by stripeSubscriptionId null", () => {
+    const where = buildOrderWhere({
+      ...baseParams,
+      orderType: "ONE_TIME",
+    });
+    expect(where.stripeSubscriptionId).toBeNull();
+    expect(where.items).toBeUndefined();
+  });
+
+  it("skips orderType filter entirely when ALL", () => {
     const where = buildOrderWhere({ ...baseParams, orderType: "ALL" });
+    expect(where.stripeSubscriptionId).toBeUndefined();
     expect(where.items).toBeUndefined();
   });
 
@@ -80,16 +89,18 @@ describe("buildOrderWhere", () => {
     });
   });
 
-  it("combines orderType + productId in same items filter", () => {
+  it("combines orderType (stripeSubscriptionId) + productId (items) independently", () => {
     const where = buildOrderWhere({
       ...baseParams,
       orderType: "ONE_TIME",
       productId: "prod-1",
     });
+    // orderType → flat field on Order
+    expect(where.stripeSubscriptionId).toBeNull();
+    // productId → nested items filter (no purchaseOption.type mixing)
     expect(where.items).toEqual({
       some: {
         purchaseOption: {
-          type: "ONE_TIME",
           variant: { productId: "prod-1" },
         },
       },
