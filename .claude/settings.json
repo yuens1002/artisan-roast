@@ -104,6 +104,10 @@
       "mcp__ide__getDiagnostics"
     ]
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "hooks": {
     "SessionStart": [
       {
