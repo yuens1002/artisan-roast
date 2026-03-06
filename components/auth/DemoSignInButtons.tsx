@@ -1,24 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Loader2, ShieldCheck, User } from "lucide-react";
+import { demoSignIn } from "@/app/auth/actions";
 
-// Demo credentials - only used when NEXT_PUBLIC_DEMO_MODE is true
+// Display config only — credentials are kept server-side in the action
 const DEMO_ACCOUNTS = {
   admin: {
-    email: "admin@artisanroast.com",
-    password: "ivcF8ZV3FnGaBJ&#8j",
-    redirectTo: "/admin",
     label: "Sign in as Admin",
     description: "Full dashboard access",
     icon: ShieldCheck,
   },
   customer: {
-    email: "demo@artisanroast.com",
-    password: "ixcF8ZV3FnGaBJ&#8j",
-    redirectTo: "/account",
     label: "Sign in as Demo Customer",
     description: "View orders, recommendations",
     icon: User,
@@ -33,6 +27,7 @@ type AccountType = keyof typeof DEMO_ACCOUNTS;
  */
 export function DemoSignInButtons() {
   const [loading, setLoading] = useState<AccountType | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Only show in demo mode
   if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
@@ -41,16 +36,20 @@ export function DemoSignInButtons() {
 
   const handleDemoSignIn = async (accountType: AccountType) => {
     setLoading(accountType);
-    const account = DEMO_ACCOUNTS[accountType];
+    setError(null);
 
     try {
-      await signIn("credentials", {
-        email: account.email,
-        password: account.password,
-        callbackUrl: account.redirectTo,
-      });
-    } catch (error) {
-      console.error("Demo sign-in failed:", error);
+      const result = await demoSignIn(accountType);
+      if (result?.error) {
+        setError(result.error);
+        setLoading(null);
+      }
+    } catch (err) {
+      // Next.js redirect throws NEXT_REDIRECT — rethrow it
+      if (err instanceof Error && err.message?.includes("NEXT_REDIRECT")) {
+        throw err;
+      }
+      setError("Something went wrong. Please try again.");
       setLoading(null);
     }
   };
@@ -60,6 +59,10 @@ export function DemoSignInButtons() {
       <div className="text-center text-xs text-muted-foreground">
         Quick demo access
       </div>
+
+      {error && (
+        <div className="text-center text-sm text-destructive">{error}</div>
+      )}
 
       <div className="grid gap-2">
         {(Object.keys(DEMO_ACCOUNTS) as AccountType[]).map((accountType) => {

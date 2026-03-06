@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.93.4 - 2026-03-05
+
+### Fixed
+
+- **Demo sign-in**: Move credentials to server action — fixes broken demo login and removes password exposure from client bundle
+- **Demo banner**: Use server-side auth check so banner hides immediately after login (no stale session race)
+
+### Changed
+
+- Demo customer sign-in now redirects to homepage instead of account page
+
 ## 0.93.3 - 2026-03-05
 
 ### Fixed

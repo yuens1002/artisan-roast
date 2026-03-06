@@ -11,6 +11,53 @@ import { isStrongPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 
+// --- Demo sign-in (credentials stay server-side) ---
+
+const DEMO_CREDENTIALS = {
+  admin: {
+    email: "admin@artisanroast.com",
+    password: "ivcF8ZV3FnGaBJ&#8j",
+    redirectTo: "/admin",
+  },
+  customer: {
+    email: "demo@artisanroast.com",
+    password: "ixcF8ZV3FnGaBJ&#8j",
+    redirectTo: "/",
+  },
+} as const;
+
+type DemoAccountType = keyof typeof DEMO_CREDENTIALS;
+
+export async function demoSignIn(
+  accountType: string
+): Promise<{ error?: string }> {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+    return { error: "Demo mode is not enabled" };
+  }
+
+  if (accountType !== "admin" && accountType !== "customer") {
+    return { error: "Invalid account type" };
+  }
+
+  const account = DEMO_CREDENTIALS[accountType as DemoAccountType];
+
+  try {
+    await signIn("credentials", {
+      email: account.email,
+      password: account.password,
+      redirectTo: account.redirectTo,
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { error: "Demo sign-in failed. Please try again." };
+    }
+    // Next.js redirects are thrown as errors — rethrow
+    throw error;
+  }
+
+  return { error: "Something went wrong" };
+}
+
 // Validation schemas
 const credentialsSchema = z.object({
   email: z.string().email("Invalid email address"),

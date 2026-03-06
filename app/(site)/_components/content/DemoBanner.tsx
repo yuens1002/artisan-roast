@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { ArrowRight, X, Zap } from "lucide-react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -18,8 +17,11 @@ type Phase = "idle" | "exit" | "enter";
  * Only renders when NEXT_PUBLIC_DEMO_MODE env var is set to "true" and user is not logged in.
  * CTA text cycles with a slide-up ticker animation.
  */
-export function DemoBanner() {
-  const { data: session } = useSession();
+interface DemoBannerProps {
+  isAuthenticated: boolean;
+}
+
+export function DemoBanner({ isAuthenticated }: DemoBannerProps) {
   const [isDismissed, setIsDismissed] = useState(false);
   const [ctaIndex, setCtaIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -50,7 +52,7 @@ export function DemoBanner() {
   }, [cycle]);
 
   // Only show in demo mode when not logged in
-  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true" || isDismissed || session?.user) {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true" || isDismissed || isAuthenticated) {
     return null;
   }
 
