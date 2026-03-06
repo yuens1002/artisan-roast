@@ -38,9 +38,10 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
   const [theme, session] = await Promise.all([
     getStorefrontTheme(),
-    auth(),
+    isDemoMode ? auth() : Promise.resolve(null),
   ]);
   const fontsUrl =
     theme && theme !== "default" ? await getThemeFontsUrl(theme) : null;

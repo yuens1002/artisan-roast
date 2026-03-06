@@ -31,6 +31,10 @@ type DemoAccountType = keyof typeof DEMO_CREDENTIALS;
 export async function demoSignIn(
   accountType: string
 ): Promise<{ error?: string }> {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+    return { error: "Demo mode is not enabled" };
+  }
+
   if (accountType !== "admin" && accountType !== "customer") {
     return { error: "Invalid account type" };
   }

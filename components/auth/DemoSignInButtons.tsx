@@ -44,8 +44,13 @@ export function DemoSignInButtons() {
         setError(result.error);
         setLoading(null);
       }
-    } catch {
-      // Next.js redirect throws — this is expected on success
+    } catch (err) {
+      // Next.js redirect throws NEXT_REDIRECT — rethrow it
+      if (err instanceof Error && err.message?.includes("NEXT_REDIRECT")) {
+        throw err;
+      }
+      setError("Something went wrong. Please try again.");
+      setLoading(null);
     }
   };
 

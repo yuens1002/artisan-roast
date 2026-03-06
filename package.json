@@ -132,7 +132,6 @@
     "markdownlint-cli2": "^0.21.0",
     "prisma": "^7.2.0",
     "puppeteer": "^24.37.2",
-    "shadcn": "^3.8.5",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.5",
     "tsx": "^4.20.6",
