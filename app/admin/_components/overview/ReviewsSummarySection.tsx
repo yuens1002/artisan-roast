@@ -129,7 +129,7 @@ export function ReviewsSummarySection({ data }: ReviewsSummarySectionProps) {
 
         {/* Latest review */}
         {data.latestReview && (
-          <div className="pt-2 border-t border-border/50 space-y-1">
+          <div className="pt-4 border-t border-border/50 space-y-1 pb-2">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-muted-foreground">
                 Latest

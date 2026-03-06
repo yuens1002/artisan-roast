@@ -279,7 +279,7 @@ function DateRangePickerView({
           >
             <CalendarIcon className="h-3.5 w-3.5" />
             <span className="text-muted-foreground">{triggerPreset}</span>
-            {triggerDates}
+            <span className="hidden sm:inline">{triggerDates}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

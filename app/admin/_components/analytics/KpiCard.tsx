@@ -134,7 +134,7 @@ export function KpiCard({
 
         {/* Value with inline metric labels */}
         <div className="mt-3">
-          <span className="text-3xl font-bold tracking-tight">
+          <span className="text-2xl sm:text-3xl font-bold tracking-tight">
             {formatByType(value, format)}
           </span>
           {valueLabel && (
@@ -153,7 +153,7 @@ export function KpiCard({
               <span className="text-xl text-muted-foreground font-normal mx-1.5">
                 /
               </span>
-              <span className="text-3xl font-bold tracking-tight">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight">
                 {formatByType(secondaryValue, secondaryFormat)}
               </span>
               {secondaryValueLabel && (

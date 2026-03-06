@@ -55,7 +55,7 @@ export function TrendChart({
 
   return (
     <ChartContainer config={config} className={className}>
-      <AreaChart data={mergedData} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
+      <AreaChart data={mergedData} margin={{ left: 0, right: 4, top: 8, bottom: 0 }}>
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="date"
@@ -73,7 +73,7 @@ export function TrendChart({
           tickLine={false}
           axisLine={false}
           tickFormatter={(v: number) => formatCompactCurrency(v)}
-          width={60}
+          width={48}
         />
         {secondaryLabel && (
           <YAxis
@@ -81,7 +81,7 @@ export function TrendChart({
             orientation="right"
             tickLine={false}
             axisLine={false}
-            width={40}
+            width={30}
           />
         )}
         <ChartTooltip content={<ChartTooltipContent />} />

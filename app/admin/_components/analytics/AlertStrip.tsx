@@ -13,7 +13,7 @@ export function AlertStrip({ alerts, className }: AlertStripProps) {
   if (alerts.length === 0) return null;
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)} role="alert">
+    <div className={cn("flex items-center gap-2 overflow-x-auto scrollbar-none pb-1", className)} role="alert">
       {alerts.map((alert, i) => {
         const Icon = alert.severity === "error" ? XCircle : AlertTriangle;
         const badge = (
@@ -21,7 +21,7 @@ export function AlertStrip({ alerts, className }: AlertStripProps) {
             key={i}
             variant="outline"
             className={cn(
-              "gap-1.5 py-1 px-2.5 text-sm font-normal",
+              "shrink-0 gap-1.5 py-1 px-2.5 text-sm font-normal",
               alert.severity === "error"
                 ? "border-red-300 bg-red-50/60 text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-400"
                 : "border-amber-300 bg-amber-50/60 text-amber-700 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-400"
@@ -35,7 +35,7 @@ export function AlertStrip({ alerts, className }: AlertStripProps) {
 
         if (alert.href) {
           return (
-            <Link key={i} href={alert.href} className="transition-opacity hover:opacity-80">
+            <Link key={i} href={alert.href} className="shrink-0 transition-opacity hover:opacity-80">
               {badge}
             </Link>
           );

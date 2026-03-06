@@ -6,18 +6,21 @@ import { DashboardTabNav } from "./DashboardTabNav";
 interface DashboardPageTemplateProps {
   title: string;
   subtitle?: string;
+  /** Show the Overview / Sales / Analytics tab bar (default: true) */
+  showTabs?: boolean;
   children: React.ReactNode;
 }
 
 export function DashboardPageTemplate({
   title,
   subtitle,
+  showTabs = true,
   children,
 }: DashboardPageTemplateProps) {
   return (
     <>
       <PageTitle title={title} subtitle={subtitle} />
-      <DashboardTabNav />
+      {showTabs && <DashboardTabNav />}
       <div className="space-y-4">{children}</div>
     </>
   );

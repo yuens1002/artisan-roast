@@ -56,7 +56,7 @@ export function DonutChart({
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Pie chart — fills available card space, PieChart keeps it circular */}
-      <ChartContainer config={config} className="flex-1 min-h-0 w-full aspect-auto">
+      <ChartContainer config={config} className="flex-1 min-h-48 w-full aspect-auto">
         <PieChart>
           <ChartTooltip
             content={

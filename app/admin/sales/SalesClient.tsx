@@ -140,7 +140,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
   // ── Loading / error states ─────────────────────────────────────
   if (isLoading && !data) {
     return (
-      <DashboardPageTemplate title={ADMIN_PAGES.sales.label} subtitle={ADMIN_PAGES.sales.description}>
+      <DashboardPageTemplate title={ADMIN_PAGES.sales.label} subtitle={ADMIN_PAGES.sales.description} showTabs={false}>
         <SkeletonDashboard />
       </DashboardPageTemplate>
     );
@@ -148,7 +148,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
 
   if (!data) {
     return (
-      <DashboardPageTemplate title={ADMIN_PAGES.sales.label} subtitle={ADMIN_PAGES.sales.description}>
+      <DashboardPageTemplate title={ADMIN_PAGES.sales.label} subtitle={ADMIN_PAGES.sales.description} showTabs={false}>
         <p className="text-muted-foreground">Failed to load sales data.</p>
       </DashboardPageTemplate>
     );
@@ -220,7 +220,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
   ];
 
   return (
-    <DashboardPageTemplate title={ADMIN_PAGES.sales.label} subtitle={ADMIN_PAGES.sales.description}>
+    <DashboardPageTemplate title={ADMIN_PAGES.sales.label} subtitle={ADMIN_PAGES.sales.description} showTabs={false}>
       {/* Period selector + Export */}
       <DashboardToolbar onExport={handleExportCsv}>
         <DateRangePicker

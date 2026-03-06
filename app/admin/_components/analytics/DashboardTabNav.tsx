@@ -15,17 +15,17 @@ export function DashboardTabNav({ className }: { className?: string }) {
   const pathname = usePathname();
 
   return (
-    <nav className={cn("mb-4", className)}>
-      <div className="bg-muted inline-flex h-9 items-center rounded-lg p-[3px]">
+    <nav className={cn("mb-4 overflow-x-auto scrollbar-none", className)}>
+      <div className="bg-muted inline-flex h-9 items-center rounded-lg p-[3px] whitespace-nowrap">
         {TABS.map((tab) => (
           <Link
             key={tab.href}
             href={tab.href}
             className={cn(
-              "inline-flex h-[calc(100%-1px)] items-center rounded-md px-3 py-1 text-sm font-medium transition-[color,box-shadow]",
+              "inline-flex h-[calc(100%-1px)] items-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow]",
               pathname === tab.href
                 ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"
             )}
           >
             {tab.label}

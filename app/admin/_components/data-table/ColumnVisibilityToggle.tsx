@@ -26,8 +26,7 @@ export function ColumnVisibilityToggle({
   onVisibilityChange,
 }: ColumnVisibilityToggleProps) {
   return (
-    <div className="hidden md:block">
-      <DropdownMenu>
+    <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon-sm">
             <Columns3 className="h-4 w-4" />
@@ -47,6 +46,5 @@ export function ColumnVisibilityToggle({
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
   );
 }
