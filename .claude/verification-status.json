@@ -133,6 +133,14 @@
       "acs_doc": "docs/plans/admin-overview-makeover-ACs.md, docs/plans/sales-analytics-page-ACs.md",
       "notes": "50/50 ACs verified (25 overview + 25 sales). Overview: 12 FN + 10 UI + 3 REG. Sales: 13 FN + 8 UI + 4 REG. All verified via Puppeteer screenshots (36 total) + code review + API validation + precheck (0 errors) + test:ci (995 tests). 0 iterations needed."
     },
+    "feat/admin-order-detail": {
+      "status": "implementing",
+      "acs_passed": 0,
+      "acs_total": 20,
+      "tasks": [],
+      "acs_doc": "docs/plans/admin-order-detail-ACs.md",
+      "notes": "6 FN + 7 UI + 4 NAV + 3 REG ACs. Shared order detail component, admin order detail page, double-click navigation."
+    },
     "feat/analytics-page-restyle": {
       "status": "planned",
       "acs_passed": 0,

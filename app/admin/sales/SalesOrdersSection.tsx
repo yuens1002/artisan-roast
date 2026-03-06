@@ -19,6 +19,7 @@ interface SalesOrdersSectionProps {
   columnVisibility: Record<string, boolean>;
   onVisibilityChange: (columnId: string, visible: boolean) => void;
   totalOrders: number;
+  onRowDoubleClick?: (row: SalesRow) => void;
 }
 
 export function SalesOrdersSection({
@@ -28,6 +29,7 @@ export function SalesOrdersSection({
   columnVisibility,
   onVisibilityChange,
   totalOrders,
+  onRowDoubleClick,
 }: SalesOrdersSectionProps) {
   return (
     <ChartCard title="Orders" titleIcon={ShoppingCart} description="Individual order details">
@@ -63,7 +65,7 @@ export function SalesOrdersSection({
           ],
         }}
       />
-      <DataTable table={table} stickyHeader fitContainer />
+      <DataTable table={table} stickyHeader fitContainer onRowDoubleClick={onRowDoubleClick} />
     </ChartCard>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import {
@@ -89,6 +90,7 @@ type Order = {
 };
 
 export default function OrderManagementClient() {
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -563,7 +565,12 @@ export default function OrderManagementClient() {
           {/* Mobile/Tablet Card Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:hidden">
             {filteredOrders.map((order) => (
-              <Card key={order.id} className="py-0 gap-0">
+              <Card
+                key={order.id}
+                className="py-0 gap-0 cursor-pointer"
+                title="Double-click to view order"
+                onDoubleClick={() => router.push(`/admin/orders/${order.id}`)}
+              >
                 <MobileRecordCard
                   type="order"
                   status={order.status}
@@ -628,7 +635,12 @@ export default function OrderManagementClient() {
                 </thead>
                 <tbody className="divide-y">
                   {filteredOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-muted/30">
+                    <tr
+                      key={order.id}
+                      className="hover:bg-muted/30 cursor-pointer"
+                      title="Double-click to view order"
+                      onDoubleClick={() => router.push(`/admin/orders/${order.id}`)}
+                    >
                       <td className="py-4 px-4">
                         {order.stripeSubscriptionId && (
                           <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full inline-block mb-1">

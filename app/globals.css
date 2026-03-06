@@ -340,3 +340,47 @@ We define CSS variables for each theme.
   animation: fade-in-up 0.4s ease-out both;
 }
 
+/* Print styles for order detail page */
+@media print {
+  /* Hide navigation chrome */
+  nav,
+  aside,
+  header,
+  footer,
+  [data-sidebar],
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Reset layout — full width, no sidebar offset */
+  body,
+  main {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Force light background for print */
+  * {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+
+  /* Preserve colored text for specific elements */
+  .text-green-600,
+  .text-green-400,
+  .text-orange-600,
+  .text-orange-400,
+  .text-red-600 {
+    color: inherit !important;
+  }
+
+  /* Show print-only elements */
+  .print\\:block {
+    display: block !important;
+  }
+}
+
