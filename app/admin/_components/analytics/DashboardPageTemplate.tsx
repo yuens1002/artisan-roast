@@ -6,7 +6,7 @@ import { DashboardTabNav } from "./DashboardTabNav";
 interface DashboardPageTemplateProps {
   title: string;
   subtitle?: string;
-  /** Show the Overview / Sales / Trends tab bar (default: true) */
+  /** Show the Overview / Sales / Analytics tab bar (default: true) */
   showTabs?: boolean;
   children: React.ReactNode;
 }

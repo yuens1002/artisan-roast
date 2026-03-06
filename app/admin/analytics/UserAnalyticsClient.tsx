@@ -102,6 +102,7 @@ export default function UserAnalyticsClient() {
     <DashboardPageTemplate
       title={ADMIN_PAGES.analytics.label}
       subtitle={ADMIN_PAGES.analytics.description}
+      showTabs={false}
     >
       {/* Toolbar — period + export */}
       <DashboardToolbar onExport={handleExportCsv}>
