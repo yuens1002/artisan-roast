@@ -340,3 +340,38 @@ We define CSS variables for each theme.
   animation: fade-in-up 0.4s ease-out both;
 }
 
+/* Print styles — scoped to pages with data-print-page on body */
+@media print {
+  /* Hide navigation chrome */
+  body[data-print-page] nav,
+  body[data-print-page] aside,
+  body[data-print-page] header,
+  body[data-print-page] footer,
+  body[data-print-page] [data-sidebar],
+  body[data-print-page] [data-print-hide] {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  body[data-print-page] [data-print-show] {
+    display: block !important;
+  }
+
+  /* Reset layout — full width, no sidebar offset */
+  body[data-print-page],
+  body[data-print-page] main {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Force light background for print */
+  body[data-print-page] * {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+}
+

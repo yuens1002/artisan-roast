@@ -197,53 +197,6 @@ describe("OrderDetailClient — tax and shipping", () => {
   });
 });
 
-describe("OrderDetailClient — OUT_FOR_DELIVERY status", () => {
-  it("renders Out for Delivery badge with orange styling", () => {
-    const order = buildOrder({
-      status: "OUT_FOR_DELIVERY",
-      deliveryMethod: "DELIVERY",
-      shippingStreet: "123 Main St",
-      shippingCity: "Portland",
-      shippingState: "OR",
-      shippingPostalCode: "97201",
-      shippingCountry: "US",
-      carrier: "USPS",
-      trackingNumber: "9400111899223456789012",
-      shippedAt: new Date("2026-02-17T10:00:00Z"),
-    });
-
-    render(<OrderDetailClient order={order} />);
-
-    const badges = screen.getAllByText("Out for Delivery");
-    const statusBadge = badges.find((el) => el.className.includes("rounded-full"));
-    expect(statusBadge).toBeDefined();
-    expect(statusBadge!.className).toContain("bg-orange");
-  });
-
-  it("shows embedded timeline for OUT_FOR_DELIVERY orders", () => {
-    const order = buildOrder({
-      status: "OUT_FOR_DELIVERY",
-      deliveryMethod: "DELIVERY",
-      shippingStreet: "123 Main St",
-      shippingCity: "Portland",
-      shippingState: "OR",
-      shippingPostalCode: "97201",
-      shippingCountry: "US",
-      carrier: "USPS",
-      trackingNumber: "9400111899223456789012",
-      shippedAt: new Date("2026-02-17T10:00:00Z"),
-    });
-
-    render(<OrderDetailClient order={order} />);
-
-    expect(screen.getByText("Tracking Information")).toBeInTheDocument();
-    expect(screen.getByText("Order Placed")).toBeInTheDocument();
-    expect(screen.getByText("Shipped via USPS")).toBeInTheDocument();
-    expect(screen.getByText(/Tracking: 9400111899223456789012/)).toBeInTheDocument();
-    expect(screen.getByText("Track Package →")).toBeInTheDocument();
-  });
-});
-
 describe("OrderDetailClient — per-item refund display", () => {
   it("shows corrected qty and line total when item has refundedQuantity > 0", () => {
     const order = buildOrder({

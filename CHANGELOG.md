@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.94.0 - 2026-03-07
+
+### Added
+
+- **Admin order detail page**: New `/admin/orders/[orderId]` with shared order detail components (OrderInfo, OrderSummary, OrderItems cards)
+- **Order detail layout**: 2-column grid (Order Information + Order Summary) above full-width Order Items table, inspired by shadcnuikit invoice pattern
+- **Product images in order items**: Variant images with `getPlaceholderImage` fallback for consistent thumbnails
+- **Buy Again button**: Per-item CTA using `useAddToCartWithFeedback` hook — transforms through Adding → Added → Buy Now / View Cart states
+- **Product links in order items**: Storefront links to product page, admin links to product edit page
+- **Admin-specific order info**: Customer email/phone, Stripe payment and subscription links
+- **Per-item refund display**: Strikethrough original qty with red refund indicator, corrected line totals
+- **Print support**: Inline print button with data-attribute-based print styles
+
+### Fixed
+
+- **Cart add-ons API**: Guard against undefined product IDs from stale cart data (returns empty instead of 500)
+- **Order detail Prisma query**: Add missing `product.id` to select clause — fixes broken admin product links and Buy Again `productId`
+
 ## 0.93.6 - 2026-03-07
 
 ### Fixed

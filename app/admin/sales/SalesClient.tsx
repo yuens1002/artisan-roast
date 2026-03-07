@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
@@ -46,6 +47,7 @@ interface SalesClientProps {
 }
 
 export default function SalesClient({ weightUnit }: SalesClientProps) {
+  const router = useRouter();
   const [period, setPeriod] = useState<PeriodPreset>("30d");
   const [compare, setCompare] = useState<CompareMode>("previous");
   const [customFrom, setCustomFrom] = useState<string | undefined>();
@@ -254,6 +256,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
         columnVisibility={columnVisibility}
         onVisibilityChange={handleVisibilityChange}
         totalOrders={data.table?.total ?? 0}
+        onRowDoubleClick={(row) => router.push(`/admin/orders/${row.id}`)}
       />
     </DashboardPageTemplate>
   );
