@@ -36,6 +36,7 @@ export default async function AdminOrderDetailPage({
                       id: true,
                       name: true,
                       slug: true,
+                      type: true,
                     },
                   },
                 },

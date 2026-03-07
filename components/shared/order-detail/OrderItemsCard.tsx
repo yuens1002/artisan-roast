@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ProductType } from "@prisma/client";
 import { formatPrice } from "@/components/shared/record-utils";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
@@ -22,6 +23,12 @@ import type { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
 interface OrderItemsCardProps {
   order: OrderWithItems;
   variant: "storefront" | "admin";
+}
+
+function placeholderCategory(item: OrderItemWithDetails) {
+  return item.purchaseOption.variant.product.type === ProductType.MERCH
+    ? "culture" as const
+    : "beans" as const;
 }
 
 function BuyAgainButton({ item }: { item: OrderItemWithDetails }) {
@@ -38,7 +45,7 @@ function BuyAgainButton({ item }: { item: OrderItemWithDetails }) {
     purchaseOptionId: po.id,
     purchaseType: po.type as "ONE_TIME" | "SUBSCRIPTION",
     priceInCents: po.priceInCents,
-    imageUrl: po.variant.images?.[0]?.url ?? getPlaceholderImage(po.variant.product.name, 400),
+    imageUrl: po.variant.images?.[0]?.url ?? getPlaceholderImage(po.variant.product.name, 400, placeholderCategory(item)),
     billingInterval: po.billingInterval ?? undefined,
     billingIntervalCount: po.intervalCount ?? undefined,
   };
@@ -118,7 +125,7 @@ export function OrderItemsCard({ order, variant }: OrderItemsCardProps) {
                     <Image
                       src={
                         item.purchaseOption.variant.images?.[0]?.url ??
-                        getPlaceholderImage(item.purchaseOption.variant.product.name, 400)
+                        getPlaceholderImage(item.purchaseOption.variant.product.name, 400, placeholderCategory(item))
                       }
                       alt={
                         item.purchaseOption.variant.images?.[0]?.altText ??
