@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, subDays, addDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -104,35 +104,61 @@ function UrlSyncedDateRangePicker({ className, hideCompare }: { className?: stri
   const customFrom = searchParams.get("from") ?? undefined;
   const customTo = searchParams.get("to") ?? undefined;
 
+  // Batch multiple synchronous URL param changes (e.g. compare + period
+  // from handleApply) into a single router.push to prevent race conditions
+  // where the second push overwrites the first.
+  const pendingParamsRef = useRef<URLSearchParams | null>(null);
+  const flushScheduledRef = useRef(false);
+
+  const getParams = useCallback(() => {
+    if (!pendingParamsRef.current) {
+      pendingParamsRef.current = new URLSearchParams(searchParams.toString());
+    }
+    return pendingParamsRef.current;
+  }, [searchParams]);
+
+  const scheduleFlush = useCallback(() => {
+    if (!flushScheduledRef.current) {
+      flushScheduledRef.current = true;
+      queueMicrotask(() => {
+        if (pendingParamsRef.current) {
+          router.push(`?${pendingParamsRef.current.toString()}`);
+          pendingParamsRef.current = null;
+        }
+        flushScheduledRef.current = false;
+      });
+    }
+  }, [router]);
+
   const handlePeriodChange = useCallback(
     (preset: PeriodPreset) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = getParams();
       params.set("period", preset);
       params.delete("from");
       params.delete("to");
-      router.push(`?${params.toString()}`);
+      scheduleFlush();
     },
-    [router, searchParams]
+    [getParams, scheduleFlush]
   );
 
   const handleCompareChange = useCallback(
     (mode: CompareMode) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = getParams();
       params.set("compare", mode);
-      router.push(`?${params.toString()}`);
+      scheduleFlush();
     },
-    [router, searchParams]
+    [getParams, scheduleFlush]
   );
 
   const handleCustomRangeChange = useCallback(
     (from: string, to: string) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = getParams();
       params.set("from", from);
       params.set("to", to);
       params.delete("period");
-      router.push(`?${params.toString()}`);
+      scheduleFlush();
     },
-    [router, searchParams]
+    [getParams, scheduleFlush]
   );
 
   return (
@@ -226,12 +252,12 @@ function DateRangePickerView({
     }
 
     if (pendingPreset) {
-      // Apply a preset
-      onPeriodChange(pendingPreset);
-      // Clear custom range if there was one
-      if (isCustom && onCustomRangeChange) {
-        // Signal to parent that we're back on a preset
-        // (parent should clear customFrom/customTo when onPeriodChange is called)
+      // Only call onPeriodChange when the preset actually changed or
+      // when switching from a custom range back to a preset.
+      // Skipping the redundant call prevents a second router.push in URL
+      // mode from overwriting the compare change above.
+      if (pendingPreset !== period || isCustom) {
+        onPeriodChange(pendingPreset);
       }
     } else if (pendingCustomFrom && pendingCustomTo && onCustomRangeChange) {
       // Normalize to [fromInclusive, toExclusive) — start-of-day and start-of-next-day

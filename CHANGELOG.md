@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.93.6 - 2026-03-07
+
+### Fixed
+
+- **Compare feature**: "No comparison" selection now works on all admin dashboard pages — previously the compare change was silently lost due to a race between two `router.push` calls in URL mode
+- **DateRangePicker**: Batch synchronous URL param updates into a single navigation to prevent race conditions when changing both period and comparison mode
+
 ## 0.93.4 - 2026-03-05
 
 ### Fixed
