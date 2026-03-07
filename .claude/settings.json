@@ -1,4 +1,8 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "permissions": {
     "allow": [
       "Bash(git status:*)",
@@ -101,12 +105,15 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:artisanroast.app)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(lsof -ti:3000)",
+      "mcp__shadcn-studio-mcp__get-refine-instructions",
+      "mcp__shadcn-studio-mcp__get-component-meta-content",
+      "mcp__shadcn-studio-mcp__collect_selected_components",
+      "mcp__shadcn-studio-mcp__get_add_command_for_components",
+      "WebFetch(domain:shadcnuikit.com)",
+      "Bash(lsof -ti :3000)"
     ]
-  },
-  "attribution": {
-    "commit": "",
-    "pr": ""
   },
   "hooks": {
     "SessionStart": [

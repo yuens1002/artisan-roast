@@ -102,12 +102,19 @@ Run before any commit: `npm run precheck` (TypeScript + ESLint)
 - Auth checks in every server action
 - Inputs validated at system boundaries (user input, external APIs)
 - Semantic HTML + ARIA labels
+- Use shadcn/ui skills (`/cui`, `/rui`, `/iui`, `/ftc`) when building UI
 
 **Testing:**
 
 - Unit tests: `*.test.ts` / `*.test.tsx` co-located in `__tests__/`
 - Mock Prisma: `jest.mock('@prisma/client')`
 - Mock Next.js router: `jest.mock('next/navigation')`
+
+**Puppeteer screenshots:**
+
+- NEVER use `fullPage: true` — produces huge images that freeze the session when read. Use viewport-only (`fullPage: false` or omit) or element screenshots (`element.screenshot()`)
+- Prefer element screenshots for targeted verification: `const el = await page.$(selector); await el?.screenshot({ path })`
+- Use demo sign-in buttons (not hardcoded credentials) when `NEXT_PUBLIC_DEMO_MODE=true`
 
 ---
 

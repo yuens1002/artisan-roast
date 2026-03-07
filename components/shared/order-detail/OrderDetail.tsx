@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { OrderItemsCard } from "./OrderItemsCard";
 import { OrderInfoCard } from "./OrderInfoCard";
-import { ShippingInfoCard } from "./ShippingInfoCard";
+import { OrderSummaryCard } from "./OrderSummaryCard";
 import type { OrderWithItems } from "@/lib/types";
 
 export interface OrderDetailProps {
   order: OrderWithItems;
   variant: "storefront" | "admin";
-  backLink: { href: string; label: string };
+  backLink?: { href: string; label: string };
 }
 
 export function OrderDetail({ order, variant, backLink }: OrderDetailProps) {
@@ -28,36 +28,48 @@ export function OrderDetail({ order, variant, backLink }: OrderDetailProps) {
         <hr className="my-2" />
       </div>
 
-      {/* Header with back button */}
+      {/* Header */}
       <div className="mb-6">
-        <Button variant="ghost" asChild className="mb-4" data-print-hide>
-          <Link href={backLink.href} className="flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            {backLink.label}
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Order #{displayId}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Placed on{" "}
-            {format(new Date(order.createdAt), "MMMM d, yyyy 'at' h:mm a")}
-          </p>
+        {backLink && (
+          <Button variant="ghost" asChild className="mb-4 -ml-2" data-print-hide>
+            <Link href={backLink.href} className="flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              {backLink.label}
+            </Link>
+          </Button>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              Order #{displayId}
+            </h1>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              data-print-hide
+              onClick={() => window.print()}
+            >
+              <Printer className="h-4 w-4" />
+              <span className="sr-only">Print order</span>
+            </Button>
+          </div>
         </div>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          Placed on{" "}
+          {format(new Date(order.createdAt), "MMMM d, yyyy 'at' h:mm a")}
+        </p>
       </div>
 
       <div className="space-y-6">
-        <OrderItemsCard order={order} variant={variant} />
-
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          <div className="md:col-span-3">
-            <OrderInfoCard order={order} variant={variant} />
-          </div>
-          <div className="md:col-span-2">
-            <ShippingInfoCard order={order} variant={variant} />
-          </div>
+        {/* Two-column grid: Order Info + Order Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <OrderInfoCard order={order} variant={variant} />
+          <OrderSummaryCard order={order} />
         </div>
+
+        {/* Full-width items table */}
+        <OrderItemsCard order={order} variant={variant} />
       </div>
     </>
   );

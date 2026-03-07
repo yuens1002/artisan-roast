@@ -25,9 +25,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ addOns: [] });
     }
 
+    // Filter out invalid IDs (e.g. undefined from stale cart data)
+    const validIds = productIds.filter(
+      (id): id is string => typeof id === "string" && id.length > 0
+    );
+    if (validIds.length === 0) {
+      return NextResponse.json({ addOns: [] });
+    }
+
     const addOns = await prisma.addOnLink.findMany({
       where: {
-        primaryProductId: { in: productIds },
+        primaryProductId: { in: validIds },
         addOnProduct: { isDisabled: false },
         OR: [
           { addOnVariant: { stockQuantity: { gt: 0 } } },

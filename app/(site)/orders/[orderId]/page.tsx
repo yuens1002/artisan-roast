@@ -26,8 +26,14 @@ export default async function OrderDetailPage({
             include: {
               variant: {
                 include: {
+                  images: {
+                    select: { url: true, altText: true },
+                    orderBy: { order: "asc" },
+                    take: 1,
+                  },
                   product: {
                     select: {
+                      id: true,
                       name: true,
                       slug: true,
                     },

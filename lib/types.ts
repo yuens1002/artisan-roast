@@ -87,6 +87,7 @@ export interface OrderItemWithDetails {
       id: string;
       name: string;
       productId: string;
+      images?: { url: string; altText: string }[];
       product: {
         id: string;
         name: string;
