@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.94.1 - 2026-03-07
+
+### Fixed
+
+- **Placeholder image category mismatch**: Merch products (e.g., Origami Cone Filters) now use correct "culture" placeholder category in order detail and Buy Again cart items, matching the product page
+
 ## 0.94.0 - 2026-03-07
 
 ### Added
