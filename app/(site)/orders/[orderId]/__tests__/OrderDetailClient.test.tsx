@@ -2,12 +2,18 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import OrderDetailClient from "../OrderDetailClient";
 import type { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 // Mock useSiteSettings
 jest.mock("@/hooks/useSiteSettings", () => ({
   useSiteSettings: () => ({
     settings: { storeName: "Test Store" },
   }),
+}));
+
+// Mock placeholder-images to verify category argument
+jest.mock("@/lib/placeholder-images", () => ({
+  getPlaceholderImage: jest.fn(() => "https://placeholder.test/image.jpg"),
 }));
 
 // Mock next/link
@@ -247,5 +253,71 @@ describe("OrderDetailClient — per-item refund display", () => {
 
     // Normal qty display, no red refund indicator
     expect(screen.queryByText(/-\d+/)).toBeNull();
+  });
+});
+
+describe("OrderDetailClient — placeholder image category", () => {
+  beforeEach(() => {
+    (getPlaceholderImage as jest.Mock).mockClear();
+  });
+
+  it("uses 'culture' category for MERCH products without variant images", () => {
+    const merchItem = buildOrderItem({
+      purchaseOption: {
+        ...buildOrderItem().purchaseOption,
+        variant: {
+          id: "var_merch",
+          name: "Default",
+          productId: "prod_merch",
+          images: [],
+          product: {
+            id: "prod_merch",
+            name: "Origami Cone Filters",
+            slug: "origami-cone-filters",
+            type: "MERCH" as never,
+            tastingNotes: [],
+          },
+        },
+      },
+    });
+
+    const order = buildOrder({ items: [merchItem] });
+    render(<OrderDetailClient order={order} />);
+
+    expect(getPlaceholderImage).toHaveBeenCalledWith(
+      "Origami Cone Filters",
+      400,
+      "culture"
+    );
+  });
+
+  it("uses 'beans' category for COFFEE products without variant images", () => {
+    const coffeeItem = buildOrderItem({
+      purchaseOption: {
+        ...buildOrderItem().purchaseOption,
+        variant: {
+          id: "var_coffee",
+          name: "12oz",
+          productId: "prod_coffee",
+          images: [],
+          product: {
+            id: "prod_coffee",
+            name: "Ethiopia Yirgacheffe",
+            slug: "ethiopia-yirgacheffe",
+            type: "COFFEE" as never,
+            tastingNotes: ["blueberry", "citrus"],
+          },
+        },
+      },
+    });
+
+    const order = buildOrder({ items: [coffeeItem] });
+    render(<OrderDetailClient order={order} />);
+
+    expect(getPlaceholderImage).toHaveBeenCalledWith(
+      "Ethiopia Yirgacheffe",
+      400,
+      "beans"
+    );
   });
 });

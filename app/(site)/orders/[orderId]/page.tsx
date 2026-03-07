@@ -36,6 +36,7 @@ export default async function OrderDetailPage({
                       id: true,
                       name: true,
                       slug: true,
+                      type: true,
                     },
                   },
                 },

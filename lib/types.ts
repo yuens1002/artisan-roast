@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, type ProductType } from "@prisma/client";
 import {
   getFeaturedProducts,
   getProductBySlug,
@@ -92,7 +92,7 @@ export interface OrderItemWithDetails {
         id: string;
         name: string;
         slug: string;
-        type: string;
+        type: ProductType;
         tastingNotes: string[];
       };
     };
