@@ -175,11 +175,17 @@ export function useSubscriptionsTable({
           if (productNames.length === 0) return "---";
           return (
             <ItemsCell
-              items={productNames.map((name, idx) => ({
-                key: String(idx),
-                name,
-                quantity: quantities[idx] ?? 1,
-              }))}
+              items={productNames.map((name, idx) => {
+                const dashIdx = name.lastIndexOf(" - ");
+                const productName = dashIdx > 0 ? name.slice(0, dashIdx) : name;
+                const variant = dashIdx > 0 ? name.slice(dashIdx + 3) : undefined;
+                return {
+                  key: String(idx),
+                  name: productName,
+                  variant,
+                  quantity: quantities[idx] ?? 1,
+                };
+              })}
             />
           );
         },
