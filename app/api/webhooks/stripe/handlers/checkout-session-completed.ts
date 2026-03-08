@@ -131,7 +131,7 @@ export async function handleCheckoutSessionCompleted(
         (item: OrderItemWithDetails) => item.purchaseOption.type === "SUBSCRIPTION"
       );
       const deliverySchedule = subscriptionItem?.purchaseOption.billingInterval
-        ? `Every ${subscriptionItem.purchaseOption.intervalCount || 1} ${subscriptionItem.purchaseOption.billingInterval}`
+        ? `Every ${subscriptionItem.purchaseOption.billingIntervalCount || 1} ${subscriptionItem.purchaseOption.billingInterval}`
         : null;
 
       await sendMerchantNotification({

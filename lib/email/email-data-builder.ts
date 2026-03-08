@@ -24,7 +24,7 @@ export function buildOrderEmailItems(
       item.purchaseOption.billingInterval
         ? formatBillingInterval(
             item.purchaseOption.billingInterval,
-            item.purchaseOption.intervalCount || 1
+            item.purchaseOption.billingIntervalCount || 1
           )
         : null,
   }));

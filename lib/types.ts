@@ -81,7 +81,7 @@ export interface OrderItemWithDetails {
     type: string;
     priceInCents: number;
     billingInterval: string | null;
-    intervalCount: number | null;
+    billingIntervalCount: number | null;
     variantId: string;
     variant: {
       id: string;

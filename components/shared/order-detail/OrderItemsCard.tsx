@@ -47,7 +47,7 @@ export function BuyAgainButton({ item }: { item: OrderItemWithDetails }) {
     priceInCents: po.priceInCents,
     imageUrl: po.variant.images?.[0]?.url ?? getPlaceholderImage(po.variant.product.name, 400, placeholderCategory(item)),
     billingInterval: po.billingInterval ?? undefined,
-    billingIntervalCount: po.intervalCount ?? undefined,
+    billingIntervalCount: po.billingIntervalCount ?? undefined,
   };
 
   const isAction = buttonState === "buy-now" || buttonState === "checkout-now";
@@ -158,7 +158,7 @@ export function OrderItemsCard({ order, variant }: OrderItemsCardProps) {
                         {item.purchaseOption.type === "SUBSCRIPTION"
                           ? `Subscription${
                               item.purchaseOption.billingInterval
-                                ? ` \u00b7 Every ${item.purchaseOption.intervalCount || 1} ${item.purchaseOption.billingInterval?.toLowerCase()}${(item.purchaseOption.intervalCount || 1) > 1 ? "s" : ""}`
+                                ? ` \u00b7 Every ${item.purchaseOption.billingIntervalCount || 1} ${item.purchaseOption.billingInterval?.toLowerCase()}${(item.purchaseOption.billingIntervalCount || 1) > 1 ? "s" : ""}`
                                 : ""
                             }`
                           : "One-time purchase"}

@@ -182,7 +182,7 @@ export function useUserOrdersTable({
                   quantity: item.quantity,
                   cadence: formatCadence(
                     item.purchaseOption.billingInterval,
-                    item.purchaseOption.intervalCount
+                    item.purchaseOption.billingIntervalCount
                   ),
                   refundedQuantity: item.refundedQuantity,
                   imageUrl:

@@ -464,6 +464,17 @@ export default function OrdersPageClient({
                           date={order.createdAt}
                           displayId={`#${order.id.slice(-8)}`}
                           detailHref={`/orders/${order.id}`}
+                          badge={
+                            order.stripeSubscriptionId ||
+                            order.items.some(
+                              (i) =>
+                                i.purchaseOption.type === "SUBSCRIPTION"
+                            ) ? (
+                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                Sub
+                              </span>
+                            ) : undefined
+                          }
                           items={order.items.map((item) => ({
                             id: item.id,
                             name: item.purchaseOption.variant.product.name,
@@ -485,7 +496,7 @@ export default function OrdersPageClient({
                               ),
                             cadence: formatCadence(
                               item.purchaseOption.billingInterval,
-                              item.purchaseOption.intervalCount
+                              item.purchaseOption.billingIntervalCount
                             ),
                           }))}
                           price={`$${(order.totalInCents / 100).toFixed(2)}`}
