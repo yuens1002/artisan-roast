@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Check, PenLine } from "lucide-react";
 import type { DataTableColumnMeta } from "@/components/shared/data-table";
 import {
