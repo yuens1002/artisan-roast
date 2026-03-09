@@ -18,7 +18,7 @@ const isDelivery = (o: Order) => o.deliveryMethod === "DELIVERY";
 const isPickup = (o: Order) => o.deliveryMethod !== "DELIVERY";
 const isInTransit = (o: Order) =>
   o.status === "SHIPPED" || o.status === "OUT_FOR_DELIVERY";
-const hasTracking = (o: Order) => !!o.trackingNumber;
+const hasTracking = (o: Order) => !!o.trackingNumber && !!o.carrier;
 const isDelivered = (o: Order) => o.status === "DELIVERED";
 const isRefundable = (o: Order) =>
   o.status !== "CANCELLED" &&

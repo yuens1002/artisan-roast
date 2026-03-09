@@ -181,7 +181,7 @@ export function useUserOrdersTable({
                         <Check className="h-3 w-3" /> Reviewed
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-primary cursor-pointer hover:underline">
+                      <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                         <PenLine className="h-3 w-3" /> Review
                       </span>
                     )

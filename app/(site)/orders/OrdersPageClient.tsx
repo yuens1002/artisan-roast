@@ -281,7 +281,7 @@ export default function OrdersPageClient({
     reviewedProductIds,
   });
 
-  const allRows = table.getRowModel().rows;
+  const allRows = table.getFilteredRowModel().rows;
   const { visibleCount, sentinelRef } = useInfiniteScroll({
     totalCount: allRows.length,
     batchSize: 10,

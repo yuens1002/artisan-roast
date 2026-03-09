@@ -10,8 +10,8 @@ export function transformToMobileActions(
 ): RecordAction[] {
   return items
     .filter(
-      (item): item is Exclude<RowActionItem, { type: "separator" }> =>
-        item.type !== "separator"
+      (item): item is Exclude<RowActionItem, { type: "separator" } | { type: "sub-menu" }> =>
+        item.type !== "separator" && item.type !== "sub-menu"
     )
     .map((item) => {
       const icon = item.icon ? (
@@ -26,13 +26,6 @@ export function transformToMobileActions(
             label: sub.label,
             onClick: sub.onClick,
           })),
-        };
-      }
-
-      if (item.type === "sub-menu") {
-        return {
-          label: item.label,
-          icon,
         };
       }
 

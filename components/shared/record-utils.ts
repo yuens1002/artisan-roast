@@ -61,67 +61,12 @@ export function formatPrice(priceInCents: number) {
   }).format(priceInCents / 100);
 }
 
-const COUNTRY_NAMES: Record<string, string> = {
-  US: "United States",
-  CA: "Canada",
-  GB: "United Kingdom",
-  AU: "Australia",
-  DE: "Germany",
-  FR: "France",
-  JP: "Japan",
-  MX: "Mexico",
-  BR: "Brazil",
-  IN: "India",
-  IT: "Italy",
-  ES: "Spain",
-  NL: "Netherlands",
-  SE: "Sweden",
-  NO: "Norway",
-  DK: "Denmark",
-  FI: "Finland",
-  NZ: "New Zealand",
-  IE: "Ireland",
-  AT: "Austria",
-  CH: "Switzerland",
-  BE: "Belgium",
-  PT: "Portugal",
-  PL: "Poland",
-  CZ: "Czech Republic",
-  KR: "South Korea",
-  SG: "Singapore",
-  HK: "Hong Kong",
-  TW: "Taiwan",
-  PH: "Philippines",
-  TH: "Thailand",
-  MY: "Malaysia",
-  ID: "Indonesia",
-  VN: "Vietnam",
-  CL: "Chile",
-  CO: "Colombia",
-  AR: "Argentina",
-  PE: "Peru",
-  ZA: "South Africa",
-  IL: "Israel",
-  AE: "United Arab Emirates",
-  SA: "Saudi Arabia",
-  RO: "Romania",
-  HU: "Hungary",
-  GR: "Greece",
-  HR: "Croatia",
-  RS: "Serbia",
-  BG: "Bulgaria",
-  SK: "Slovakia",
-  SI: "Slovenia",
-  LT: "Lithuania",
-  LV: "Latvia",
-  EE: "Estonia",
-  IS: "Iceland",
-  LU: "Luxembourg",
-  MT: "Malta",
-  CY: "Cyprus",
-};
-
 /** Map ISO 3166-1 alpha-2 code to full country name. Falls back to the code itself. */
-export function getCountryName(code: string): string {
-  return COUNTRY_NAMES[code.toUpperCase()] ?? code;
+export function getCountryName(code: string | null | undefined): string {
+  if (!code) return "";
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
 }

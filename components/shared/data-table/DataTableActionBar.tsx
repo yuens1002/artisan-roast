@@ -284,6 +284,21 @@ export function DataTableActionBar({
     [config.left],
   );
 
+  const otherFixedWidth = useMemo(
+    () => {
+      let width = 0;
+      for (const slot of config.left) {
+        const isCollapsible = !!getCollapseConfig(slot);
+        const isTab = slot.type === "custom" && slot.mobileContent;
+        if (!isCollapsible && !isTab) {
+          width += COLLAPSED_SLOT_WIDTH;
+        }
+      }
+      return width;
+    },
+    [config.left],
+  );
+
   // Extract declared tab natural width from config (first custom slot with mobileContent)
   const tabNaturalWidth = useMemo(() => {
     for (const slot of config.left) {
@@ -348,14 +363,14 @@ export function DataTableActionBar({
       const barWidth = Math.round(barEl!.getBoundingClientRect().width);
       const rightWidth = Math.round(rightEl!.getBoundingClientRect().width);
       const leftAvailable = barWidth - rightWidth - SECTION_GAP;
-      setCollapseLevel(computeCollapseLevel(leftAvailable, tabNaturalWidth, collapsibleCount));
+      setCollapseLevel(computeCollapseLevel(leftAvailable, tabNaturalWidth, collapsibleCount, otherFixedWidth));
     }
 
     const observer = new ResizeObserver(measure);
     observer.observe(barEl);
 
     return () => observer.disconnect();
-  }, [collapsibleCount, tabNaturalWidth]);
+  }, [collapsibleCount, tabNaturalWidth, otherFixedWidth]);
 
   const expandedSlot = expandedIndex !== null ? config.left[expandedIndex] ?? null : null;
 
