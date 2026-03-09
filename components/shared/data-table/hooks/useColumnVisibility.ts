@@ -1,5 +1,5 @@
 import type { VisibilityState } from "@tanstack/react-table";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
 function loadVisibility(key: string): VisibilityState {
   try {
@@ -21,10 +21,17 @@ function saveVisibility(key: string, state: VisibilityState) {
 
 export function useColumnVisibility(
   storageKey?: string,
-  alwaysHidden?: VisibilityState
+  defaultHidden?: VisibilityState
 ) {
   const [userVisibility, setUserVisibility] = useState<VisibilityState>(
-    () => (storageKey ? loadVisibility(storageKey) : {})
+    () => {
+      const saved = storageKey ? loadVisibility(storageKey) : {};
+      // Apply defaults only for columns the user hasn't explicitly set
+      if (defaultHidden) {
+        return { ...defaultHidden, ...saved };
+      }
+      return saved;
+    }
   );
 
   const handleVisibilityChange = useCallback(
@@ -38,10 +45,5 @@ export function useColumnVisibility(
     [storageKey]
   );
 
-  const columnVisibility: VisibilityState = useMemo(
-    () => ({ ...userVisibility, ...alwaysHidden }),
-    [userVisibility, alwaysHidden]
-  );
-
-  return { columnVisibility, handleVisibilityChange };
+  return { columnVisibility: userVisibility, handleVisibilityChange };
 }

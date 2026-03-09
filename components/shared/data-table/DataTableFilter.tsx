@@ -137,7 +137,7 @@ function MultiSelectFilterContent({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex-1 flex items-center justify-between gap-1 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground truncate"
+            className={`flex-1 flex items-center justify-between gap-1 px-2 py-1.5 text-sm truncate ${selectedValues.length > 0 ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             <span className="truncate">
               {selectedValues.length === 0

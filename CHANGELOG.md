@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.95.2 - 2026-03-09
+
+### Changed
+
+- **Header nav icons**: Shrink desktop storefront nav link icons from 20px to 16px
+- **Store Pickup styling**: Default font color and no italic across table columns and mobile cards
+- **Mobile card address format**: Split into separate lines (street / city, state zip / country)
+- **Mixed frequency badge**: Mobile cards now show "Mixed" badge (blue) matching desktop table styling
+- **Order number searchable**: Order # is now included in the global search filter for both admin and user order tables
+- **Filter display**: Multi-select filters show selected value in default text color (matching date filter)
+
+### Fixed
+
+- **Smooth scroll offset**: Added `scroll-padding-top` to account for sticky header height
+- **Column visibility toggle**: `defaultHidden` columns can now be toggled on by the user (was being overridden on every render)
+
 ## 0.95.1 - 2026-03-09
 
 ### Fixed

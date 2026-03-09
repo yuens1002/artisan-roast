@@ -50,6 +50,7 @@ const globalFilterFn: FilterFn<OrderWithItems> = (
   const query = String(filterValue).toLowerCase();
   const order = row.original;
   const searchable = [
+    order.id.slice(-8),
     ...order.items.map(
       (i) =>
         `${i.purchaseOption.variant.product.name} ${i.purchaseOption.variant.name}`
@@ -217,7 +218,6 @@ export function useUserOrdersTable({
               postalCode={order.shippingPostalCode}
               mutedClassName="text-muted-foreground"
               muteAddressLines
-              normalPickupFont
             />
           );
         },

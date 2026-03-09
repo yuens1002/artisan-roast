@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
@@ -44,7 +45,7 @@ import { useDataTableInfiniteScroll } from "@/components/shared/data-table/hooks
 import { useColumnVisibility } from "@/components/shared/data-table/hooks";
 import type { ActionBarConfig } from "@/components/shared/data-table/types";
 import { createStatusTabsSlot } from "@/components/shared/data-table/StatusTabsSlot";
-import { formatCadence } from "@/components/shared/order-utils";
+import { formatCadence, getPurchaseType } from "@/components/shared/order-utils";
 import { transformToMobileActions } from "@/components/shared/data-table/mobile-actions";
 import type { RowActionItem } from "@/components/shared/data-table/RowActionMenu";
 import { resolveRowActions } from "@/components/shared/data-table/row-action-config";
@@ -593,13 +594,18 @@ export default function OrderManagementClient() {
                     date={new Date(order.createdAt)}
                     displayId={`#${order.orderNumber || order.id.slice(-8)}`}
                     detailHref={`/admin/orders/${order.id}`}
-                    badge={
-                      order.stripeSubscriptionId ? (
-                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                          Subscription
-                        </span>
-                      ) : undefined
-                    }
+                    badge={(() => {
+                      const type = getPurchaseType(order);
+                      if (type === "One-time") return undefined;
+                      const color = type === "Mixed"
+                        ? "bg-blue-100 text-blue-700 border-blue-200"
+                        : "bg-purple-100 text-purple-700 border-purple-200";
+                      return (
+                        <Badge variant="default" className={`${color} font-normal`}>
+                          {type === "Mixed" ? "Mixed" : "Sub"}
+                        </Badge>
+                      );
+                    })()}
                     customer={{
                       name:
                         order.user?.name || order.recipientName,

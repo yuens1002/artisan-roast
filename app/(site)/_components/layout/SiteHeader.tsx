@@ -412,7 +412,7 @@ export default function SiteHeader({
                     <NavigationMenuItem value="shop">
                       <NavigationMenuTrigger className="h-auto px-2 py-2 text-foreground [&>svg]:hidden">
                         <div className="flex flex-col items-center gap-1">
-                          <DynamicIcon name={productMenuIcon as IconName} className="w-5 h-5" />
+                          <DynamicIcon name={productMenuIcon as IconName} className="w-4 h-4" />
                           <div className="flex items-center gap-0.5">
                             <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
                               {productMenuText}
@@ -447,9 +447,9 @@ export default function SiteHeader({
                             )}
                           >
                             {page.icon ? (
-                              <DynamicIcon name={page.icon} className="w-5 h-5" />
+                              <DynamicIcon name={page.icon} className="w-4 h-4" />
                             ) : (
-                              <FileText className="w-5 h-5" />
+                              <FileText className="w-4 h-4" />
                             )}
                             <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
                               {page.title}
@@ -469,7 +469,7 @@ export default function SiteHeader({
                         className="h-auto px-2 py-2 text-foreground hover:text-primary transition-colors bg-transparent border-none cursor-pointer inline-flex items-center outline-none"
                       >
                         <div className="flex flex-col items-center gap-1">
-                          <MoreHorizontal className="w-5 h-5" />
+                          <MoreHorizontal className="w-4 h-4" />
                           <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
                             More
                           </span>

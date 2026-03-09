@@ -11,8 +11,6 @@ interface ShippingAddressDisplayProps {
   showCountry?: boolean;
   /** When "full", renders spelled-out country name (e.g., "US" -> "United States"). Default: "code". */
   countryDisplayFormat?: "code" | "full";
-  /** When true, renders "Store Pickup" in normal font (not italic). */
-  normalPickupFont?: boolean;
   fallbackText?: string;
   mutedClassName?: string;
   /** When true (default), renders address/country/phone in muted style. */
@@ -29,14 +27,13 @@ export function ShippingAddressDisplay({
   country,
   showCountry,
   countryDisplayFormat = "code",
-  normalPickupFont,
   fallbackText = "Store Pickup",
   mutedClassName = "text-muted-foreground",
   muteAddressLines,
 }: ShippingAddressDisplayProps) {
   if (!street) {
     return (
-      <span className={`${mutedClassName} ${normalPickupFont ? "" : "italic "}text-sm`}>
+      <span className="text-sm">
         {fallbackText}
       </span>
     );
@@ -53,15 +50,15 @@ export function ShippingAddressDisplay({
   return (
     <div className="text-sm">
       {recipientName && <div>{recipientName}</div>}
-      <div className={addressLineClass}>{street}</div>
-      <div className={addressLineClass}>
+      <div className={`text-xs ${addressLineClass ?? ""}`}>{street}</div>
+      <div className={`text-xs ${addressLineClass ?? ""}`}>
         {city}, {state} {postalCode}
       </div>
       {displayCountry && (
-        <div className={addressLineClass}>{displayCountry}</div>
+        <div className={`text-xs ${addressLineClass ?? ""}`}>{displayCountry}</div>
       )}
       {phone && (
-        <div className={addressLineClass}>
+        <div className={`text-xs ${addressLineClass ?? ""}`}>
           {formatPhoneNumber(phone)}
         </div>
       )}

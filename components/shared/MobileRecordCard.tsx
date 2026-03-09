@@ -290,16 +290,16 @@ export function MobileRecordCard({
                 {shipping.recipientName && (
                   <p>{shipping.recipientName}</p>
                 )}
+                <p className="text-foreground">{shipping.street}</p>
                 <p className="text-foreground">
-                  {shipping.street}, {shipping.city}, {shipping.state}{" "}
-                  {shipping.postalCode}
+                  {shipping.city}, {shipping.state} {shipping.postalCode}
                 </p>
                 {shipping.country && (
                   <p className="text-sm text-foreground">{getCountryName(shipping.country)}</p>
                 )}
               </>
             ) : (
-              <p className="text-foreground italic">Store Pickup</p>
+              <p className="text-foreground">Store Pickup</p>
             )}
           </div>
         </div>

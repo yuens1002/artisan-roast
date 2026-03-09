@@ -85,6 +85,7 @@ const globalFilterFn: FilterFn<Order> = (row, _columnId, filterValue) => {
   const query = String(filterValue).toLowerCase();
   const order = row.original;
   const searchable = [
+    order.orderNumber ?? order.id.slice(-8),
     order.user?.name ?? "",
     order.customerEmail,
     ...order.items.map(
@@ -235,7 +236,6 @@ export function useOrdersTable({
               country={order.shippingCountry}
               showCountry
               countryDisplayFormat="full"
-              normalPickupFont
               muteAddressLines
             />
           );

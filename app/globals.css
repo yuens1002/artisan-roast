@@ -140,6 +140,7 @@ We define CSS variables for each theme.
   html {
     overflow-y: scroll;
     scroll-behavior: smooth;
+    scroll-padding-top: 4rem;
   }
   /* Keep scrollbar space but make it invisible when dialog/sheet is open */
   html:has(body[data-scroll-locked]) {

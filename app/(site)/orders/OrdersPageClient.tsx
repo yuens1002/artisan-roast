@@ -4,11 +4,12 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import type { OrderWithItems } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Loader2, Search, Filter } from "lucide-react";
 import { createStatusTabsSlot } from "@/components/shared/data-table/StatusTabsSlot";
-import { formatCadence } from "@/components/shared/order-utils";
+import { formatCadence, getPurchaseType } from "@/components/shared/order-utils";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 import { formatPrice } from "@/components/shared/record-utils";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
@@ -417,17 +418,18 @@ export default function OrdersPageClient({
                           date={order.createdAt}
                           displayId={`#${order.id.slice(-8)}`}
                           detailHref={`/orders/${order.id}`}
-                          badge={
-                            order.stripeSubscriptionId ||
-                            order.items.some(
-                              (i) =>
-                                i.purchaseOption.type === "SUBSCRIPTION"
-                            ) ? (
-                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                                Subscription
-                              </span>
-                            ) : undefined
-                          }
+                          badge={(() => {
+                            const type = getPurchaseType(order);
+                            if (type === "One-time") return undefined;
+                            const color = type === "Mixed"
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : "bg-purple-100 text-purple-700 border-purple-200";
+                            return (
+                              <Badge variant="default" className={`${color} font-normal`}>
+                                {type === "Mixed" ? "Mixed" : "Sub"}
+                              </Badge>
+                            );
+                          })()}
                           items={order.items.map((item) => ({
                             id: item.id,
                             name: item.purchaseOption.variant.product.name,
