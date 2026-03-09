@@ -112,8 +112,7 @@
       "mcp__shadcn-studio-mcp__collect_selected_components",
       "mcp__shadcn-studio-mcp__get_add_command_for_components",
       "WebFetch(domain:shadcnuikit.com)",
-      "Bash(lsof -ti :3000)",
-      "Bash(grep '\"\"version\"\"' package.json)"
+      "Bash(lsof -ti :3000)"
     ]
   },
   "hooks": {
