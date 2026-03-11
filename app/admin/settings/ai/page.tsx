@@ -198,7 +198,7 @@ export default function AISettingsPage() {
         {/* Provider preset */}
         <Field>
           <FormHeading label="Quick Setup" />
-          <Select onValueChange={handlePreset}>
+          <Select onValueChange={handlePreset} disabled={DEMO_MODE}>
             <SelectTrigger className="w-full max-w-xs">
               <SelectValue placeholder="Choose a provider preset..." />
             </SelectTrigger>
@@ -230,6 +230,7 @@ export default function AISettingsPage() {
               setSettings((prev) => ({ ...prev, baseUrl: e.target.value }));
               setTestStatus("idle");
             }}
+            disabled={DEMO_MODE}
             className={`max-w-[72ch] ${settings.baseUrl !== original.baseUrl ? "border-amber-500" : ""}`}
           />
           <FieldDescription>
@@ -275,7 +276,7 @@ export default function AISettingsPage() {
           </div>
           <FieldDescription>
             {DEMO_MODE
-              ? "API key editing is disabled in demo mode"
+              ? "Provider settings are locked in demo mode"
               : "Optional for local providers (e.g., Ollama)"}
           </FieldDescription>
         </Field>
@@ -295,6 +296,7 @@ export default function AISettingsPage() {
               setSettings((prev) => ({ ...prev, model: e.target.value }));
               setTestStatus("idle");
             }}
+            disabled={DEMO_MODE}
             className={`max-w-xs ${settings.model !== original.model ? "border-amber-500" : ""}`}
           />
           <FieldDescription>
@@ -316,7 +318,7 @@ export default function AISettingsPage() {
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!isDirty || isSaving}
+            disabled={DEMO_MODE || !isDirty || isSaving}
           >
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save
