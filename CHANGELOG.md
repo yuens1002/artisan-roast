@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.95.3 - 2026-03-11
+
+### Added
+
+- **LLM-agnostic AI provider**: Replace Gemini-specific code with universal OpenAI-compatible client supporting any provider (OpenAI, Gemini, Groq, Ollama, etc.)
+- **Admin AI settings page**: Configure AI provider (base URL, API key, model) and feature toggles (chat, recommender, about assistant) from admin UI
+- **Provider presets**: Quick-setup dropdown for OpenAI, Gemini, Groq, and Ollama with auto-filled base URLs
+- **Connection test**: Test AI provider connectivity with response time feedback before saving
+
+### Changed
+
+- **AI endpoints refactored**: Chat, recommend, and about-page-generate endpoints now use shared `chatCompletion()` client instead of Gemini REST API
+- **Config resolution**: DB settings (SiteSettings) take precedence over env vars for AI configuration
+
+### Removed
+
+- **`@google/generative-ai` dependency**: No longer needed — all AI calls use OpenAI-compatible format
+
 ## 0.95.2 - 2026-03-09
 
 ### Changed
