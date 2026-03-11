@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { AI_PROVIDER_PRESETS } from "@/lib/ai-client";
+import { AI_PROVIDER_PRESETS } from "@/lib/ai-provider-presets";
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
