@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Loader2, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react";
+import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Switch } from "@/components/ui/switch";
@@ -193,105 +194,120 @@ export default function AISettingsPage() {
         description="Connect any OpenAI-compatible AI provider. Choose a preset or enter custom settings."
       >
         {/* Provider preset */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Quick Setup</Label>
-          <Select onValueChange={handlePreset}>
-            <SelectTrigger className="w-full max-w-xs">
-              <SelectValue placeholder="Choose a provider preset..." />
-            </SelectTrigger>
-            <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
-              {Object.entries(AI_PROVIDER_PRESETS).map(([id, preset]) => (
-                <SelectItem key={id} value={id}>
-                  {preset.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-sm text-muted-foreground">
-            Auto-fills Base URL. You can customize after selecting.
-          </p>
-        </div>
+        <SettingsField
+          endpoint="/api/admin/settings/ai"
+          field="baseUrl"
+          label="Quick Setup"
+          description="Auto-fills Base URL. You can customize after selecting."
+          autoSave={false}
+          input={() => (
+            <Select onValueChange={handlePreset}>
+              <SelectTrigger className="w-full max-w-xs">
+                <SelectValue placeholder="Choose a provider preset..." />
+              </SelectTrigger>
+              <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
+                {Object.entries(AI_PROVIDER_PRESETS).map(([id, preset]) => (
+                  <SelectItem key={id} value={id}>
+                    {preset.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
 
         {/* Base URL */}
-        <div className="space-y-2">
-          <Label htmlFor="ai-base-url" className="text-sm font-medium">
-            Base URL
-          </Label>
-          <Input
-            id="ai-base-url"
-            placeholder="https://api.openai.com/v1"
-            value={settings.baseUrl}
-            onChange={(e) => {
-              setSettings((prev) => ({ ...prev, baseUrl: e.target.value }));
-              setTestStatus("idle");
-            }}
-          />
-          <p className="text-sm text-muted-foreground">
-            OpenAI-compatible API endpoint (must support /chat/completions)
-          </p>
-        </div>
-
-        {/* API Key */}
-        <div className="space-y-2">
-          <Label htmlFor="ai-api-key" className="text-sm font-medium">
-            API Key
-          </Label>
-          <div className="relative">
+        <SettingsField
+          endpoint="/api/admin/settings/ai"
+          field="baseUrl"
+          label="Base URL"
+          description="OpenAI-compatible API endpoint (must support /chat/completions)"
+          maxLength={200}
+          input={(_, onChange) => (
             <Input
-              id="ai-api-key"
-              type={showApiKey && !DEMO_MODE ? "text" : "password"}
-              placeholder={settings.hasApiKey ? "••••••••(saved)" : "Enter API key"}
-              value={settings.apiKey}
+              id="field-baseUrl"
+              placeholder="https://api.openai.com/v1"
+              value={settings.baseUrl}
               onChange={(e) => {
-                setSettings((prev) => ({ ...prev, apiKey: e.target.value }));
+                setSettings((prev) => ({ ...prev, baseUrl: e.target.value }));
+                onChange(e.target.value);
                 setTestStatus("idle");
               }}
-              disabled={DEMO_MODE}
+              className={settings.baseUrl !== original.baseUrl ? "border-amber-500" : ""}
             />
-            {!DEMO_MODE && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                onClick={() => setShowApiKey((v) => !v)}
-              >
-                {showApiKey ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-          </div>
-          {DEMO_MODE && (
-            <p className="text-sm text-amber-600">
-              API key editing is disabled in demo mode
-            </p>
           )}
-          <p className="text-sm text-muted-foreground">
-            Optional for local providers (e.g., Ollama)
-          </p>
-        </div>
+          transformLoad={(data) => (data.baseUrl as string) || ""}
+          saveButtonInInput
+        />
+
+        {/* API Key */}
+        <SettingsField
+          endpoint="/api/admin/settings/ai"
+          field="apiKey"
+          label="API Key"
+          description={
+            DEMO_MODE
+              ? "API key editing is disabled in demo mode"
+              : "Optional for local providers (e.g., Ollama)"
+          }
+          input={() => (
+            <div className="relative max-w-md">
+              <Input
+                id="field-apiKey"
+                type={showApiKey && !DEMO_MODE ? "text" : "password"}
+                placeholder={settings.hasApiKey ? "••••••••(saved)" : "Enter API key"}
+                value={settings.apiKey}
+                onChange={(e) => {
+                  setSettings((prev) => ({ ...prev, apiKey: e.target.value }));
+                  setTestStatus("idle");
+                }}
+                disabled={DEMO_MODE}
+                className={settings.apiKey !== original.apiKey ? "border-amber-500 pr-10" : "pr-10"}
+              />
+              {!DEMO_MODE && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                  onClick={() => setShowApiKey((v) => !v)}
+                >
+                  {showApiKey ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+            </div>
+          )}
+          transformLoad={(data) => (data.apiKey as string) || ""}
+          saveButtonInInput
+        />
 
         {/* Model */}
-        <div className="space-y-2">
-          <Label htmlFor="ai-model" className="text-sm font-medium">
-            Model
-          </Label>
-          <Input
-            id="ai-model"
-            placeholder="gpt-4o-mini"
-            value={settings.model}
-            onChange={(e) => {
-              setSettings((prev) => ({ ...prev, model: e.target.value }));
-              setTestStatus("idle");
-            }}
-          />
-          <p className="text-sm text-muted-foreground">
-            Model identifier (e.g., gpt-4o-mini, gemini-2.5-flash, llama3.2)
-          </p>
-        </div>
+        <SettingsField
+          endpoint="/api/admin/settings/ai"
+          field="model"
+          label="Model"
+          description="Model identifier (e.g., gpt-4o-mini, gemini-2.5-flash, llama3.2)"
+          maxLength={100}
+          input={(_, onChange) => (
+            <Input
+              id="field-model"
+              placeholder="gpt-4o-mini"
+              value={settings.model}
+              onChange={(e) => {
+                setSettings((prev) => ({ ...prev, model: e.target.value }));
+                onChange(e.target.value);
+                setTestStatus("idle");
+              }}
+              className={settings.model !== original.model ? "border-amber-500" : ""}
+            />
+          )}
+          transformLoad={(data) => (data.model as string) || ""}
+          saveButtonInInput
+        />
 
         {/* Actions row */}
         <div className="flex items-center gap-3 pt-2">
@@ -333,46 +349,92 @@ export default function AISettingsPage() {
         title="Feature Toggles"
         description="Enable or disable individual AI features. Disabling a feature hides it from users."
       >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">AI Chat (Barista)</Label>
+        <SettingsField<boolean>
+          endpoint="/api/admin/settings/ai"
+          field="chatEnabled"
+          label="AI Chat (Barista)"
+          autoSave
+          defaultValue={true}
+          input={(value, onChange) => (
+            <div className="space-y-1.5">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={Boolean(value)}
+                  onCheckedChange={(checked) => {
+                    onChange(checked);
+                    handleToggle("chatEnabled", checked);
+                  }}
+                />
+                <Label className="text-sm text-muted-foreground">
+                  {value
+                    ? "AI barista chat is enabled"
+                    : "AI barista chat is disabled"}
+                </Label>
+              </div>
               <p className="text-sm text-muted-foreground">
                 AI-powered coffee barista chat for personalized recommendations
               </p>
             </div>
-            <Switch
-              checked={settings.chatEnabled}
-              onCheckedChange={(v) => handleToggle("chatEnabled", v)}
-            />
-          </div>
+          )}
+        />
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">Coffee Recommender</Label>
+        <SettingsField<boolean>
+          endpoint="/api/admin/settings/ai"
+          field="recommendEnabled"
+          label="Coffee Recommender"
+          autoSave
+          defaultValue={true}
+          input={(value, onChange) => (
+            <div className="space-y-1.5">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={Boolean(value)}
+                  onCheckedChange={(checked) => {
+                    onChange(checked);
+                    handleToggle("recommendEnabled", checked);
+                  }}
+                />
+                <Label className="text-sm text-muted-foreground">
+                  {value
+                    ? "Coffee recommendations are enabled"
+                    : "Coffee recommendations are disabled"}
+                </Label>
+              </div>
               <p className="text-sm text-muted-foreground">
                 AI coffee recommendations based on taste preferences
               </p>
             </div>
-            <Switch
-              checked={settings.recommendEnabled}
-              onCheckedChange={(v) => handleToggle("recommendEnabled", v)}
-            />
-          </div>
+          )}
+        />
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">About Page Assistant</Label>
+        <SettingsField<boolean>
+          endpoint="/api/admin/settings/ai"
+          field="aboutAssistEnabled"
+          label="About Page Assistant"
+          autoSave
+          defaultValue={true}
+          input={(value, onChange) => (
+            <div className="space-y-1.5">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={Boolean(value)}
+                  onCheckedChange={(checked) => {
+                    onChange(checked);
+                    handleToggle("aboutAssistEnabled", checked);
+                  }}
+                />
+                <Label className="text-sm text-muted-foreground">
+                  {value
+                    ? "About page assistant is enabled"
+                    : "About page assistant is disabled"}
+                </Label>
+              </div>
               <p className="text-sm text-muted-foreground">
                 AI-generated About page content with multiple style variations
               </p>
             </div>
-            <Switch
-              checked={settings.aboutAssistEnabled}
-              onCheckedChange={(v) => handleToggle("aboutAssistEnabled", v)}
-            />
-          </div>
-        </div>
+          )}
+        />
       </SettingsSection>
     </div>
   );

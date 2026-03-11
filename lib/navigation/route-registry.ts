@@ -360,6 +360,14 @@ const routeEntries: RouteEntry[] = [
     isNavigable: true,
   },
   {
+    id: "admin.settings.ai",
+    pathname: "/admin/settings/ai",
+    matchMode: "exact",
+    label: "AI",
+    parentId: "admin.settings",
+    isNavigable: true,
+  },
+  {
     id: "admin.settings.marketing",
     pathname: "/admin/settings/marketing",
     matchMode: "exact",
