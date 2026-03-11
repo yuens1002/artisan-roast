@@ -164,6 +164,14 @@
       "tasks": [],
       "acs_doc": "docs/plans/table-ui-polish-ACs.md",
       "notes": "26/26 ACs verified. 10 FN + 11 UI + 2 NAV + 3 REG via code review + Puppeteer screenshots. Bug found: intervalCount→billingIntervalCount type mismatch fixed. Precheck 0 errors, 1008 tests pass."
+    },
+    "feat/phase2a-llm-agnostic-ai": {
+      "status": "implementing",
+      "acs_passed": 0,
+      "acs_total": 27,
+      "tasks": [],
+      "acs_doc": "docs/plans/phase2a-ACs.md",
+      "notes": "Plan approved. Skipping planning state — plan already in docs/plans/SaaS-implementation-plan.md."
     }
   }
 }

@@ -7,6 +7,7 @@ import {
 } from "@/lib/data";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { chatCompletion, isAIFeatureEnabled } from "@/lib/ai-client";
 
 // Define the expected structure of the *incoming* request body
 interface RecommendRequest {
@@ -54,11 +55,13 @@ export async function POST(request: Request) {
       throw new Error("No products found in database.");
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is not set");
+    // Check if recommend feature is enabled
+    if (!(await isAIFeatureEnabled("recommend"))) {
+      return new NextResponse(
+        JSON.stringify({ message: "AI recommendations are currently disabled" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
     }
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     // --- 5. Create the Product List for the Prompt ---
     const productList = products
@@ -125,46 +128,20 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
 
     const userQuery = `I typically enjoy coffee with ${taste} notes and I brew using a ${brewMethod}. Which coffee should I try?`;
 
-    // --- 5. Construct the Gemini Payload ---
-    const payload = {
-      contents: [{ parts: [{ text: userQuery }] }],
-      systemInstruction: {
-        parts: [{ text: systemPrompt }],
-      },
-      generationConfig: {
-        maxOutputTokens: 500,
-        temperature: 0.7,
-        thinkingConfig: {
-          thinkingBudget: 0,
-        },
-      },
-    };
-
-    // --- 6. Call the Gemini API ---
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+    // --- 5. Call AI via OpenAI-compatible API ---
+    const result = await chatCompletion({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userQuery },
+      ],
+      maxTokens: 500,
+      temperature: 0.7,
     });
 
-    if (!response.ok) {
-      console.error("Gemini API Error:", await response.text());
-      throw new Error(`Gemini API failed with status: ${response.status}`);
-    }
+    const text = result.text;
 
-    const result = await response.json();
-    const candidate = result.candidates?.[0];
-    const text = candidate?.content?.parts?.[0]?.text;
-    const finishReason = candidate?.finishReason;
-
-    // Handle MAX_TOKENS or other issues
-    if (!text) {
-      console.warn("Gemini Response:", result);
-
-      // If MAX_TOKENS, provide a graceful fallback
-      if (finishReason === "MAX_TOKENS") {
+    if (!text || result.finishReason === "length") {
+      if (result.finishReason === "length") {
         return NextResponse.json({
           text: `I'd recommend exploring our selection based on your preferences! Our ${taste.toLowerCase()} coffees are perfect for ${brewMethod.toLowerCase()}. Browse our full catalog to find your perfect match.`,
           isPersonalized,
@@ -177,8 +154,7 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
             : null,
         });
       }
-
-      throw new Error("No text in Gemini response");
+      throw new Error("No text in AI response");
     }
 
     // --- 7. Extract recommended product slug from the response ---
