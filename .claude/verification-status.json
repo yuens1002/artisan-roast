@@ -164,6 +164,14 @@
       "tasks": [],
       "acs_doc": "docs/plans/table-ui-polish-ACs.md",
       "notes": "26/26 ACs verified. 10 FN + 11 UI + 2 NAV + 3 REG via code review + Puppeteer screenshots. Bug found: intervalCount→billingIntervalCount type mismatch fixed. Precheck 0 errors, 1008 tests pass."
+    },
+    "feat/phase2a-llm-agnostic-ai": {
+      "status": "verified",
+      "acs_passed": 22,
+      "acs_total": 27,
+      "tasks": [],
+      "acs_doc": "docs/plans/SaaS-implementation-plan.md",
+      "notes": "22/27 ACs verified. 13 FN via code review, 5 UI via Puppeteer screenshots, 2 REG via precheck+tests. 5 deferred: AC-UI-A2/A3/A5/A8 (interactive, need manual), AC-REG-A1/A2/A3 (need AI provider). Bug fix: extracted AI_PROVIDER_PRESETS to client-safe module. Deviation: lib/version.ts kept (telemetry dependency)."
     }
   }
 }

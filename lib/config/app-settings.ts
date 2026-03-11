@@ -16,6 +16,13 @@ const APP_SETTINGS_KEYS = {
   NOTIFY_ON_NEW_REVIEW: "commerce.notifyOnNewReview",
   STOREFRONT_THEME: "storefront.theme",
   CRON_SECRET: "cron.secret",
+  // AI provider configuration
+  AI_BASE_URL: "ai.baseUrl",
+  AI_API_KEY: "ai.apiKey",
+  AI_MODEL: "ai.model",
+  AI_CHAT_ENABLED: "ai.chatEnabled",
+  AI_RECOMMEND_ENABLED: "ai.recommendEnabled",
+  AI_ABOUT_ASSIST_ENABLED: "ai.aboutAssistEnabled",
 } as const;
 
 /**
@@ -283,4 +290,95 @@ export async function getAppSettings() {
     locationType,
     weightUnit,
   };
+}
+
+// ---------------------------------------------------------------------------
+// AI Settings
+// ---------------------------------------------------------------------------
+
+export interface AISettings {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  chatEnabled: boolean;
+  recommendEnabled: boolean;
+  aboutAssistEnabled: boolean;
+}
+
+/**
+ * Get all AI settings. DB values take precedence over env vars.
+ */
+export async function getAISettings(): Promise<AISettings> {
+  const settings = await prisma.siteSettings.findMany({
+    where: {
+      key: {
+        in: [
+          APP_SETTINGS_KEYS.AI_BASE_URL,
+          APP_SETTINGS_KEYS.AI_API_KEY,
+          APP_SETTINGS_KEYS.AI_MODEL,
+          APP_SETTINGS_KEYS.AI_CHAT_ENABLED,
+          APP_SETTINGS_KEYS.AI_RECOMMEND_ENABLED,
+          APP_SETTINGS_KEYS.AI_ABOUT_ASSIST_ENABLED,
+        ],
+      },
+    },
+  });
+
+  const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+
+  return {
+    baseUrl: map[APP_SETTINGS_KEYS.AI_BASE_URL] || process.env.AI_BASE_URL || "",
+    apiKey: map[APP_SETTINGS_KEYS.AI_API_KEY] || process.env.AI_API_KEY || "",
+    model: map[APP_SETTINGS_KEYS.AI_MODEL] || process.env.AI_MODEL || "",
+    chatEnabled: map[APP_SETTINGS_KEYS.AI_CHAT_ENABLED] !== "false",
+    recommendEnabled: map[APP_SETTINGS_KEYS.AI_RECOMMEND_ENABLED] !== "false",
+    aboutAssistEnabled: map[APP_SETTINGS_KEYS.AI_ABOUT_ASSIST_ENABLED] !== "false",
+  };
+}
+
+/**
+ * Update AI settings. Only writes keys that are provided.
+ */
+export async function setAISettings(
+  values: Partial<AISettings>
+): Promise<void> {
+  const updates: Array<{ key: string; value: string }> = [];
+
+  if (values.baseUrl !== undefined) {
+    updates.push({ key: APP_SETTINGS_KEYS.AI_BASE_URL, value: values.baseUrl });
+  }
+  if (values.apiKey !== undefined) {
+    updates.push({ key: APP_SETTINGS_KEYS.AI_API_KEY, value: values.apiKey });
+  }
+  if (values.model !== undefined) {
+    updates.push({ key: APP_SETTINGS_KEYS.AI_MODEL, value: values.model });
+  }
+  if (values.chatEnabled !== undefined) {
+    updates.push({
+      key: APP_SETTINGS_KEYS.AI_CHAT_ENABLED,
+      value: String(values.chatEnabled),
+    });
+  }
+  if (values.recommendEnabled !== undefined) {
+    updates.push({
+      key: APP_SETTINGS_KEYS.AI_RECOMMEND_ENABLED,
+      value: String(values.recommendEnabled),
+    });
+  }
+  if (values.aboutAssistEnabled !== undefined) {
+    updates.push({
+      key: APP_SETTINGS_KEYS.AI_ABOUT_ASSIST_ENABLED,
+      value: String(values.aboutAssistEnabled),
+    });
+  }
+
+  await Promise.all(
+    updates.map(({ key, value }) =>
+      prisma.siteSettings.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      })
+    )
+  );
 }

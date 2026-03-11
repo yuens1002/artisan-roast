@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createHash } from "crypto";
 import { readFile } from "fs/promises";
 import path from "path";
@@ -15,14 +14,14 @@ import {
   Tone,
   WizardAnswers,
 } from "@/lib/api-schemas/generate-about";
+import {
+  chatCompletion,
+  isAIFeatureEnabled,
+  getAIConfig,
+  type ChatContentPart,
+} from "@/lib/ai-client";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const FEATURE_NAME = "about-assist";
-
-// Main text generation model (Gemini 2.5 Flash per docs)
-const MODEL_NAME = "gemini-2.5-flash";
-// Vision-capable model for alt text
-const ALT_MODEL_NAME = "gemini-2.0-flash";
 
 interface PromptOptions {
   tone: Tone;
@@ -319,32 +318,29 @@ async function generateAltTextFromLocalImage(
     );
     const buffer = await readFile(fullPath);
     const base64 = buffer.toString("base64");
-    const model = genAI.getGenerativeModel({ model: ALT_MODEL_NAME });
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              inlineData: {
-                data: base64,
-                mimeType: getMimeTypeFromPath(imageUrl),
-              },
-            },
-            {
-              text: `Write a concise, accessible alt text (max 18 words) describing this image. Avoid opinions; be specific. ${
-                hint ? `Context: ${hint}` : ""
-              }`,
-            },
-          ],
-        },
-      ],
+    const mimeType = getMimeTypeFromPath(imageUrl);
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+
+    const content: ChatContentPart[] = [
+      { type: "image_url", image_url: { url: dataUrl, detail: "low" } },
+      {
+        type: "text",
+        text: `Write a concise, accessible alt text (max 18 words) describing this image. Avoid opinions; be specific. ${
+          hint ? `Context: ${hint}` : ""
+        }`,
+      },
+    ];
+
+    const result = await chatCompletion({
+      messages: [{ role: "user", content }],
+      maxTokens: 60,
+      temperature: 0.3,
     });
 
-    const text = result.response.text().trim();
+    const text = result.text.trim();
     return {
       altText: text.replace(/^"|"$/g, ""),
-      tokens: result.response?.usageMetadata?.totalTokenCount ?? null,
+      tokens: result.usage.totalTokens,
       latencyMs: Date.now() - startedAt,
     };
   } catch (error) {
@@ -369,6 +365,13 @@ export async function POST(request: NextRequest) {
 
     if (!user?.isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await isAIFeatureEnabled("aboutAssist"))) {
+      return NextResponse.json(
+        { error: "About page assistant is currently disabled" },
+        { status: 403 }
+      );
     }
 
     const parseResult = generateAboutRequestSchema.safeParse(
@@ -544,8 +547,6 @@ export async function POST(request: NextRequest) {
       userPrompt += `\n\nIMPORTANT: Match this block structure:\n${JSON.stringify(blockCounts, null, 2)}\nGenerate exactly the same number of blocks for each type.`;
     }
 
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-
     type ParsedResponse = {
       metaDescription?: string | null;
       blocks?: GeneratedBlock[];
@@ -615,19 +616,17 @@ export async function POST(request: NextRequest) {
       title: string,
       description: string
     ) => {
-      const result = await model.generateContent({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt + "\n\n" + userPrompt }],
-          },
+      const result = await chatCompletion({
+        messages: [
+          { role: "system", content: prompt },
+          { role: "user", content: userPrompt },
         ],
       });
 
-      const usageTokens = result?.response?.usageMetadata?.totalTokenCount;
+      const usageTokens = result.usage.totalTokens;
 
       try {
-        const rawText = result.response.text();
+        const rawText = result.text;
         const parsed = parseJsonResponse(rawText, title);
         console.log(`${title} blocks count:`, parsed.blocks?.length);
 
@@ -735,10 +734,17 @@ export async function POST(request: NextRequest) {
         return sum + (typeof count === "number" ? count : 0);
       }, 0);
 
+      let aiConfig: { model: string } = { model: "unknown" };
+      try {
+        aiConfig = await getAIConfig();
+      } catch {
+        // Config may not be available during token logging
+      }
+
       const tokenRows = [
         {
-          modelId: MODEL_NAME,
-          provider: "gemini",
+          modelId: aiConfig.model,
+          provider: "openai-compatible",
           feature: FEATURE_NAME,
           route: "/api/admin/pages/about/generate-about",
           actorType: "admin",
@@ -749,8 +755,8 @@ export async function POST(request: NextRequest) {
           latencyMs: duration,
         },
         {
-          modelId: ALT_MODEL_NAME,
-          provider: "gemini",
+          modelId: aiConfig.model,
+          provider: "openai-compatible",
           feature: FEATURE_NAME,
           route: "/api/admin/pages/about/generate-about",
           actorType: "admin",
