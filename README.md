@@ -8,7 +8,7 @@
 
 [**Try the Live Demo**](https://artisanroast.app/) | [Self-Host Guide](#quick-start) | [Documentation](./docs/)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,STRIPE_SECRET_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,RESEND_API_KEY,RESEND_FROM_EMAIL,NEXT_PUBLIC_APP_URL,SEED_ON_BUILD&envDescription=Required%20environment%20variables%20for%20Artisan%20Roast.%20See%20.env.example%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast&env=DATABASE_URL,AUTH_SECRET,SEED_ON_BUILD&envDescription=DATABASE_URL%3A%20Neon%20PostgreSQL%20connection%20string.%20AUTH_SECRET%3A%20Run%20%27openssl%20rand%20-base64%2032%27.%20SEED_ON_BUILD%3A%20Set%20to%20%27true%27%20for%20demo%20data.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
 
 ---
 
@@ -96,11 +96,14 @@ Most e-commerce platforms treat coffee like any other product. But your customer
 
 ### Option 1: One-Click Deploy (Recommended)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,STRIPE_SECRET_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,RESEND_API_KEY,RESEND_FROM_EMAIL,NEXT_PUBLIC_APP_URL,SEED_ON_BUILD&envDescription=Required%20environment%20variables%20for%20Artisan%20Roast.%20See%20.env.example%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast&env=DATABASE_URL,AUTH_SECRET,SEED_ON_BUILD&envDescription=DATABASE_URL%3A%20Neon%20PostgreSQL%20connection%20string.%20AUTH_SECRET%3A%20Run%20%27openssl%20rand%20-base64%2032%27.%20SEED_ON_BUILD%3A%20Set%20to%20%27true%27%20for%20demo%20data.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
 
 You'll need:
 
 - [Neon](https://neon.tech) account (free tier available) for PostgreSQL database
+
+Optional (add later for full functionality):
+
 - [Stripe](https://stripe.com) account for payment processing
 - [Resend](https://resend.com) account (free tier: 3,000 emails/month) for transactional emails
 
@@ -108,15 +111,15 @@ You'll need:
 
 ```bash
 
-git clone https://github.com/yuens1002/ecomm-ai-app.git
-cd ecomm-ai-app
+git clone https://github.com/yuens1002/artisan-roast.git
+cd artisan-roast
 npm install
 cp .env.example .env.local  # Add your API keys
 npm run setup               # Database + seed data
 npm run dev                 # http://localhost:3000
 ```
 
-**Full setup guide:** [SETUP.md](./SETUP.md)
+**Full setup guide:** [INSTALLATION.md](./INSTALLATION.md)
 
 ---
 
@@ -151,7 +154,7 @@ npm run dev                 # http://localhost:3000
 - **Type-safe** end-to-end (TypeScript strict + Prisma)
 - **Stripe** payments and subscriptions
 - **OAuth** login (Google, GitHub)
-- **AI** powered by Google Gemini
+- **AI** powered by any OpenAI-compatible provider
 - **500+ tests** with Jest and Testing Library
 
 ---
@@ -167,7 +170,7 @@ npm run dev                 # http://localhost:3000
 | Auth | NextAuth.js v5 |
 | Payments | Stripe Checkout + Billing Portal |
 | Email | Resend |
-| AI | Google Gemini API |
+| AI | Any OpenAI-compatible provider |
 | Styling | Tailwind CSS 4 + shadcn/ui |
 | State | Zustand (cart) + SWR (data) |
 | Testing | Jest + Testing Library |
@@ -212,6 +215,6 @@ MIT License - Use it however you want. See [LICENSE](./LICENSE).
 
 **Built by a coffee nerd who codes.**
 
-[Demo](https://artisanroast.app/) · [GitHub](https://github.com/yuens1002/ecomm-ai-app) · [Setup Guide](./SETUP.md)
+[Demo](https://artisanroast.app/) · [GitHub](https://github.com/yuens1002/artisan-roast) · [Setup Guide](./INSTALLATION.md)
 
 </div>

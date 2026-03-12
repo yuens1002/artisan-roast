@@ -1,5 +1,5 @@
 import { logger } from "@/lib/logger";
-import { resend } from "@/lib/services/resend";
+import { getResend } from "@/lib/services/resend";
 import { getEmailBranding } from "@/lib/config/app-settings";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import type { SendOrderConfirmationParams, EmailSendResult } from "./types";
@@ -36,6 +36,9 @@ export async function sendOrderConfirmation(
       calculateCombinedTotals(orders);
     const orderNumbers = formatOrderNumbers(orders);
     const { logoUrl } = await getEmailBranding();
+
+    const resend = getResend();
+    if (!resend) return { success: true };
 
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",

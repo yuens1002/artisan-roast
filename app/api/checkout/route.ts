@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/services/stripe";
+import { getStripe } from "@/lib/services/stripe";
 import Stripe from "stripe";
 import { CartItem } from "@/lib/store/cart-store";
 import { getErrorMessage } from "@/lib/error-utils";
@@ -7,6 +7,14 @@ import { getAllowPromoCodes } from "@/lib/config/app-settings";
 
 export async function POST(req: NextRequest) {
   try {
+    const stripe = getStripe();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: "Payments not configured" },
+        { status: 503 }
+      );
+    }
+
     const { items, userId, deliveryMethod, selectedAddressId } =
       await req.json();
 

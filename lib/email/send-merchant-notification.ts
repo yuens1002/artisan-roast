@@ -1,5 +1,5 @@
 import { logger } from "@/lib/logger";
-import { resend } from "@/lib/services/resend";
+import { getResend } from "@/lib/services/resend";
 import { getEmailBranding } from "@/lib/config/app-settings";
 import MerchantOrderNotification from "@/emails/MerchantOrderNotification";
 import type { SendMerchantNotificationParams, EmailSendResult } from "./types";
@@ -33,6 +33,9 @@ export async function sendMerchantNotification(
     const subject = isRecurringOrder
       ? `Subscription Renewal - ${deliverySchedule} - #${orderNumber}`
       : `New Order #${orderNumber} - Action Required`;
+
+    const resend = getResend();
+    if (!resend) return { success: true };
 
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",

@@ -546,35 +546,44 @@ export function ShoppingCart() {
 
               {/* Checkout Button */}
               {(() => {
+                const stripeConfigured = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
                 const hasSubscription = items.some(
                   (item) => item.purchaseType === "SUBSCRIPTION"
                 );
                 const isSessionLoading =
                   hasSubscription && sessionStatus === "loading";
-                const isDisabled = isCheckingOut || isSessionLoading;
+                const isDisabled = isCheckingOut || isSessionLoading || !stripeConfigured;
 
                 return (
-                  <Button
-                    type="button"
-                    className="w-full"
-                    size="lg"
-                    onClick={handleCheckout}
-                    disabled={isDisabled}
-                  >
-                    {isSessionLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Loading session...
-                      </>
-                    ) : isCheckingOut ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      "Proceed to Checkout"
+                  <>
+                    {!stripeConfigured && (
+                      <p className="text-sm text-muted-foreground text-center">
+                        Payments are not configured yet. The store owner needs to add Stripe keys.
+                      </p>
                     )}
-                  </Button>
+                    <Button
+                      type="button"
+                      className="w-full"
+                      size="lg"
+                      onClick={handleCheckout}
+                      disabled={isDisabled}
+                      title={!stripeConfigured ? "Payments not configured" : undefined}
+                    >
+                      {isSessionLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Loading session...
+                        </>
+                      ) : isCheckingOut ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        "Proceed to Checkout"
+                      )}
+                    </Button>
+                  </>
                 );
               })()}
 

@@ -14,7 +14,7 @@ This guide walks a technical shop owner or developer through installing Artisan 
 
 ```bash
 
-git clone https://github.com/yuens1002/ecomm-ai-app.git artisan-roast
+git clone https://github.com/yuens1002/artisan-roast.git artisan-roast
 cd artisan-roast
 npm install
 cp .env.example .env.local
@@ -30,7 +30,7 @@ Edit `.env.local`:
 - Stripe: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` (from `stripe listen` during dev)
 - OAuth (optional): `AUTH_GOOGLE_ID/SECRET`, `AUTH_GITHUB_ID/SECRET`
 - Email: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
-- AI: `GEMINI_API_KEY`
+- AI: Configure via **Settings > AI** in the admin panel (or set `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL` in env)
 - Image storage: `BLOB_READ_WRITE_TOKEN` (Vercel Blob — see [Image Storage](#image-storage) below)
 
 ## 3) Run one-command setup

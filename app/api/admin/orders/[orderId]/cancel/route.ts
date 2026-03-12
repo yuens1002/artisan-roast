@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
-import { stripe } from "@/lib/services/stripe";
+import { getStripe } from "@/lib/services/stripe";
 import { getErrorMessage } from "@/lib/error-utils";
 
 /**
@@ -71,7 +71,8 @@ export async function POST(
     console.log(`✅ Order ${orderId} canceled`);
 
     // Issue Stripe refund if payment exists
-    if (order.stripePaymentIntentId) {
+    const stripe = getStripe();
+    if (order.stripePaymentIntentId && stripe) {
       try {
         await stripe.refunds.create({
           payment_intent: order.stripePaymentIntentId,
@@ -112,7 +113,7 @@ export async function POST(
     }
 
     // If this is a subscription order, cancel the Stripe subscription
-    if (order.stripeSubscriptionId) {
+    if (order.stripeSubscriptionId && stripe) {
       try {
         console.log(
           `🔄 Canceling Stripe subscription ${order.stripeSubscriptionId}...`

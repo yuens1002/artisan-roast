@@ -160,7 +160,11 @@ function runMigrations() {
  * Uses minimal seed mode to keep initial data small
  */
 async function seedIfEmpty() {
-  if (process.env.SEED_ON_BUILD !== "true") {
+  const shouldSeed =
+    process.env.SEED_ON_BUILD === "true" ||
+    (process.env.VERCEL === "1" && process.env.SEED_ON_BUILD !== "false");
+
+  if (!shouldSeed) {
     log.debug("SEED_ON_BUILD not enabled, skipping seed check");
     return;
   }

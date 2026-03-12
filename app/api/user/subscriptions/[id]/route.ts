@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { stripe } from "@/lib/services/stripe";
+import { getStripe } from "@/lib/services/stripe";
 import { z } from "zod";
 
 const actionSchema = z.object({
@@ -104,6 +104,14 @@ export async function PATCH(
       return NextResponse.json(
         { error: "Can only cancel active or paused subscriptions" },
         { status: 400 }
+      );
+    }
+
+    const stripe = getStripe();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: "Payments not configured" },
+        { status: 503 }
       );
     }
 

@@ -103,6 +103,6 @@ export async function GET() {
     },
   };
 
-  const statusCode = overall === "ok" ? 200 : 503;
+  const statusCode = overall === "error" ? 503 : 200;
   return NextResponse.json(response, { status: statusCode });
 }

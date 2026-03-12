@@ -1,4 +1,4 @@
-import { resend } from "@/lib/services/resend";
+import { getResend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
 import { getEmailBranding } from "@/lib/config/app-settings";
 import ReviewRequestEmail from "@/emails/ReviewRequestEmail";
@@ -23,6 +23,9 @@ export async function sendReviewRequest(
       logoUrl,
     })
   );
+
+  const resend = getResend();
+  if (!resend) return;
 
   await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? "noreply@example.com",

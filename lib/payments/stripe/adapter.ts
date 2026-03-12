@@ -16,8 +16,15 @@ import type {
   NormalizedInvoicePaymentEvent,
   NormalizedCustomerUpdateEvent,
 } from "../types";
-import { stripe } from "@/lib/services/stripe";
+import { getStripe } from "@/lib/services/stripe";
 import { formatBillingInterval } from "@/lib/utils";
+
+/** Returns the Stripe client or throws — adapter is only used when Stripe is configured */
+function requireStripe() {
+  const stripe = getStripe();
+  if (!stripe) throw new Error("Stripe is not configured");
+  return stripe;
+}
 import {
   parseCartMetadata,
   parseShippingFromSession,
@@ -88,6 +95,7 @@ function normalizeStripeAddress(
 export async function normalizeCheckoutSession(
   session: Stripe.Checkout.Session
 ): Promise<NormalizedCheckoutEvent> {
+  const stripe = requireStripe();
   // Parse cart items from metadata
   const cartItems = parseCartMetadata(session);
   const normalizedItems: NormalizedCartItem[] = cartItems.map((item) => ({
@@ -163,6 +171,7 @@ export async function normalizeSubscription(
   shippingNameOverride?: string | null,
   customerPhoneOverride?: string | null
 ): Promise<NormalizedSubscriptionData> {
+  const stripe = requireStripe();
   // Extract items
   const items: NormalizedSubscriptionItem[] = [];
   let totalPriceInCents = 0;
@@ -292,6 +301,7 @@ export function extractSubscriptionId(
 export async function normalizeInvoicePayment(
   invoice: Stripe.Invoice
 ): Promise<NormalizedInvoicePaymentEvent> {
+  const stripe = requireStripe();
   const paymentInfo = await getPaymentDetailsFromInvoice(stripe, invoice.id);
 
   const subscriptionId = extractSubscriptionId(
@@ -336,6 +346,7 @@ export function normalizeCustomerUpdate(
 export async function getStripeCustomerEmail(
   customerId: string
 ): Promise<string | null> {
+  const stripe = requireStripe();
   try {
     const customer = await stripe.customers.retrieve(customerId);
     return (customer as Stripe.Customer).email;
@@ -354,6 +365,7 @@ export async function storeShippingInStripeMetadata(
   shippingName: string | null,
   deliveryMethod: string
 ): Promise<void> {
+  const stripe = requireStripe();
   try {
     await stripe.subscriptions.update(subscriptionId, {
       metadata: {
@@ -382,6 +394,7 @@ export async function updateStripeSubscriptionShipping(
   subscriptionId: string,
   shippingAddress: NormalizedShippingAddress
 ): Promise<void> {
+  const stripe = requireStripe();
   try {
     await stripe.subscriptions.update(subscriptionId, {
       metadata: {

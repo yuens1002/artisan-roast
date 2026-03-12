@@ -1,4 +1,4 @@
-import { resend } from "@/lib/services/resend";
+import { getResend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
 import { getEmailBranding } from "@/lib/config/app-settings";
 import NewReviewNotification from "@/emails/NewReviewNotification";
@@ -30,6 +30,9 @@ export async function sendNewReviewNotification(
       logoUrl,
     })
   );
+
+  const resend = getResend();
+  if (!resend) return;
 
   await resend.emails.send({
     from:

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
-import { resend } from "@/lib/services/resend";
+import { getResend } from "@/lib/services/resend";
 import { render } from "@react-email/components";
 import { getEmailBranding } from "@/lib/config/app-settings";
 import DeliveryConfirmationEmail from "@/emails/DeliveryConfirmationEmail";
@@ -66,7 +66,8 @@ export async function PATCH(
           })
         );
 
-        await resend.emails.send({
+        const resend = getResend();
+        if (resend) await resend.emails.send({
           from: process.env.RESEND_FROM_EMAIL!,
           to: order.customerEmail,
           subject: `Your order #${order.id.slice(-8)} has been delivered!`,

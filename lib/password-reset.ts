@@ -1,6 +1,6 @@
 import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/services/resend";
+import { getResend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
 import { getEmailBranding } from "@/lib/config/app-settings";
 import PasswordResetEmail from "@/emails/PasswordResetEmail";
@@ -53,6 +53,9 @@ export async function requestPasswordReset(email: string) {
     PasswordResetEmail({ resetUrl, storeName, logoUrl, supportEmail }),
     { pretty: false }
   );
+
+  const resend = getResend();
+  if (!resend) return { ok: true } as const;
 
   await resend.emails.send({
     from: `${storeName} <${fromEmail}>`,

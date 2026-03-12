@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/services/resend";
+import { getResend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
 import { getEmailBranding } from "@/lib/config/app-settings";
 import NewsletterWelcomeEmail from "@/emails/NewsletterWelcomeEmail";
@@ -86,7 +86,8 @@ export async function POST(request: NextRequest) {
             { pretty: false }
           );
 
-          await resend.emails.send({
+          const resend = getResend();
+          if (resend) await resend.emails.send({
             from: `${storeName} <${fromEmail}>`,
             to: [email],
             subject: `Welcome Back to ${storeName} Newsletter! ☕`,
@@ -113,7 +114,8 @@ export async function POST(request: NextRequest) {
               { pretty: false }
             );
 
-            await resend.emails.send({
+            const resend = getResend();
+            if (resend) await resend.emails.send({
               from: `${storeName} Notifications <${fromEmail}>`,
               to: [fromEmail],
               subject: `Newsletter Resubscribed: ${email}`,
@@ -166,7 +168,8 @@ export async function POST(request: NextRequest) {
 
       console.log("Welcome email HTML length:", emailHtml.length);
 
-      await resend.emails.send({
+      const resend = getResend();
+      if (resend) await resend.emails.send({
         from: `${storeName} <${fromEmail}>`,
         to: [email],
         subject: `Welcome to ${storeName} Newsletter! ☕`,
@@ -200,7 +203,8 @@ export async function POST(request: NextRequest) {
 
         console.log("Admin notification HTML length:", notificationHtml.length);
 
-        await resend.emails.send({
+        const resend = getResend();
+        if (resend) await resend.emails.send({
           from: `${storeName} Notifications <${fromEmail}>`,
           to: [fromEmail],
           subject: `New Newsletter Subscriber: ${email}`,

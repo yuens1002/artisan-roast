@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resend } from "@/lib/services/resend";
+import { getResend } from "@/lib/services/resend";
 import { getEmailBranding } from "@/lib/config/app-settings";
 import ContactFormEmail from "@/emails/ContactFormEmail";
 import { getErrorMessage } from "@/lib/error-utils";
@@ -30,6 +30,14 @@ export async function POST(req: NextRequest) {
     console.log(`Attempting to send email to: ${adminEmail}`);
 
     const { storeName, logoUrl } = await getEmailBranding();
+
+    const resend = getResend();
+    if (!resend) {
+      return NextResponse.json(
+        { error: "Email not configured" },
+        { status: 503 }
+      );
+    }
 
     const { data, error } = await resend.emails.send({
       from: `${storeName} <onboarding@resend.dev>`,

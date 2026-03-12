@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
-import { stripe } from "@/lib/services/stripe";
+import { getStripe } from "@/lib/services/stripe";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -114,6 +114,9 @@ export async function cancelSubscription(id: string) {
     };
   }
 
+  const stripe = getStripe();
+  if (!stripe) return { success: false, error: "Payments not configured" };
+
   // Cancel at period end - customer keeps access until period ends
   await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
     cancel_at_period_end: true,
@@ -162,6 +165,9 @@ export async function skipBillingPeriod(id: string) {
     subscription.deliverySchedule
   );
 
+  const stripe = getStripe();
+  if (!stripe) return { success: false, error: "Payments not configured" };
+
   // Pause collection - void next invoice, auto-resume after one period
   await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
     pause_collection: {
@@ -206,6 +212,9 @@ export async function resumeSubscription(id: string) {
   if (subscription.status !== "PAUSED") {
     return { success: false, error: "Can only resume paused subscriptions" };
   }
+
+  const stripe = getStripe();
+  if (!stripe) return { success: false, error: "Payments not configured" };
 
   // Remove pause_collection to resume billing
   await stripe.subscriptions.update(subscription.stripeSubscriptionId, {

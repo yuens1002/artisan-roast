@@ -3,14 +3,14 @@
 import type Stripe from "stripe";
 
 jest.mock("@/lib/services/stripe", () => ({
-  stripe: {
+  getStripe: () => ({
     paymentIntents: {
       retrieve: jest.fn().mockResolvedValue({
         id: "pi_123",
         latest_charge: { id: "ch_123", payment_method_details: { card: { last4: "4242" } } },
       }),
     },
-  },
+  }),
 }));
 
 jest.mock("@/lib/logger", () => ({

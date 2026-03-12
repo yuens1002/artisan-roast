@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
-import { stripe } from "@/lib/services/stripe";
-import { resend } from "@/lib/services/resend";
+import { getStripe } from "@/lib/services/stripe";
+import { getResend } from "@/lib/services/resend";
 import { render } from "@react-email/components";
 import { getEmailBranding } from "@/lib/config/app-settings";
 import RefundNotificationEmail from "@/emails/RefundNotificationEmail";
@@ -98,6 +98,14 @@ export async function POST(
       );
     }
 
+    const stripe = getStripe();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: "Payments not configured" },
+        { status: 503 }
+      );
+    }
+
     // Issue Stripe refund
     await stripe.refunds.create({
       payment_intent: order.stripePaymentIntentId,
@@ -177,7 +185,8 @@ export async function POST(
           })
         );
 
-        await resend.emails.send({
+        const resend = getResend();
+        if (resend) await resend.emails.send({
           from: process.env.RESEND_FROM_EMAIL!,
           to: order.customerEmail,
           subject: `Refund processed for your order #${order.id.slice(-8)}`,

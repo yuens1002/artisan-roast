@@ -35,7 +35,7 @@ services:
       - product_uploads:/app/public/products
     # First-run seeding/admin (manual): docker compose run --rm app npm run setup -- --email=owner@shop.com --password=changeme
     command: >-
-      sh -c "npx prisma migrate deploy && npm run build && npm run start"
+      sh -c "npx prisma migrate deploy && node scripts/seed-if-empty.js && npm run build && npm run start"
     restart: unless-stopped
 
 volumes:

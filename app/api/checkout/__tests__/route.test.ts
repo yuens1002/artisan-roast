@@ -12,13 +12,13 @@ jest.mock("@/lib/services/stripe", () => {
   const createMock = jest.fn();
   return {
     __esModule: true,
-    stripe: {
+    getStripe: () => ({
       checkout: {
         sessions: {
           create: createMock,
         },
       },
-    },
+    }),
     __mock: { createMock },
   };
 });
