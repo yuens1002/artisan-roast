@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
-import { Resend } from "resend";
 
 import { prisma } from "@/lib/prisma";
 import { validateEnv } from "@/lib/validate-env";
+import { getStripe } from "@/lib/services/stripe";
+import { getResend } from "@/lib/services/resend";
 
 type CheckStatus = "ok" | "error" | "skipped";
 
@@ -24,14 +24,6 @@ type HealthResponse = {
 
 export const dynamic = "force-dynamic";
 
-const stripeClient = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY)
-  : null;
-
-const resendClient = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
-
 async function checkDatabase(): Promise<CheckResult> {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -42,12 +34,13 @@ async function checkDatabase(): Promise<CheckResult> {
 }
 
 async function checkStripe(): Promise<CheckResult> {
-  if (!stripeClient) {
+  const stripe = getStripe();
+  if (!stripe) {
     return { status: "skipped", message: "STRIPE_SECRET_KEY not set" };
   }
 
   try {
-    await stripeClient.balance.retrieve();
+    await stripe.balance.retrieve();
     return { status: "ok" };
   } catch (error) {
     return { status: "error", message: toMessage(error) };
@@ -55,12 +48,13 @@ async function checkStripe(): Promise<CheckResult> {
 }
 
 async function checkResend(): Promise<CheckResult> {
-  if (!resendClient) {
+  const resend = getResend();
+  if (!resend) {
     return { status: "skipped", message: "RESEND_API_KEY not set" };
   }
 
   try {
-    await resendClient.domains.list();
+    await resend.domains.list();
     return { status: "ok" };
   } catch (error) {
     return { status: "error", message: toMessage(error) };

@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import Stripe from "stripe";
+import { getStripe } from "@/lib/services/stripe";
 import { getErrorMessage } from "@/lib/error-utils";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-01-28.clover",
-});
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
+    const stripe = getStripe();
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -57,8 +55,8 @@ export async function POST(
       );
     }
 
-    // Process refund via Stripe if payment intent exists
-    if (order.stripePaymentIntentId) {
+    // Process refund via Stripe if payment intent exists and Stripe is configured
+    if (order.stripePaymentIntentId && stripe) {
       try {
         await stripe.refunds.create({
           payment_intent: order.stripePaymentIntentId,
@@ -105,7 +103,7 @@ export async function POST(
     });
 
     // If this is a subscription order, cancel the Stripe subscription
-    if (order.stripeSubscriptionId) {
+    if (order.stripeSubscriptionId && stripe) {
       try {
         console.log(
           `🔄 Canceling Stripe subscription ${order.stripeSubscriptionId}...`

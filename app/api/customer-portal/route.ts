@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import Stripe from "stripe";
+import { getStripe } from "@/lib/services/stripe";
 import { getErrorMessage } from "@/lib/error-utils";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-01-28.clover",
-});
 
 /**
  * POST /api/customer-portal
@@ -13,6 +10,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
  */
 export async function POST(req: NextRequest) {
   try {
+    const stripe = getStripe();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: "Payments not configured" },
+        { status: 503 }
+      );
+    }
+
     const session = await auth();
 
     if (!session?.user?.email) {
