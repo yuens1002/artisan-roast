@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.95.5 - 2026-03-12
+
+### Added
+
+- **Install matrix CI workflow**: Automated e2e test across 4 env-var profiles (minimal, stripe-only, resend-only, full) using Postgres service container. Validates health endpoint, checkout behavior, storefront rendering, and seed idempotency.
+
 ## 0.95.4 - 2026-03-12
 
 ### Added

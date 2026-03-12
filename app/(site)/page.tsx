@@ -20,10 +20,8 @@ export default async function Home() {
   // Fetch recommendations (depends on userId from auth)
   const recommendations = await getHomeRecommendations(userId);
 
-  // AI section logic
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-  const isDemoUser = session?.user?.email === "demo@artisanroast.com";
-  const showVoiceBarista = isDemoMode && isDemoUser;
+  // Voice barista disabled — VAPI is not ready for production
+  const showVoiceBarista = false;
 
   return (
     <>
