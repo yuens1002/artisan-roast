@@ -1,0 +1,209 @@
+name: Install Matrix
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "lib/services/**"
+      - "lib/validate-env.ts"
+      - "app/api/health/**"
+      - "app/api/checkout/**"
+      - "scripts/seed-if-empty.js"
+      - "scripts/build-resilient.js"
+      - "docker-compose.yml"
+      - ".github/workflows/install-matrix.yml"
+  schedule:
+    - cron: "0 3 * * 0" # Sunday 3 AM UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  matrix-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: artisan_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U testuser -d artisan_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Health returns "ok" when skipped (not "degraded") — "degraded" only on error
+          - profile: minimal
+            stripe_key: ""
+            stripe_pub_key: ""
+            resend_key: ""
+            expected_status: ok
+            expected_stripe: skipped
+            expected_resend: skipped
+            checkout_expect: 503
+
+          - profile: stripe-only
+            stripe_key: from_secret
+            stripe_pub_key: from_secret
+            resend_key: ""
+            expected_status: ok
+            expected_stripe: ok
+            expected_resend: skipped
+            checkout_expect: 400
+
+          - profile: resend-only
+            stripe_key: ""
+            stripe_pub_key: ""
+            resend_key: from_secret
+            expected_status: ok
+            expected_stripe: skipped
+            expected_resend: ok
+            checkout_expect: 503
+
+          - profile: full
+            stripe_key: from_secret
+            stripe_pub_key: from_secret
+            resend_key: from_secret
+            expected_status: ok
+            expected_stripe: ok
+            expected_resend: ok
+            checkout_expect: 400
+
+    env:
+      DATABASE_URL: postgresql://testuser:testpass@localhost:5432/artisan_test?schema=public
+      DIRECT_URL: postgresql://testuser:testpass@localhost:5432/artisan_test?schema=public
+      AUTH_SECRET: test-secret-at-least-32-characters-long
+      STRIPE_SECRET_KEY: ${{ matrix.stripe_key == 'from_secret' && secrets.STRIPE_SECRET_KEY || '' }}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ matrix.stripe_pub_key == 'from_secret' && secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '' }}
+      RESEND_API_KEY: ${{ matrix.resend_key == 'from_secret' && secrets.RESEND_API_KEY || '' }}
+      RESEND_FROM_EMAIL: "Test <test@example.com>"
+      SKIP_SSG: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-engines
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run migrations
+        run: npx prisma migrate deploy
+
+      - name: Seed if empty
+        run: node scripts/seed-if-empty.js
+
+      - name: Build app
+        run: npm run build:no-migrate
+
+      - name: Start server
+        run: |
+          npm start &
+          echo "Waiting for server..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "Server ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "FAIL: server did not become ready within 60s"
+          exit 1
+
+      - name: "Assert: health endpoint status"
+        run: |
+          RESPONSE=$(curl -sf http://localhost:3000/api/health)
+          STATUS=$(echo "$RESPONSE" | jq -r '.status')
+          HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://localhost:3000/api/health)
+
+          echo "Profile: ${{ matrix.profile }}"
+          echo "HTTP: $HTTP_CODE | Status: $STATUS"
+          echo "$RESPONSE" | jq .
+
+          # Assert HTTP code is 200
+          [ "$HTTP_CODE" = "200" ] || { echo "FAIL: expected HTTP 200, got $HTTP_CODE"; exit 1; }
+
+          # Assert overall status
+          [ "$STATUS" = "${{ matrix.expected_status }}" ] || { echo "FAIL: expected status '${{ matrix.expected_status }}', got '$STATUS'"; exit 1; }
+
+          # Assert database is always ok
+          DB_STATUS=$(echo "$RESPONSE" | jq -r '.checks.database.status')
+          [ "$DB_STATUS" = "ok" ] || { echo "FAIL: database expected 'ok', got '$DB_STATUS'"; exit 1; }
+
+          # Assert Stripe check
+          STRIPE_STATUS=$(echo "$RESPONSE" | jq -r '.checks.stripe.status')
+          [ "$STRIPE_STATUS" = "${{ matrix.expected_stripe }}" ] || { echo "FAIL: stripe expected '${{ matrix.expected_stripe }}', got '$STRIPE_STATUS'"; exit 1; }
+
+          # Assert Resend check
+          RESEND_STATUS=$(echo "$RESPONSE" | jq -r '.checks.resend.status')
+          [ "$RESEND_STATUS" = "${{ matrix.expected_resend }}" ] || { echo "FAIL: resend expected '${{ matrix.expected_resend }}', got '$RESEND_STATUS'"; exit 1; }
+
+          echo "✅ Health check assertions passed"
+
+      - name: "Assert: checkout endpoint"
+        run: |
+          HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' -X POST http://localhost:3000/api/checkout \
+            -H 'Content-Type: application/json' \
+            -d '{}')
+
+          echo "Profile: ${{ matrix.profile }} | Checkout HTTP: $HTTP_CODE | Expected: ${{ matrix.checkout_expect }}"
+
+          [ "$HTTP_CODE" = "${{ matrix.checkout_expect }}" ] || { echo "FAIL: expected ${{ matrix.checkout_expect }}, got $HTTP_CODE"; exit 1; }
+
+          echo "✅ Checkout assertion passed"
+
+      - name: "Assert: storefront renders"
+        run: |
+          HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://localhost:3000/)
+
+          [ "$HTTP_CODE" = "200" ] || { echo "FAIL: storefront expected 200, got $HTTP_CODE"; exit 1; }
+
+          echo "✅ Storefront renders (HTTP 200)"
+
+      - name: "Assert: seed idempotency (minimal only)"
+        if: matrix.profile == 'minimal'
+        run: |
+          # Count products via node to avoid fragile grep parsing
+          COUNT_BEFORE=$(node -e "
+            const { PrismaClient } = require('@prisma/client');
+            const p = new PrismaClient();
+            p.product.count().then(c => { console.log(c); p.\$disconnect(); });
+          ")
+
+          # Run seed again
+          node scripts/seed-if-empty.js
+
+          COUNT_AFTER=$(node -e "
+            const { PrismaClient } = require('@prisma/client');
+            const p = new PrismaClient();
+            p.product.count().then(c => { console.log(c); p.\$disconnect(); });
+          ")
+
+          echo "Before: $COUNT_BEFORE | After: $COUNT_AFTER"
+
+          [ "$COUNT_BEFORE" = "$COUNT_AFTER" ] || { echo "FAIL: seed is not idempotent ($COUNT_BEFORE → $COUNT_AFTER)"; exit 1; }
+
+          echo "✅ Seed idempotency check passed"
