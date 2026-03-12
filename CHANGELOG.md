@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.95.4 - 2026-03-12
+
+### Added
+
+- **Graceful degradation**: App starts with only `DATABASE_URL` + `AUTH_SECRET` — Stripe and Resend initialize lazily and return null when unconfigured
+- **Storefront checkout guard**: Checkout disabled with user-facing message when Stripe is not configured
+- **Auto-seed on first deploy**: Vercel deploys auto-seed when DB is empty; Docker Compose runs `seed-if-empty.js` after migrate
+- **Admin setup checklist**: Dismissible "Getting started" card on dashboard tracking products, payments, email, branding
+- **Integration banners**: Warning banners on Orders and Subscriptions admin pages when Stripe is missing
+- **Install e2e matrix test plan**: `docs/plans/install-e2e-matrix-test.md` for automated CI testing across env-var combinations
+
+### Changed
+
+- **Required env vars reduced from 6 to 2**: Stripe and Resend keys moved to optional — app degrades gracefully
+- **Health endpoint**: Returns 200 with `"degraded"` status instead of 503 when optional services are missing
+- **VAPI gated as demo-only**: Voice barista only renders when `NEXT_PUBLIC_DEMO_MODE=true`
+- **INSTALLATION.md restructured**: Three clear install paths (Vercel One-Click, Docker Compose, Local Development)
+- **Cancel order route**: Stripe refund now attempted before marking order as refunded (data integrity fix)
+
+### Fixed
+
+- **Vercel deploy button**: URLs corrected from old `ecomm-ai-app` repo to `artisan-roast`
+- **Clone URLs**: Fixed in README and INSTALLATION.md
+- **VAPI gate condition**: Was inverted (`isDemoUser && !isDemoMode` → `isDemoMode && isDemoUser`)
+
 ## 0.95.3 - 2026-03-11
 
 ### Added
