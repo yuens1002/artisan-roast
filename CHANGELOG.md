@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.95.6 - 2026-03-12
+
+### Fixed
+
+- **Build crash without Stripe keys**: Customer portal, health endpoint, and user order cancel routes still had top-level `new Stripe()` that crashed at build time — converted to lazy `getStripe()` singletons
+- **VAPI voice barista**: Disabled entirely — not ready for production
+
 ## 0.95.5 - 2026-03-12
 
 ### Added
