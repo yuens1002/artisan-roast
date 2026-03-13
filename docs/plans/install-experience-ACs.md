@@ -38,7 +38,7 @@ Shipped in v0.95.4–v0.95.6 across PRs #226, #228–#231. Implements the "5-Min
 
 **Given** `RESEND_API_KEY` is NOT set
 **When** `POST /api/contact` is called
-**Then** HTTP 503 with JSON `{ "error": "Email service not configured" }`
+**Then** HTTP 503 with JSON `{ "error": "Email not configured" }`
 
 ## AC6: Email silently skipped
 
@@ -57,6 +57,7 @@ Shipped in v0.95.4–v0.95.6 across PRs #226, #228–#231. Implements the "5-Min
 **Given** a fresh install (no products, no Stripe, no Resend, default store name)
 **When** an admin visits the dashboard
 **Then** a "Getting started (0/4)" checklist appears with:
+
 - [ ] Add your products → link to /admin/products/new
 - [ ] Configure payments (Stripe) → link to setup guide
 - [ ] Configure email (Resend) → link to setup guide
@@ -129,6 +130,7 @@ Shipped in v0.95.4–v0.95.6 across PRs #226, #228–#231. Implements the "5-Min
 ## AC16: INSTALLATION.md accuracy
 
 The doc has 3 install paths:
+
 1. **Vercel One-Click** — 3 steps, links to correct repo
 2. **Docker Compose** — 4 steps, includes `seed-if-empty.js`
 3. **Local Development** — 5 steps, correct commands
