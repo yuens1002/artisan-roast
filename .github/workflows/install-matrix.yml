@@ -204,17 +204,20 @@ jobs:
 
       - name: "Assert: seed idempotency (minimal only)"
         if: matrix.profile == 'minimal'
+        env:
+          PGPASSWORD: testpass
+          PGHOST: localhost
+          PGUSER: testuser
+          PGDATABASE: artisan_test
         run: |
-          # Count products via psql directly (avoids Prisma client issues post-build)
-          COUNT_BEFORE=$(PGPASSWORD=testpass psql -h localhost -U testuser -d artisan_test -tAc 'SELECT COUNT(*) FROM "Product"')
+          set -euo pipefail
 
+          COUNT_BEFORE=$(psql -tAc 'SELECT COUNT(*) FROM "Product"')
           echo "Products before re-seed: $COUNT_BEFORE"
 
-          # Run seed again
           node scripts/seed-if-empty.js
 
-          COUNT_AFTER=$(PGPASSWORD=testpass psql -h localhost -U testuser -d artisan_test -tAc 'SELECT COUNT(*) FROM "Product"')
-
+          COUNT_AFTER=$(psql -tAc 'SELECT COUNT(*) FROM "Product"')
           echo "Products after re-seed: $COUNT_AFTER"
 
           [ "$COUNT_BEFORE" = "$COUNT_AFTER" ] || { echo "FAIL: seed is not idempotent ($COUNT_BEFORE → $COUNT_AFTER)"; exit 1; }
