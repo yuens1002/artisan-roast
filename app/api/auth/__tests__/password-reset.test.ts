@@ -185,6 +185,51 @@ describe("Password Reset Service", () => {
       });
     });
 
+    it("should return ok without crashing when RESEND_API_KEY is not set", async () => {
+      const testUserId = "test-user-id";
+
+      (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
+        id: testUserId,
+        email: "user@example.com",
+        passwordHash: "hash",
+        name: null,
+        emailVerified: null,
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isAdmin: false,
+      });
+
+      (prisma.passwordResetToken.deleteMany as jest.Mock).mockResolvedValueOnce(
+        { count: 0 }
+      );
+
+      (prisma.passwordResetToken.create as jest.Mock).mockResolvedValueOnce({
+        id: "token-id",
+        userId: testUserId,
+        tokenHash: "hash",
+        expiresAt: new Date(),
+        consumedAt: null,
+        createdAt: new Date(),
+      });
+
+      (prisma.siteSettings.findUnique as jest.Mock).mockResolvedValue(null);
+
+      // Temporarily override getResend() to return null (no RESEND_API_KEY)
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const resendModule = require("@/lib/services/resend") as { getResend: jest.Mock };
+      const spy = jest.spyOn(resendModule, "getResend").mockReturnValue(null);
+
+      try {
+        const result = await requestPasswordReset("user@example.com");
+
+        expect(result).toEqual({ ok: true });
+        expect(mockResendClient.emails.send).not.toHaveBeenCalled();
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
     it("should create token with correct expiry time", async () => {
       const testUserId = "test-user-id";
 
