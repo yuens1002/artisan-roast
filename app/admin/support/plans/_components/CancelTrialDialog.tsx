@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -67,12 +67,12 @@ export function CancelTrialDialog({
   const [otherText, setOtherText] = useState<string>("");
 
   const variant = cardAdded ? "card-added" : "no-card";
-  const heading = cardAdded ? "Cancel your subscription?" : "Cancel your trial?";
+  const heading = "Cancel your trial?";
   const description = cardAdded
     ? "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve."
     : "Your trial will be cancelled and your store deprovisioned. Tell us why before you go — your feedback helps us improve.";
   const keepLabel = cardAdded ? "Keep subscription" : "Keep trial";
-  const confirmLabel = cardAdded ? "Continue to Stripe →" : "Cancel trial";
+  const confirmLabel = cardAdded ? "Continue to Stripe" : "Cancel trial";
 
   function reset() {
     setReason("");
@@ -188,6 +188,7 @@ export function CancelTrialDialog({
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {confirmLabel}
+            {cardAdded && <ExternalLink className="ml-1.5 h-3.5 w-3.5" />}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -172,6 +172,19 @@ const MOCK_PLANS: Plan[] = [
         "Cancel anytime during your trial — no contract, no commitment",
       ],
     },
+    cancelModal: {
+      heading: "Cancel your trial?",
+      description: "Your trial will be cancelled and your store deprovisioned. Tell us why before you go — your feedback helps us improve.",
+      reasons: [
+        { value: "too-expensive", label: "Too expensive" },
+        { value: "missing-features", label: "Missing features" },
+        { value: "switching", label: "Switching to another platform" },
+        { value: "no-longer-needed", label: "Don't need it anymore" },
+        { value: "other", label: "Other" },
+      ],
+      keepLabel: "Keep trial",
+      confirmLabel: "Cancel trial",
+    },
   },
   {
     slug: "house-blend",
@@ -208,6 +221,19 @@ const MOCK_PLANS: Plan[] = [
         "Unused support tickets do not roll over to the next billing period",
         "Custom domain assignment held while subscription is active",
       ],
+    },
+    cancelModal: {
+      heading: "Cancel your subscription?",
+      description: "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve.",
+      reasons: [
+        { value: "too-expensive", label: "Too expensive" },
+        { value: "missing-features", label: "Missing features" },
+        { value: "switching", label: "Switching to another platform" },
+        { value: "no-longer-needed", label: "Don't need it anymore" },
+        { value: "other", label: "Other" },
+      ],
+      keepLabel: "Keep subscription",
+      confirmLabel: "Continue to Stripe",
     },
   },
 ];

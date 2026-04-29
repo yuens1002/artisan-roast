@@ -25,12 +25,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { UsageBar, getNextRenewalDate } from "../UsageBar";
 import { refreshLicense } from "../actions";
@@ -669,8 +663,7 @@ function TrialCard({
   const formatTrialDays = (pool: CreditPool) =>
     `${pool.remaining} / ${pool.limit} remaining`;
 
-  // Add Billing is disabled when the customer has already added a card.
-  const addBillingDisabled =
+  const cardAdded =
     trialStatus.status === "ACTIVE" && trialStatus.cardAdded;
 
   const tagline =
@@ -723,41 +716,47 @@ function TrialCard({
         )}
       </div>
 
-      {/* Actions: Cancel text-link left + Add Billing button right.
-          No Details — Trial card has no detail page (per AC-UI-18). */}
+      {/* Actions — No Details (Trial card has no detail page, per AC-UI-18).
+          cardAdded=false: Cancel text-link + Add Billing.
+          cardAdded=true:  Manage Billing only — cancellation goes through Stripe. */}
       <div className="flex items-center gap-2 mt-auto pt-5">
-        <button
-          type="button"
-          onClick={onCancelTrial}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Cancel
-        </button>
-        <div className="flex-1" />
-        {addBillingDisabled ? (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0}>
-                  <Button size="sm" disabled>
-                    Add Billing
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>Billing already on file</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ) : (
-          <Button size="sm" asChild disabled={!extendUrl}>
-            <a
-              href={extendUrl || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
+        {!cardAdded && (
+          <>
+            <button
+              type="button"
+              onClick={onCancelTrial}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Add Billing
-              <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-            </a>
-          </Button>
+              Cancel
+            </button>
+            <div className="flex-1" />
+            <Button size="sm" asChild disabled={!extendUrl}>
+              <a
+                href={extendUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Add Billing
+                <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+              </a>
+            </Button>
+          </>
+        )}
+        {cardAdded && (
+          <>
+            <div className="flex-1" />
+            {/* URL interim: replace with billing portal URL from provider payload */}
+            <Button size="sm" variant="outline" asChild disabled={!extendUrl}>
+              <a
+                href={extendUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Manage Billing
+                <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+              </a>
+            </Button>
+          </>
         )}
       </div>
     </div>

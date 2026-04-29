@@ -36,6 +36,25 @@ export interface Plan {
   saleEndsAt?: string;
   /** Sale badge text (e.g. "Launch Special"). Null when no active sale. */
   saleLabel?: string;
+  /** Cancel modal config — supplied by the platform in the plan payload. */
+  cancelModal?: CancelModalConfig;
+}
+
+// ---------------------------------------------------------------------------
+// Cancel modal config (provider-driven — platform supplies copy + reason list)
+// ---------------------------------------------------------------------------
+
+export interface CancelModalConfig {
+  /** Dialog heading (e.g. "Cancel your trial?") */
+  heading: string;
+  /** Dialog body copy */
+  description: string;
+  /** Reason dropdown options */
+  reasons: Array<{ value: string; label: string }>;
+  /** Dismiss button label (e.g. "Keep trial") */
+  keepLabel: string;
+  /** Confirm button label (e.g. "Cancel trial") */
+  confirmLabel: string;
 }
 
 export interface PlanDetails {

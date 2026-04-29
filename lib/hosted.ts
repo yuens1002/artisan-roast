@@ -55,17 +55,27 @@ export type TrialStatusConverted = {
   };
 };
 
+/** Billing cancelled; customer retains access until deprovisionAt. */
+export type TrialStatusCancelled = {
+  status: "CANCELLED";
+  cardAdded: true;
+  daysRemaining: number;
+  daysLimit: number;
+  deprovisionAt: string;
+};
+
 export type TrialStatus =
   | TrialStatusActive
   | TrialStatusExpired
-  | TrialStatusConverted;
+  | TrialStatusConverted
+  | TrialStatusCancelled;
 
 // ---------------------------------------------------------------------------
 // Dev/verification fixtures
 //   `MOCK_HOSTED_STATUS` short-circuits the upstream fetch and returns a
 //   hardcoded fixture so the plans page can be exercised without a live
 //   hosting service. Mirrors the `MOCK_LICENSE_TIER` pattern in lib/license.ts.
-//   Values: ACTIVE_NO_CARD | ACTIVE_CARD_ADDED | EXPIRED | CONVERTED
+//   Values: ACTIVE_NO_CARD | ACTIVE_CARD_ADDED | EXPIRED | CONVERTED | PENDING_CANCEL
 // ---------------------------------------------------------------------------
 
 const MOCK_FIXTURES: Record<string, TrialStatus> = {
@@ -88,6 +98,15 @@ const MOCK_FIXTURES: Record<string, TrialStatus> = {
     daysLimit: 14,
     deprovisionAt: new Date(
       Date.now() + 14 * 24 * 60 * 60 * 1000
+    ).toISOString(),
+  },
+  PENDING_CANCEL: {
+    status: "CANCELLED",
+    cardAdded: true,
+    daysRemaining: 18,
+    daysLimit: 30,
+    deprovisionAt: new Date(
+      Date.now() + 18 * 24 * 60 * 60 * 1000
     ).toISOString(),
   },
   CONVERTED: {
