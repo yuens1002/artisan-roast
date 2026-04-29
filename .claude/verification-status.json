@@ -2,12 +2,12 @@
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
     "feat/hosted-store-s2": {
-      "status": "implementing",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 48,
       "acs_total": 50,
       "tasks": [],
       "acs_doc": "docs/plans/hosting-extension-trial-ui-ACs.md",
-      "notes": "Trial UI body of work under the hosting-extension feature umbrella (in-store admin trial cards + Cancel modal + Download Your Data). Plan at docs/features/hosting-extension/trial-ui-plan.md; architecture at docs/features/hosting-extension/ARCHITECTURE.md. ~50 ACs (35 UI + 10 FN + 5 TST + 5 REG). Pre-launch — no live customers."
+      "notes": "48/50 ACs verified. Sub-agent: 27 PASS (code review) + 20 BLOCKED. QC: took Playwright screenshots across Setups A/C/D/F/G; resolved all BLOCKED UI ACs from evidence. 2 remain BLOCKED (AC-UI-1b, AC-REG-5 — Priority Support active state, unchanged code, low risk). 0 FAIL. 1303 tests pass. Precheck 0 errors. Fixture correction: Setups C/D/E use MOCK_LICENSE_TIER=FREE not HOSTED. AC-FN-6 Manage billing: design confirmed as direct link, not POST. AC-UI-20: 'Subscribe' label vs 'Subscribe Now' — minor copy, flagged for Reviewer."
     },
     "feat/counter-ux": {
       "status": "verified",
