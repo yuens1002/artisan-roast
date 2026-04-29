@@ -2,7 +2,7 @@
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
     "feat/hosted-store-s2": {
-      "status": "planned",
+      "status": "implementing",
       "acs_passed": 0,
       "acs_total": 50,
       "tasks": [],
