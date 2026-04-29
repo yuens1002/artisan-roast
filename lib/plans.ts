@@ -63,6 +63,21 @@ export function invalidatePlansCache(): void {
   cached = null;
 }
 
+/**
+ * Filter the plan catalog by build-mode visibility.
+ *
+ * Self-hosted instances see only `visibility: "self-hosted"` plans;
+ * hosted instances see only `visibility: "hosted"` plans. The two sets
+ * are disjoint — no plan is visible in both modes.
+ */
+export function filterPlansByVisibility(
+  plans: Plan[],
+  isHosted: boolean
+): Plan[] {
+  const target = isHosted ? "hosted" : "self-hosted";
+  return plans.filter((p) => p.visibility === target);
+}
+
 // ---------------------------------------------------------------------------
 // Mock plans (for MOCK_LICENSE_TIER env var)
 // ---------------------------------------------------------------------------
@@ -77,6 +92,7 @@ const MOCK_PLANS: Plan[] = [
     interval: "month",
     features: [],
     highlight: false,
+    visibility: "self-hosted",
     saleLabel: "Forever",
     details: {
       benefits: [
@@ -102,6 +118,7 @@ const MOCK_PLANS: Plan[] = [
     interval: "month",
     features: ["priority-support"],
     highlight: true,
+    visibility: "self-hosted",
     salePrice: 2900,
     saleEndsAt: "2026-04-25T00:00:00Z",
     saleLabel: "Launch Special",
@@ -134,6 +151,62 @@ const MOCK_PLANS: Plan[] = [
         "Billed monthly, cancel anytime from your billing dashboard",
         "Unused tickets do not roll over to the next billing period",
         "Purchased add-on credits never expire",
+      ],
+    },
+  },
+  {
+    slug: "house-blend-trial",
+    name: "House Blend Trial",
+    description: "14-day free trial of fully managed hosting",
+    price: 0,
+    currency: "USD",
+    interval: "month",
+    features: ["hosted-trial"],
+    highlight: false,
+    visibility: "hosted",
+    details: {
+      benefits: [
+        "No billing needed — or add billing to extend your trial up to 30 days",
+        "You own your trial data — download a ZIP anytime during the trial",
+        "100% feature parity from day 1 — subscribe anytime to assign a custom domain",
+        "Cancel anytime during your trial — no contract, no commitment",
+      ],
+    },
+  },
+  {
+    slug: "house-blend",
+    name: "House Blend",
+    description: "Fully managed hosting with custom domain and priority support",
+    price: 4900,
+    currency: "USD",
+    interval: "month",
+    features: ["hosted"],
+    highlight: true,
+    visibility: "hosted",
+    details: {
+      benefits: [
+        "Fully managed hosting — we run the infrastructure",
+        "Custom domain on your store",
+        "Automatic backups and security updates",
+        "5 priority support tickets, 48-hr SLA",
+      ],
+      sla: {
+        responseTime: "48 hours",
+        availability: "Business days (Mon–Fri)",
+      },
+      quotas: [
+        { icon: "ticket", slug: "tickets", label: "Priority Tickets", limit: 5 },
+      ],
+      scope: [
+        "Hosting infrastructure",
+        "Custom domain configuration",
+        "Setup & configuration support",
+        "Troubleshooting",
+      ],
+      terms: [
+        "Billed monthly, cancel anytime from your billing dashboard",
+        "Unused support tickets do not roll over to the next billing period",
+        "Custom domain assignment held while subscription is active",
       ],
     },
   },

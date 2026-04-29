@@ -28,6 +28,8 @@ export interface Plan {
   details: PlanDetails;
   /** Whether to visually highlight this plan (e.g. "recommended") */
   highlight: boolean;
+  /** Visibility discriminator — controls which build mode renders the card */
+  visibility: "self-hosted" | "hosted";
   /** Optional sale price in cents (shown as current price, original struck through) */
   salePrice?: number;
   /** ISO 8601 date when the sale offer expires (e.g. "2026-04-25T00:00:00Z") */
