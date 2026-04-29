@@ -100,16 +100,16 @@ For each UI AC, read the **What**, **How**, and **Pass** columns:
 
 For each page in PAGES_TO_SCREENSHOT:
 
-1. Write a Puppeteer script to the scratchpad directory that:
+1. Write a Playwright/Puppeteer script to **`.scratch/verify-{feature}.ts`** (gitignored — never `scripts/`):
    - Navigates to the page at the given dev server URL
    - Performs any interaction steps (click tab, wait for load, etc.)
    - Captures screenshots at three breakpoints:
      - mobile: 375x812
      - tablet: 768x1024
      - desktop: 1440x900
-   - Saves to `.screenshots/verify-{breakpoint}-{page-name}.png`
+   - Saves to `.screenshots/{feature-name}/verify-{breakpoint}-{page-name}.png`
 
-2. Run the script: `npx tsx {scratchpad}/verify-screenshot.ts`
+2. Run the script: `npx tsx .scratch/verify-{feature}.ts`
 
 3. Read each screenshot with the Read tool
 
@@ -187,14 +187,14 @@ If no ACs doc exists yet, produce the report inline in this format:
 
 ## Important Rules
 
-1. **Read, don't write — ever.** The sub-agent verifies only. It does NOT edit source files, create plan documents, create ACs docs, or write any file outside of `.screenshots/` and the scratchpad. If you find yourself about to edit a `.tsx`, `.ts`, `.md`, or any project file, STOP. You are out of scope.
+1. **Read, don't write — ever.** The sub-agent verifies only. It does NOT edit source files, create plan documents, create ACs docs, or write any file outside of `.screenshots/` and `.scratch/`. If you find yourself about to edit a `.tsx`, `.ts`, `.md`, or any project file, STOP. You are out of scope.
 2. **Evidence-based.** Every PASS/FAIL must reference a screenshot or file:line.
 3. **Complete coverage.** Verify ALL ACs, don't skip any.
 4. **Screenshot every breakpoint.** Even if an AC seems desktop-only, capture all three.
 5. **Screenshots go to `.screenshots/{feature-name}/` only.** NEVER save screenshots inside `docs/`, `app/`, `lib/`, or any other project directory. `.screenshots/` is gitignored — subdirectories outside it are not and will be committed to the repo. A screenshot saved anywhere else is a bug.
-6. **Clean scratchpad.** Write Puppeteer scripts to the scratchpad, not `scripts/`.
+6. **Verification scripts go to `.scratch/` only — never `scripts/`.** `.scratch/` is gitignored; `scripts/` is committed. Ephemeral QC tooling must not enter the project repo. Delete scripts from `.scratch/` after the session if desired, but never move them into `scripts/`.
 7. **Report everything.** Include test output, screenshot paths, and code references.
-8. **Combine interaction + evidence.** When an AC requires UI interaction before verification, write a single Puppeteer flow that interacts and captures evidence in sequence. Do not split interaction and screenshot into separate scripts.
+8. **Combine interaction + evidence.** When an AC requires UI interaction before verification, write a single Playwright flow that interacts and captures evidence in sequence. Do not split interaction and screenshot into separate scripts.
 9. **Exercise cautiously.** For ACs requiring form submission or data mutation, verify the UI response (toast, state change) — do not verify database state directly.
 10. **Check Pass criteria literally.** Do not interpret — the Pass column is the contract. If it says "no red text visible" and you see red text, it's FAIL regardless of context.
 11. **How column is the contract.** The How column dictates the verification method. If How says `Screenshot:`, you MUST take a screenshot — do not substitute code review. The QC validator will reject mismatched evidence.
