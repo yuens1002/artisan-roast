@@ -14,10 +14,14 @@ export default async function PlanPage() {
     plans = [];
   }
 
-  // Filter the catalog by build mode — disjoint sets between self-hosted and hosted.
-  const visiblePlans = filterPlansByVisibility(plans, IS_HOSTED);
+  // Visibility: hosted plans render whenever the customer is in any hosted
+  // scenario — trial (HOSTED_TRIAL_ID set) OR paid hosted (license.tier).
+  // The two paths converge once converted; direct-subscribe customers never
+  // had HOSTED_TRIAL_ID set but still need to see the active House Blend card.
+  const isHostedView = IS_HOSTED || license.tier === "HOSTED";
+  const visiblePlans = filterPlansByVisibility(plans, isHostedView);
 
-  // Hosted-mode trial status drives the Trial card visibility.
+  // Trial status only when there's a trial record to fetch.
   const trialStatus = IS_HOSTED ? await getTrialStatus() : null;
 
   // Trial card visibility rule: show only when trial is ACTIVE or EXPIRED.

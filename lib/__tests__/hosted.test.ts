@@ -19,6 +19,7 @@ beforeEach(() => {
   process.env = { ...ORIGINAL_ENV };
   delete process.env.HOSTED_TRIAL_ID;
   delete process.env.PLATFORM_API_URL;
+  delete process.env.MOCK_HOSTED_STATUS;
 });
 
 afterAll(() => {
@@ -206,6 +207,38 @@ describe("getTrialStatus()", () => {
 
       expect(result).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalled();
+    });
+
+    it("returns the fixture and skips fetch when MOCK_HOSTED_STATUS is set", async () => {
+      process.env.MOCK_HOSTED_STATUS = "ACTIVE_NO_CARD";
+      // No HOSTED_TRIAL_ID / PLATFORM_API_URL set — mock should still resolve.
+
+      const { getTrialStatus } = await import("../hosted");
+      const result = await getTrialStatus();
+
+      expect(result).toMatchObject({
+        status: "ACTIVE",
+        cardAdded: false,
+        daysLimit: 14,
+      });
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("ignores MOCK_HOSTED_STATUS when value is unrecognized", async () => {
+      process.env.MOCK_HOSTED_STATUS = "BOGUS";
+      process.env.HOSTED_TRIAL_ID = "test-trial-id";
+      process.env.PLATFORM_API_URL = "http://localhost:3001";
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ status: "ACTIVE", cardAdded: false, daysRemaining: 1, daysLimit: 14 }),
+      });
+
+      const { getTrialStatus } = await import("../hosted");
+      await getTrialStatus();
+
+      expect(mockFetch).toHaveBeenCalled();
     });
 
     it("returns null when JSON parsing fails", async () => {
