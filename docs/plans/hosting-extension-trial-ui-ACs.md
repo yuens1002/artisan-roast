@@ -1,30 +1,27 @@
-# Hosted Store — Trial UI · ACs
+# Hosting Extension — Trial UI · ACs
 
 **Branch:** `feat/hosted-store-s2`
-**Plan:** [`plan.md`](plan.md)
+**Plan:** [`docs/features/hosting-extension/trial-ui-plan.md`](../features/hosting-extension/trial-ui-plan.md)
+**Architecture:** [`docs/features/hosting-extension/ARCHITECTURE.md`](../features/hosting-extension/ARCHITECTURE.md)
 **Iterations:** 0 (initial)
 
 ---
 
-## Doc stance
-
-This is the public open-source ACs doc — verification accountability for the UI states the store renders. **No data shapes**, no DB schemas, no platform internals. Where the platform owns shape (e.g. trial-status response, license fields, cancel-reason DB), the AC verifies behavior at the store boundary (does the card render correctly given the platform's response?), not the platform's internal data.
-
-## Column Definitions
+## Column definitions
 
 | Column | Filled by | When |
-|--------|-----------|------|
+|---|---|---|
 | **Agent** | Verification sub-agent | During `/ac-verify` — PASS/FAIL with brief evidence |
 | **QC** | Main thread agent | After reading sub-agent report — confirms or overrides |
 | **Reviewer** | Human (reviewer) | During manual review — final approval per AC |
 
-Screenshots saved to `.screenshots/hosted-store-trial-ui/` (gitignored).
+Screenshots saved to `.screenshots/hosting-extension-trial-ui/` (gitignored).
 
 ---
 
 ## Test fixture setups
 
-UI ACs use one of six fixture lifecycle states. Each runs against a mock platform on `localhost:3001` returning the trial-status JSON shape (shape owned by platform — see `artisan-roast-platform/docs/products/hosted/features/extended-trial-lifecycle/` for the endpoint contract).
+UI ACs use one of seven fixture lifecycle states. Each runs against a mock service on `localhost:3001` returning the `TrialStatus` JSON shape documented in [`ARCHITECTURE.md`](../features/hosting-extension/ARCHITECTURE.md#integration-contract).
 
 **Setup A — Self-hosted (Community current):** no `HOSTED_TRIAL_ID`, no Priority Support active.
 
@@ -40,15 +37,15 @@ PLATFORM_SUBSCRIBE_URL=https://buy.stripe.com/test_subscribe_link
 LICENSE_KEY=test-license-key
 ```
 
-Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remaining out of 14.
+Mock returns `TrialStatus` with `status: "ACTIVE"`, `cardAdded: false`, `daysRemaining` < `daysLimit: 14`.
 
-**Setup D — Trial · active · card-added:** same env. Mock returns `cardAdded: true`, days remaining out of 30.
+**Setup D — Trial · active · card-added:** same env. Mock returns `cardAdded: true`, `daysLimit: 30`.
 
-**Setup E — Trial · expired (grace period):** same env. Mock returns `status: EXPIRED`, `cardAdded: false`, days remaining at 0, deprovisioning date in the future.
+**Setup E — Trial · expired (grace period):** same env. Mock returns `status: "EXPIRED"`, `daysRemaining: 0`, `deprovisionAt` in the future.
 
-**Setup F — Hosted Paid · converted from trial:** same env. Mock returns `status: CONVERTED` with subscription / renewal info.
+**Setup F — Hosted Paid · converted from trial:** same env. Mock returns `status: "CONVERTED"` with `plan` + `support.pools` populated.
 
-**Setup G — Hosted Paid · direct-subscribe:** `HOSTED_TRIAL_ID` unset (no trial record); `LICENSE_KEY` set with HOSTED tier license. Mock returns license with `tier: HOSTED` and Priority Tickets pool populated.
+**Setup G — Hosted Paid · direct-subscribe:** `HOSTED_TRIAL_ID` unset (no trial record); HOSTED-tier license configured. Mock service returns license with Priority Tickets pool populated.
 
 ---
 
@@ -70,7 +67,7 @@ Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remain
 | AC-UI-3 | Hosted plans page hides Community + Priority Support; shows House Blend Trial + House Blend (Setup C) | Screenshot: `/admin/support/plans` | No Community or Priority Support cards in DOM. House Blend Trial in `active` state + House Blend in `none` state visible | | | |
 | AC-UI-4 | House Blend Trial card hidden on CONVERTED (Setup F) | Screenshot: same path | No House Blend Trial card in DOM. Only House Blend (active) visible | | | |
 | AC-UI-5 | House Blend Trial card hidden on direct-subscribe (Setup G) | Screenshot: same path | No House Blend Trial card in DOM. Only House Blend (active) visible — visually identical to Setup F | | | |
-| AC-UI-6 | Plans page renders correctly when platform status fetch fails | Screenshot: with platform mock returning 500 (or `PLATFORM_API_URL` pointing to nothing) | Page does NOT crash; Trial card shows error fallback ("Trial info unavailable") or omits gracefully; House Blend card still renders | | | |
+| AC-UI-6 | Plans page renders correctly when status fetch fails | Screenshot: with mock returning 500 (or `PLATFORM_API_URL` pointing to nothing) | Page does NOT crash; Trial card shows error fallback ("Trial info unavailable") or omits gracefully; House Blend card still renders | | | |
 
 ### House Blend Trial card — sub-states
 
@@ -81,7 +78,7 @@ Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remain
 | AC-UI-9 | Trial card "Extended Trial" badge (Setup D) | Screenshot: Setup D Trial card | Badge text reads "Extended Trial" (no "pending" wording) | | | |
 | AC-UI-10 | Trial card "Expired" badge (Setup E) | Screenshot: Setup E Trial card | Badge text reads "Expired" | | | |
 | AC-UI-11 | Trial card tagline rendered | Code review: TrialPlanCard component | Tagline copy reads "Risk-free for 14 days — full hosting, no card, no commitment." | | | |
-| AC-UI-12 | Trial-days status bar — direct format (Setup C) | Screenshot: Trial card with Setup C | Status bar reads in direct format ("X days remaining" or "X / 14 remaining"); progress bar reflects remaining proportion |  | |  |
+| AC-UI-12 | Trial-days status bar — direct format (Setup C) | Screenshot: Trial card with Setup C | Status bar reads in direct format ("X days remaining" or "X / 14 remaining"); progress bar reflects remaining proportion | | | |
 | AC-UI-13 | Trial-days status bar limit changes 14 → 30 when card added (Setups C → D) | Screenshot: side-by-side Setups C and D Trial cards | Setup C bar shows out of 14; Setup D shows out of 30 (extended) | | | |
 | AC-UI-14 | Trial card 4-bullet benefits list rendered | Screenshot: Trial card | Four bullet items visible with the agreed copy: no-billing-needed, own-your-data, feature-parity, cancel-anytime | | | |
 
@@ -98,7 +95,7 @@ Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remain
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|----|----------|
-| AC-UI-19 | House Blend card renders with name + tagline + benefits (Setup C) | Screenshot: House Blend card | Card shows "House Blend" name, tagline, benefits list pulled from gated marketing copy. **Benefits list includes "5 priority support tickets, 48-hr SLA"** bullet | | | |
+| AC-UI-19 | House Blend card renders with name + tagline + benefits (Setup C) | Screenshot: House Blend card | Card shows "House Blend" name, tagline, benefits list. **Benefits list includes "5 priority support tickets, 48-hr SLA"** bullet | | | |
 | AC-UI-20 | House Blend card actions layout | Screenshot: House Blend card bottom row | Bottom-left: [Details] button. Bottom-right: [Subscribe Now] primary button | | | |
 | AC-UI-21 | Subscribe Now CTA always visible regardless of card-added (Setups C and D) | Screenshot: side-by-side Setups C/D House Blend cards | [Subscribe Now] CTA present in both states | | | |
 | AC-UI-22 | Subscribe Now opens `PLATFORM_SUBSCRIBE_URL` in new tab | Interactive: click [Subscribe Now] | Browser opens `PLATFORM_SUBSCRIBE_URL` in new tab | | | |
@@ -136,20 +133,24 @@ Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remain
 | AC-UI-34 | Plans page renders cleanly at mobile (≤768px) — Setup C | Screenshot: 375px viewport | No horizontal overflow; cards stack vertically; status bar + buttons remain tappable | | | |
 | AC-UI-35 | Plans page renders cleanly at mobile — Setup A (regression) | Screenshot: 375px viewport with Setup A | Self-hosted layout pixel-identical to current main at 375px (regression) | | | |
 
+---
+
 ## Functional Acceptance Criteria
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|----|----------|
 | AC-FN-1 | `IS_HOSTED` evaluates from `HOSTED_TRIAL_ID` env | Code review: `lib/hosted.ts` | Constant truthy when env set, falsy otherwise; mirrors `IS_DEMO` shape | | | |
-| AC-FN-2 | `getTrialStatus()` calls platform with revalidate | Code review: `lib/hosted.ts` | Server-side fetch to `${PLATFORM_API_URL}/api/trial/hosted/${HOSTED_TRIAL_ID}/status` with `next: { revalidate: 60 }`; returns null on error (does not throw) | | | |
+| AC-FN-2 | `getTrialStatus()` calls upstream with revalidate | Code review: `lib/hosted.ts` | Server-side fetch to `${PLATFORM_API_URL}/api/trial/hosted/${HOSTED_TRIAL_ID}/status` with `next: { revalidate: 60 }`; returns `null` on error (does not throw) | | | |
 | AC-FN-3 | Plans catalog filters by visibility discriminator | Code review: `lib/plans.ts` + `PlanPageClient.tsx` | Each MOCK_PLAN entry has `visibility: "self-hosted" \| "hosted"`; PlanPageClient filters by `IS_HOSTED` before rendering | | | |
 | AC-FN-4 | Trial card visibility rule | Code review: `PlanPageClient.tsx` | Trial card render is conditional on `trialStatus?.status === "ACTIVE" \|\| "EXPIRED"`; hidden for CONVERTED and null status | | | |
-| AC-FN-5 | Add Billing disabled state binds to card-added | Code review: TrialPlanCard | Disabled prop / className wired to the platform-reported card-added state | | | |
-| AC-FN-6 | Subscribe Now and Manage billing call existing platform endpoints | Code review: TrialPlanCard / HostedPlanCard | Subscribe Now opens `PLATFORM_SUBSCRIBE_URL`; Manage billing fires `POST ${PLATFORM_API_URL}/api/billing/portal` with `Authorization: Bearer ${LICENSE_KEY}` and opens returned `url` | | | |
-| AC-FN-7 | Cancel modal reason capture submits to platform | Code review: CancelTrialDialog | Form submission posts reason + optional textarea content to platform endpoint; failure surfaces a toast and keeps modal open. (No-card variant may stub the platform call — endpoint ships in platform `trial-cancellation` feature) | | | |
+| AC-FN-5 | Add Billing disabled state binds to card-added | Code review: TrialPlanCard | Disabled prop / className wired to the `cardAdded` field of `TrialStatus` | | | |
+| AC-FN-6 | Subscribe Now and Manage billing call documented endpoints | Code review: TrialPlanCard / HostedPlanCard | Subscribe Now opens `PLATFORM_SUBSCRIBE_URL`; Manage billing fires `POST ${PLATFORM_API_URL}/api/billing/portal` with `Authorization: Bearer ${LICENSE_KEY}` and opens returned `url` | | | |
+| AC-FN-7 | Cancel modal reason capture submits upstream | Code review: CancelTrialDialog | Form submission posts reason + optional textarea content to documented endpoint; failure surfaces a toast and keeps modal open. (No-card variant in this body of work mocks the call client-side — wiring identical, only fetch destination changes once endpoint ships) | | | |
 | AC-FN-8 | Export endpoint returns ZIP with correct headers | Interactive: `curl -I http://localhost:4000/api/admin/export` (logged in) | `Content-Type: application/zip` and `Content-Disposition: attachment; filename="*.zip"` | | | |
 | AC-FN-9 | Export ZIP includes data + media + manifest | Interactive: `curl -o /tmp/x.zip http://localhost:4000/api/admin/export && unzip -l /tmp/x.zip` | At minimum: `data/products.json`, `data/orders.json`, `data/users.json`, `data/siteSettings.json`, `media/` directory, `manifest.json` | | | |
 | AC-FN-10 | Export endpoint requires admin auth | Interactive: `curl http://localhost:4000/api/admin/export` (no session) | 401 or 403; no ZIP body | | | |
+
+---
 
 ## Test Coverage Acceptance Criteria
 
@@ -161,6 +162,8 @@ Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remain
 | AC-TST-4 | `IS_HOSTED` reflects env presence | Test run: `npm run test:ci` | Two tests with env set/unset; assert constant value | | | |
 | AC-TST-5 | Plan catalog filter selects correct plans by `IS_HOSTED` | Test run: `npm run test:ci` | Test renders / filters with each (IS_HOSTED, status) pair; asserts only expected plans pass the filter | | | |
 
+---
+
 ## Regression Acceptance Criteria
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
@@ -168,8 +171,8 @@ Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remain
 | AC-REG-1 | All existing tests pass | Test run: `npm run test:ci` | All test suites pass; no new failures introduced | | | |
 | AC-REG-2 | Precheck passes clean | Test run: `npm run precheck` | 0 TypeScript errors, 0 ESLint errors | | | |
 | AC-REG-3 | Self-hosted plans page pixel-identical to main (Setup A) | Screenshot diff: side-by-side current `main` vs branch at `/admin/support/plans` | No visual difference at desktop / tablet / mobile breakpoints | | | |
-| AC-REG-4 | Self-hosted Data Privacy tab adds only Download card | Screenshot diff: `/admin/support/terms` Data Privacy tab between main and branch with Setup A | Only the Download Your Data card is new; rest of the tab unchanged |  |  |  |
-| AC-REG-5 | Existing Priority Support flows still functional (Setup B) | Screenshot: `/admin/support` and `/admin/support/plans` with Setup B | Priority Support active card renders with usage bars + Manage; Submit Ticket flow still works |  | | |
+| AC-REG-4 | Self-hosted Data Privacy tab adds only Download card | Screenshot diff: `/admin/support/terms` Data Privacy tab between main and branch with Setup A | Only the Download Your Data card is new; rest of the tab unchanged | | | |
+| AC-REG-5 | Existing Priority Support flows still functional (Setup B) | Screenshot: `/admin/support` and `/admin/support/plans` with Setup B | Priority Support active card renders with usage bars + Manage; Submit Ticket flow still works | | | |
 
 ---
 

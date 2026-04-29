@@ -6,8 +6,8 @@
       "acs_passed": 0,
       "acs_total": 50,
       "tasks": [],
-      "acs_doc": "docs/features/trial-ui/ACs.md",
-      "notes": "Trial UI body of work (in-store admin trial cards + Cancel modal + Download Your Data). Plan-mode plan at ~/.claude/plans/i-cant-seem-to-robust-pumpkin.md. ~50 ACs (35 UI + 10 FN + 5 TST + 5 REG). Pre-launch — no live customers. Public doc-stance: UI-only; data/sync/platform internals owned by platform features (extended-trial-lifecycle, trial-conversion, trial-cancellation, custom-domains, billing-portal). Cross-repo roadmap at artisan-roast-platform/docs/products/hosted/product.md."
+      "acs_doc": "docs/plans/hosting-extension-trial-ui-ACs.md",
+      "notes": "Trial UI body of work under the hosting-extension feature umbrella (in-store admin trial cards + Cancel modal + Download Your Data). Plan at docs/features/hosting-extension/trial-ui-plan.md; architecture at docs/features/hosting-extension/ARCHITECTURE.md. ~50 ACs (35 UI + 10 FN + 5 TST + 5 REG). Pre-launch — no live customers."
     },
     "feat/counter-ux": {
       "status": "verified",
