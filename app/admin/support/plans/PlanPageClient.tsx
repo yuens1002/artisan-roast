@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UsageBar, getNextRenewalDate } from "../UsageBar";
 import { refreshLicense } from "../actions";
 import { startCheckout } from "./actions";
+import { CancelTrialDialog } from "./_components/CancelTrialDialog";
 
 import type {
   LicenseInfo,
@@ -181,6 +182,12 @@ export function PlanPageClient({
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [cancelOpen, setCancelOpen] = useState(false);
+
+  // Card-added flag drives the Cancel dialog variant. Defaults to false
+  // when not in hosted mode or trial isn't active.
+  const cardAdded =
+    trialStatus?.status === "ACTIVE" ? trialStatus.cardAdded : false;
 
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
@@ -264,9 +271,7 @@ export function PlanPageClient({
                   plan={plan}
                   trialStatus={trialStatus}
                   extendUrl={extendUrl ?? ""}
-                  onCancelTrial={() => {
-                    // Cancel modal lands in the next commit.
-                  }}
+                  onCancelTrial={() => setCancelOpen(true)}
                 />
               );
             }
@@ -290,6 +295,12 @@ export function PlanPageClient({
             </p>
         </div>
       )}
+
+      <CancelTrialDialog
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        cardAdded={cardAdded}
+      />
     </div>
   );
 }
