@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Clock,
   ExternalLink,
   Loader2,
   MoreVertical,
@@ -24,6 +25,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { UsageBar, getNextRenewalDate } from "../UsageBar";
 import { refreshLicense } from "../actions";
@@ -33,8 +40,14 @@ import type {
   LicenseInfo,
   UsagePool,
   AvailableAction,
+  CreditPool,
 } from "@/lib/license-types";
 import type { Plan } from "@/lib/plan-types";
+import type {
+  TrialStatus,
+  TrialStatusActive,
+  TrialStatusExpired,
+} from "@/lib/hosted";
 
 // ---------------------------------------------------------------------------
 // Icon resolution — delegates to shared DynamicIcon utility
@@ -149,13 +162,22 @@ function computePlanCardConfig(
 interface PlanPageClientProps {
   license: LicenseInfo;
   plans: Plan[];
+  trialStatus?: TrialStatus | null;
+  extendUrl?: string;
+  subscribeUrl?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function PlanPageClient({ license, plans }: PlanPageClientProps) {
+export function PlanPageClient({
+  license,
+  plans,
+  trialStatus,
+  extendUrl,
+  subscribeUrl,
+}: PlanPageClientProps) {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -178,6 +200,12 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
   }, []);
 
   function handleSubscribe(planSlug: string) {
+    // Hosted-mode House Blend uses a Stripe Payment Link directly — opens in new tab.
+    if (planSlug === "house-blend" && subscribeUrl) {
+      window.open(subscribeUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
     const formData = new FormData();
     formData.set("planSlug", planSlug);
 
@@ -196,7 +224,6 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
   }
 
   const hasPlans = plans.length > 0;
-  const configs = plans.map((p) => computePlanCardConfig(p, license));
 
   return (
     <div className="max-w-5xl space-y-8">
@@ -222,14 +249,37 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
 
       {hasPlans ? (
         <div className="grid gap-4 md:grid-cols-2">
-          {configs.map((config) => (
-            <PlanCard
-              key={config.plan.slug}
-              config={config}
-              isPending={isPending}
-              onSubscribe={handleSubscribe}
-            />
-          ))}
+          {plans.map((plan) => {
+            // Hosted-mode Trial card uses a dedicated renderer with its own
+            // action layout (Cancel text-link + Add Billing button).
+            if (
+              plan.slug === "house-blend-trial" &&
+              trialStatus &&
+              (trialStatus.status === "ACTIVE" ||
+                trialStatus.status === "EXPIRED")
+            ) {
+              return (
+                <TrialCard
+                  key={plan.slug}
+                  plan={plan}
+                  trialStatus={trialStatus}
+                  extendUrl={extendUrl ?? ""}
+                  onCancelTrial={() => {
+                    // Cancel modal lands in the next commit.
+                  }}
+                />
+              );
+            }
+            const config = computePlanCardConfig(plan, license);
+            return (
+              <PlanCard
+                key={config.plan.slug}
+                config={config}
+                isPending={isPending}
+                onSubscribe={handleSubscribe}
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="rounded-lg border border-dashed py-12 text-center">
@@ -567,6 +617,138 @@ function PlanCard({
             </>
           )}
         </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TrialCard — hosted-mode House Blend Trial card
+// ---------------------------------------------------------------------------
+
+interface TrialCardProps {
+  plan: Plan;
+  trialStatus: TrialStatusActive | TrialStatusExpired;
+  extendUrl: string;
+  onCancelTrial: () => void;
+}
+
+function TrialCard({
+  plan,
+  trialStatus,
+  extendUrl,
+  onCancelTrial,
+}: TrialCardProps) {
+  // Sub-state badge label
+  const badgeLabel =
+    trialStatus.status === "EXPIRED"
+      ? "Expired"
+      : trialStatus.cardAdded
+        ? "Extended Trial"
+        : "Active Trial";
+
+  // Trial-days pool — UsageBar consumes the standard CreditPool shape with a
+  // formatter override so it reads "X / Y remaining" instead of "X / Y used".
+  const trialDaysPool: CreditPool = {
+    limit: trialStatus.daysLimit,
+    purchased: 0,
+    used: trialStatus.daysLimit - trialStatus.daysRemaining,
+    remaining: trialStatus.daysRemaining,
+  };
+
+  const formatTrialDays = (pool: CreditPool) =>
+    `${pool.remaining} / ${pool.limit} remaining`;
+
+  // Add Billing is disabled when the customer has already added a card.
+  const addBillingDisabled =
+    trialStatus.status === "ACTIVE" && trialStatus.cardAdded;
+
+  const tagline =
+    "Risk-free for 14 days — full hosting, no card, no commitment.";
+
+  return (
+    <div className="flex flex-col rounded-lg border border-primary p-6 transition-shadow hover:shadow-lg">
+      {/* Title + Clock badge inline */}
+      <div className="flex items-start gap-3 mb-5">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold">{plan.name}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{tagline}</p>
+        </div>
+        <Badge variant="secondary" className="shrink-0 gap-1.5">
+          <Clock className="h-3.5 w-3.5" />
+          {badgeLabel}
+        </Badge>
+      </div>
+
+      <div className="space-y-5">
+        <UsageBar
+          icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+          label="Trial days"
+          pool={trialDaysPool}
+          showBreakdown={false}
+          formatter={formatTrialDays}
+        />
+
+        {trialStatus.status === "EXPIRED" && trialStatus.deprovisionAt && (
+          <p className="text-xs text-muted-foreground">
+            Trial ended. Store will be removed on{" "}
+            {new Date(trialStatus.deprovisionAt).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+            .
+          </p>
+        )}
+
+        {plan.details.benefits && plan.details.benefits.length > 0 && (
+          <ul className="space-y-2 text-sm">
+            {plan.details.benefits.map((benefit) => (
+              <li key={benefit} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                {benefit}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Actions: Cancel text-link left + Add Billing button right.
+          No Details — Trial card has no detail page (per AC-UI-18). */}
+      <div className="flex items-center gap-2 mt-auto pt-5">
+        <button
+          type="button"
+          onClick={onCancelTrial}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Cancel
+        </button>
+        <div className="flex-1" />
+        {addBillingDisabled ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={0}>
+                  <Button size="sm" disabled>
+                    Add Billing
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Billing already on file</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <Button size="sm" asChild disabled={!extendUrl}>
+            <a
+              href={extendUrl || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Add Billing
+              <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+            </a>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
