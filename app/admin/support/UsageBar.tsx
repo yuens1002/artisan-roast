@@ -13,11 +13,14 @@ interface UsageBarProps {
   pool: CreditPool;
   /** Show breakdown text ("3 plan, 1 add-on") when both sources exist. Default true. */
   showBreakdown?: boolean;
+  /** Override the right-side count text. Default: `${used} / ${total} used` */
+  formatter?: (pool: CreditPool) => string;
 }
 
-export function UsageBar({ icon, label, pool, showBreakdown = true }: UsageBarProps) {
+export function UsageBar({ icon, label, pool, showBreakdown = true, formatter }: UsageBarProps) {
   const total = pool.limit + pool.purchased;
   const pct = total > 0 ? (pool.used / total) * 100 : 0;
+  const countLabel = formatter ? formatter(pool) : `${pool.used} / ${total} used`;
 
   const breakdown: string[] = [];
   if (pool.limit > 0) {
@@ -42,7 +45,7 @@ export function UsageBar({ icon, label, pool, showBreakdown = true }: UsageBarPr
           <span className="font-medium">{label}</span>
         </div>
         <span className="tabular-nums text-muted-foreground">
-          {pool.used} / {total} used
+          {countLabel}
         </span>
       </div>
       <Progress value={pct} className="h-2" />

@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { activateLicense, refreshLicense } from "../actions";
+import { DownloadDataCard } from "./_components/DownloadDataCard";
 import type { LicenseInfo } from "@/lib/license-types";
 import type { Plan } from "@/lib/plan-types";
 
@@ -410,7 +411,7 @@ function DataPrivacyTab() {
   }
 
   return (
-    <div className="w-full md:w-1/2">
+    <div className="grid gap-4 md:grid-cols-2">
       <div className="flex h-full flex-col space-y-4 rounded-lg border p-6">
         <div className="space-y-1">
           <h3 className="text-sm font-medium">Share Anonymous Usage Data</h3>
@@ -451,6 +452,8 @@ function DataPrivacyTab() {
           </div>
         </div>
       </div>
+
+      <DownloadDataCard />
     </div>
   );
 }

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.105.1 - 2026-05-05
+
+### Added
+
+- **Hosted trial support**: IS_HOSTED detection, trial status fetcher (getTrialStatus), House Blend Trial + House Blend plan entries, plans page filters by build-mode visibility
+- **Trial card UI**: Progress bar (trial days remaining), ACTIVE/EXPIRED/CANCELLED badge variants, PENDING_CANCEL fixture for dev/verification
+- **Cancel trial dialog**: ConfirmActionDialog (config-driven, replaces CancelTrialDialog) — reason capture with dropdown + optional free-text field; wired to hosted trial plan payload
+- **Data export**: Download Your Data — ZIP archive of all customer data served via admin export route
+
+### Fixed
+
+- **ZIP export**: Archiver error handler now pipes stream errors to the response (prevents silent hangs)
+- **TrialStatus cast**: Response shape validated before cast — malformed upstream response returns null instead of entering a bad state
+- **cardAdded derivation**: Now covers CANCELLED status (was ACTIVE-only; CANCELLED trials with card on file showed wrong UI)
+- **Cancel button**: Hidden when plan.actionModal is absent (previously showed an empty dropdown or stuck submit)
+- **ConfirmActionDialog**: Only mounted when trialStatus is non-null
+- **No-card cancel reason**: Logged server-side instead of silently discarded
+
+### Changed
+
+- **CardConfig**: Refactored to discriminated union (type: "trial" | "plan") — computeCardConfig() factory encapsulates card-type selection, no slug checks in the render loop
+- **MOCK_HOSTED_STATUS**: Fixture env var for dev/verification of all hosted trial states without a live service
+
+---
+
 ## 0.105.0 - 2026-05-04
 
 ### Added

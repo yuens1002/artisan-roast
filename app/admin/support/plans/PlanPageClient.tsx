@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   ArrowRight,
   Check,
   CheckCircle2,
+  Clock,
   ExternalLink,
   Loader2,
   MoreVertical,
@@ -28,13 +29,21 @@ import { useToast } from "@/hooks/use-toast";
 import { UsageBar, getNextRenewalDate } from "../UsageBar";
 import { refreshLicense } from "../actions";
 import { startCheckout } from "./actions";
+import { ConfirmActionDialog } from "./_components/ConfirmActionDialog";
 
 import type {
   LicenseInfo,
   UsagePool,
   AvailableAction,
+  CreditPool,
 } from "@/lib/license-types";
 import type { Plan } from "@/lib/plan-types";
+import type {
+  TrialStatus,
+  TrialStatusActive,
+  TrialStatusExpired,
+  TrialStatusCancelled,
+} from "@/lib/hosted";
 
 // ---------------------------------------------------------------------------
 // Icon resolution — delegates to shared DynamicIcon utility
@@ -65,6 +74,7 @@ function formatPriceLabel(plan: Plan): string | null {
 // ---------------------------------------------------------------------------
 
 interface PlanCardConfig {
+  type: "plan";
   plan: Plan;
   status: "active" | "inactive" | "none";
   badge: { label: string; variant: "secondary" | "destructive" | "outline" } | null;
@@ -78,12 +88,22 @@ interface PlanCardConfig {
   } | null;
 }
 
+interface TrialCardConfig {
+  type: "trial";
+  plan: Plan;
+  trialStatus: TrialStatusActive | TrialStatusExpired | TrialStatusCancelled;
+  extendUrl: string;
+}
+
+type CardConfig = TrialCardConfig | PlanCardConfig;
+
 function computePlanCardConfig(
   plan: Plan,
   license: LicenseInfo
 ): PlanCardConfig {
   if (license.plan?.slug === plan.slug) {
     return {
+      type: "plan",
       plan,
       status: "active",
       badge: { label: "Active", variant: "secondary" },
@@ -102,6 +122,7 @@ function computePlanCardConfig(
 
   if (license.lapsed?.planSlug === plan.slug) {
     return {
+      type: "plan",
       plan,
       status: "inactive",
       badge: { label: "Inactive", variant: "outline" },
@@ -119,6 +140,7 @@ function computePlanCardConfig(
   // Free plan: show "Current Plan" when user has no active paid plan
   if (plan.price === 0 && !license.plan) {
     return {
+      type: "plan",
       plan,
       status: "active",
       badge: { label: "Current Plan", variant: "secondary" },
@@ -132,6 +154,7 @@ function computePlanCardConfig(
   }
 
   return {
+    type: "plan",
     plan,
     status: "none",
     badge: null,
@@ -142,6 +165,22 @@ function computePlanCardConfig(
   };
 }
 
+function computeCardConfig(
+  plan: Plan,
+  license: LicenseInfo,
+  trialStatus: TrialStatus | null | undefined,
+  extendUrl: string,
+): CardConfig {
+  if (
+    plan.slug === "house-blend-trial" &&
+    trialStatus &&
+    (trialStatus.status === "ACTIVE" || trialStatus.status === "EXPIRED" || trialStatus.status === "CANCELLED")
+  ) {
+    return { type: "trial", plan, trialStatus, extendUrl };
+  }
+  return computePlanCardConfig(plan, license);
+}
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -149,16 +188,41 @@ function computePlanCardConfig(
 interface PlanPageClientProps {
   license: LicenseInfo;
   plans: Plan[];
+  trialStatus?: TrialStatus | null;
+  extendUrl?: string;
+  subscribeUrl?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function PlanPageClient({ license, plans }: PlanPageClientProps) {
+export function PlanPageClient({
+  license,
+  plans,
+  trialStatus,
+  extendUrl,
+  subscribeUrl,
+}: PlanPageClientProps) {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [cancelOpen, setCancelOpen] = useState(false);
+
+  const cardConfigs = plans.map((plan) =>
+    computeCardConfig(plan, license, trialStatus, extendUrl ?? "")
+  );
+
+  const trialConfig = cardConfigs.find((c): c is TrialCardConfig => c.type === "trial");
+
+  // Modal copy comes directly from the trial plan's payload — no slug lookup.
+  const actionModalConfig = trialConfig?.plan.actionModal;
+
+  // ACTIVE and CANCELLED both have cardAdded on the status object.
+  const cardAdded =
+    trialStatus?.status === "ACTIVE" || trialStatus?.status === "CANCELLED"
+      ? trialStatus.cardAdded
+      : false;
 
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
@@ -178,6 +242,12 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
   }, []);
 
   function handleSubscribe(planSlug: string) {
+    // Hosted-mode House Blend uses a Stripe Payment Link directly — opens in new tab.
+    if (planSlug === "house-blend" && subscribeUrl) {
+      window.open(subscribeUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
     const formData = new FormData();
     formData.set("planSlug", planSlug);
 
@@ -196,7 +266,6 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
   }
 
   const hasPlans = plans.length > 0;
-  const configs = plans.map((p) => computePlanCardConfig(p, license));
 
   return (
     <div className="max-w-5xl space-y-8">
@@ -222,14 +291,22 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
 
       {hasPlans ? (
         <div className="grid gap-4 md:grid-cols-2">
-          {configs.map((config) => (
-            <PlanCard
-              key={config.plan.slug}
-              config={config}
-              isPending={isPending}
-              onSubscribe={handleSubscribe}
-            />
-          ))}
+          {cardConfigs.map((config) =>
+            config.type === "trial" ? (
+              <TrialCard
+                key={config.plan.slug}
+                config={config}
+                onCancelTrial={() => setCancelOpen(true)}
+              />
+            ) : (
+              <PlanCard
+                key={config.plan.slug}
+                config={config}
+                isPending={isPending}
+                onSubscribe={handleSubscribe}
+              />
+            )
+          )}
         </div>
       ) : (
         <div className="rounded-lg border border-dashed py-12 text-center">
@@ -239,6 +316,15 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
               again.
             </p>
         </div>
+      )}
+
+      {trialStatus && (
+        <ConfirmActionDialog
+          open={cancelOpen}
+          onOpenChange={setCancelOpen}
+          cardAdded={cardAdded}
+          config={actionModalConfig}
+        />
       )}
     </div>
   );
@@ -567,6 +653,150 @@ function PlanCard({
             </>
           )}
         </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TrialCard — hosted-mode House Blend Trial card
+// ---------------------------------------------------------------------------
+
+interface TrialCardProps {
+  config: TrialCardConfig;
+  onCancelTrial: () => void;
+}
+
+function TrialCard({ config, onCancelTrial }: TrialCardProps) {
+  const { plan, trialStatus, extendUrl } = config;
+  // Sub-state badge label
+  const badgeLabel =
+    trialStatus.status === "EXPIRED"
+      ? "Expired"
+      : trialStatus.status === "CANCELLED"
+        ? "Cancelled"
+        : trialStatus.cardAdded
+          ? "Extended Trial"
+          : "Active Trial";
+
+  // Trial-days pool — UsageBar consumes the standard CreditPool shape with a
+  // formatter override so it reads "X / Y remaining" instead of "X / Y used".
+  const trialDaysPool: CreditPool = {
+    limit: trialStatus.daysLimit,
+    purchased: 0,
+    used: trialStatus.daysLimit - trialStatus.daysRemaining,
+    remaining: trialStatus.daysRemaining,
+  };
+
+  const formatTrialDays = (pool: CreditPool) =>
+    `${pool.remaining} / ${pool.limit} remaining`;
+
+  const cardAdded =
+    (trialStatus.status === "ACTIVE" || trialStatus.status === "CANCELLED") &&
+    trialStatus.cardAdded;
+
+  const tagline =
+    "Risk-free for 14 days — full hosting, no card, no commitment.";
+
+  return (
+    <div className="flex flex-col rounded-lg border border-primary p-6 transition-shadow hover:shadow-lg">
+      {/* Title + Clock badge inline */}
+      <div className="flex items-start gap-3 mb-5">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold">{plan.name}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{tagline}</p>
+        </div>
+        <Badge variant="secondary" className="shrink-0 gap-1.5">
+          <Clock className="h-3.5 w-3.5" />
+          {badgeLabel}
+        </Badge>
+      </div>
+
+      <div className="space-y-5">
+        <UsageBar
+          icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+          label="Trial days"
+          pool={trialDaysPool}
+          showBreakdown={false}
+          formatter={formatTrialDays}
+        />
+
+        {(trialStatus.status === "EXPIRED" || trialStatus.status === "CANCELLED") && trialStatus.deprovisionAt && (
+          <p className="text-xs text-muted-foreground">
+            {trialStatus.status === "CANCELLED" ? "Subscription cancelled." : "Trial ended."}{" "}
+            Store will be removed on{" "}
+            {new Date(trialStatus.deprovisionAt).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+            .
+          </p>
+        )}
+
+        {plan.details.benefits && plan.details.benefits.length > 0 && (
+          <ul className="space-y-2 text-sm">
+            {plan.details.benefits.map((benefit) => (
+              <li key={benefit} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                {benefit}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Actions — No Details (Trial card has no detail page, per AC-UI-18).
+          cardAdded=false: Cancel text-link (if actionModal present) + Add Billing.
+          cardAdded=true:  Manage Billing only — cancellation goes through Stripe.
+          Add Billing is always shown when !cardAdded, independent of actionModal. */}
+      <div className="flex items-center gap-2 mt-auto pt-5">
+        {!cardAdded && (
+          <>
+            {plan.actionModal && (
+              <button
+                type="button"
+                onClick={onCancelTrial}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+            )}
+            <div className="flex-1" />
+            {extendUrl ? (
+              <Button size="sm" asChild>
+                <a href={extendUrl} target="_blank" rel="noopener noreferrer">
+                  Add Billing
+                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                </a>
+              </Button>
+            ) : (
+              <Button size="sm" disabled>
+                Add Billing
+                <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            )}
+          </>
+        )}
+        {cardAdded && (
+          <>
+            <div className="flex-1" />
+            {/* URL interim: replace with billing portal URL from provider payload */}
+            {extendUrl ? (
+              <Button size="sm" variant="outline" asChild>
+                <a href={extendUrl} target="_blank" rel="noopener noreferrer">
+                  Manage Billing
+                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                </a>
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" disabled>
+                Manage Billing
+                <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,14 @@
 {
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
+    "feat/hosted-store-s2": {
+      "status": "verified",
+      "acs_passed": 50,
+      "acs_total": 50,
+      "tasks": [],
+      "acs_doc": "docs/plans/hosting-extension-trial-ui-ACs.md",
+      "notes": "50/50 ACs verified. Sub-agent: 27 PASS (code review) + 20 BLOCKED. QC: took Playwright screenshots across Setups A/C/D/F/G; resolved all BLOCKED UI ACs from evidence. AC-UI-1b + AC-REG-5 confirmed PASS via active PS subscription in production (unchanged code, same active-state rendering path as Setup F). 0 FAIL. 1303 tests pass. Precheck 0 errors. Fixture correction: Setups C/D/E use MOCK_LICENSE_TIER=FREE not HOSTED. AC-FN-6 Manage billing: design confirmed as direct link, not POST. Reviewer design question open: plan CTA labels should come from provider payload, not hardcoded — flagged for next iteration."
+    },
     "feat/counter-ux": {
       "status": "verified",
       "acs_passed": 21,

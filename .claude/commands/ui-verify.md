@@ -84,6 +84,15 @@ Or if issues found:
 Check flex-direction in CardFooter - may need `flex-row` at all breakpoints
 ```
 
+## Script Placement — Durable vs. Ephemeral
+
+| Type | Where | Why |
+|------|-------|-----|
+| **Durable** (general responsive capture) | `scripts/` | Committed — shared utility |
+| **Ephemeral** (feature-specific QC script) | `.scratch/` | Gitignored — discard after session |
+
+**Rule:** Feature-specific verification scripts always go in `.scratch/`, never `scripts/`. Only scripts that will be useful across future sessions belong in `scripts/`. Both `.scratch/` and `.screenshots/` are gitignored.
+
 ## Screenshot Script
 
 The project includes a screenshot script at `scripts/take-responsive-screenshots.ts`.

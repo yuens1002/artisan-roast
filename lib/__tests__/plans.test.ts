@@ -11,7 +11,8 @@
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-import { fetchPlans, invalidatePlansCache } from "../plans";
+import type { Plan } from "../plan-types";
+import { fetchPlans, filterPlansByVisibility, invalidatePlansCache } from "../plans";
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -111,5 +112,57 @@ describe("fetchPlans", () => {
 
     const plans = await fetchPlans();
     expect(plans).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC-TST-5 — filterPlansByVisibility selects correct plans by IS_HOSTED
+// ---------------------------------------------------------------------------
+
+describe("filterPlansByVisibility", () => {
+  function makePlan(slug: string, visibility: "self-hosted" | "hosted"): Plan {
+    return {
+      slug,
+      name: slug,
+      description: "",
+      price: 0,
+      currency: "USD",
+      interval: "month",
+      features: [],
+      highlight: false,
+      visibility,
+      details: {},
+    };
+  }
+
+  const catalog: Plan[] = [
+    makePlan("free", "self-hosted"),
+    makePlan("priority-support", "self-hosted"),
+    makePlan("house-blend-trial", "hosted"),
+    makePlan("house-blend", "hosted"),
+  ];
+
+  it("returns only self-hosted plans when isHosted=false", () => {
+    const filtered = filterPlansByVisibility(catalog, false);
+    expect(filtered.map((p) => p.slug)).toEqual(["free", "priority-support"]);
+  });
+
+  it("returns only hosted plans when isHosted=true", () => {
+    const filtered = filterPlansByVisibility(catalog, true);
+    expect(filtered.map((p) => p.slug)).toEqual([
+      "house-blend-trial",
+      "house-blend",
+    ]);
+  });
+
+  it("returns empty array when catalog is empty", () => {
+    expect(filterPlansByVisibility([], true)).toEqual([]);
+    expect(filterPlansByVisibility([], false)).toEqual([]);
+  });
+
+  it("does not mutate the input catalog", () => {
+    const before = catalog.length;
+    filterPlansByVisibility(catalog, true);
+    expect(catalog.length).toBe(before);
   });
 });

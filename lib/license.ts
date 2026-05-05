@@ -554,22 +554,21 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         availableActions: [
           {
             slug: "manage-billing",
-            label: "Billing",
+            label: "Manage billing",
             url: `${PLATFORM_URL}/billing`,
             variant: "outline",
             icon: "credit-card",
           },
         ],
         plan: {
-          slug: "priority-support",
-          name: "Priority Support",
+          slug: "house-blend",
+          name: "House Blend",
           snapshotAt: "2026-03-01T00:00:00Z",
         },
         lapsed: null,
         support: {
           pools: [
             { slug: "tickets", label: "Priority Tickets", icon: "ticket", limit: 5, purchased: 0, used: 1, remaining: 4 },
-            { slug: "one-on-one", label: "1:1 Sessions", icon: "calendar", limit: 1, purchased: 0, used: 0, remaining: 1 },
           ],
         },
         alaCarte: [

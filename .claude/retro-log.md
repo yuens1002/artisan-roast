@@ -4,6 +4,21 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 
 ---
 
+## 2026-04-29 — Ephemeral verification scripts placed in `scripts/` instead of `.scratch/`
+
+**Gap:** During the hosted-store-s2 trial UI verification session, two feature-specific Playwright scripts (`scripts/verify-trial-ui.ts`, `scripts/verify-hosting-screenshots.ts`) were written to `scripts/` instead of `.scratch/`. The `scripts/` directory is committed; `.scratch/` is gitignored. Placing QC tooling in `scripts/` would have committed ephemeral verification artifacts to the project repo. The scripts were caught while still untracked and moved before commit.
+
+**Root cause:** The ac-verify skill used "scratchpad directory" as a placeholder without defining it concretely. Rule 6 said "Write Puppeteer scripts to the scratchpad, not `scripts/`" but never named `.scratch/` explicitly. Main thread inferred `scripts/` because it was the nearest familiar location for `.ts` files.
+
+**Fix applied to:**
+
+- `.claude/commands/ac-verify.md` — Step 2 now names `.scratch/verify-{feature}.ts` explicitly with example path. Rule 6 reworded to spell out that `.scratch/` is gitignored and `scripts/` is committed, with an explicit "never move to `scripts/`" constraint.
+- `.claude/commands/ui-verify.md` — Added "Script Placement" table distinguishing durable (`scripts/`) vs. ephemeral (`.scratch/`) verification tooling. Rule stated clearly: feature-specific QC scripts always go in `.scratch/`.
+
+**Prevented by:** Both skills now name the concrete directory (`.scratch/`) rather than an abstract placeholder. The distinction between committed durable scripts and gitignored ephemeral QC tooling is now explicit in both the template and the rule list.
+
+---
+
 ## 2026-04-12 — Verification sub-agent spawned without ac-verify.md reference across session boundaries
 
 **Gap:** On session resume on a `pending` branch (`feat/phase2-voice-cadence`), the main thread spawned a verification sub-agent without the mandatory first line `Run the AC verification protocol from .claude/commands/ac-verify.md.`. The sub-agent improvised its own conventions: screenshots saved to `verification-screenshots/phase-2-iter-2/` instead of `.screenshots/smart-search-verify/`, and Puppeteer script written to `scripts/verify-phase2-iter2.mjs` instead of the scratchpad. Both violations required manual cleanup. The QC process was also skipped — prose notes written at the bottom of the ACs doc instead of filling individual QC cells. This pattern recurred across multiple sessions.

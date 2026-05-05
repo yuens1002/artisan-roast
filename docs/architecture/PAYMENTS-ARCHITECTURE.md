@@ -17,7 +17,7 @@ The payments system uses a **processor-agnostic architecture** that normalizes p
 
 ## Directory Structure
 
-```
+```text
 
 lib/
 ├── payments/
@@ -129,7 +129,7 @@ interface NormalizedSubscriptionData {
 
 ## Data Flow
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              WEBHOOK REQUEST                                │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -217,7 +217,7 @@ To add support for a new processor (e.g., PayPal):
 
 ### 1. Create Processor Directory
 
-```
+```text
 lib/payments/paypal/
 ├── adapter.ts      # PayPal → Normalized converters
 ├── verify.ts       # Webhook signature verification
@@ -247,7 +247,7 @@ export async function normalizePayPalCheckout(
 
 ### 3. Create Webhook Route
 
-```
+```text
 app/api/webhooks/paypal/
 ├── route.ts
 └── handlers/
