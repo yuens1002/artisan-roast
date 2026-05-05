@@ -32,8 +32,8 @@ import {
 import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
-import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MessageSquareDot, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
-import { useChatPanelStore } from "@/lib/store/chat-panel-store";
+import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MoreHorizontal, PackageSearch, User } from "lucide-react";
+import { SearchTrigger } from "@/app/(site)/_components/search/SearchTrigger";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -107,7 +107,7 @@ interface SiteHeaderProps {
   productMenuIcon?: string;
   productMenuText?: string;
   storeName?: string;
-  aiConfigured?: boolean;
+  stripeConfigured?: boolean;
 }
 
 /**
@@ -123,16 +123,34 @@ export default function SiteHeader({
   productMenuIcon = "ShoppingBag",
   productMenuText = "Shop",
   storeName: serverStoreName,
-  aiConfigured = false,
+  stripeConfigured = false,
 }: SiteHeaderProps) {
   const pathname = usePathname();
-  const togglePanel = useChatPanelStore((s) => s.toggle);
-  const isPanelOpen = useChatPanelStore((s) => s.isOpen);
-  const COUNTER_HIDDEN_ROUTES = ["/account", "/orders", "/subscriptions"];
-  const isCounterHidden = COUNTER_HIDDEN_ROUTES.some((r) => pathname.startsWith(r));
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  // Controlled mobile menu Sheet state — lifted out of the Sheet so the
+  // SearchTrigger inside can synchronously close the menu before opening
+  // the search drawer (otherwise both overlays would mount stacked and
+  // their focus traps would compete on mobile).
+  // Desktop uses NavigationMenu, not Sheet — this is mobile-only.
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Close the menu before opening the search drawer. Synchronous handler,
+  // no effects: the user's tap drives both transitions in one render.
+  // Note: we deliberately do NOT reopen the menu when the search drawer
+  // closes — if the user dismisses search via × they retap the hamburger.
+  // The previous "reopen on dismissal" UX required tracking close-cause
+  // across stores via a flag + effect, which mis-fired on same-pathname
+  // navigation (drawer closes via link click, no pathname change → the
+  // effect couldn't tell "navigated" from "dismissed" → menu would reopen
+  // over the destination). Simpler architecture wins.
+  const handleMobileSearchOpen = () => {
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
   const lastScrollY = useRef(0);
   const { settings } = useSiteSettings();
   const { visible: visiblePages, overflow: overflowPages } = useNavOverflow(
@@ -236,7 +254,7 @@ export default function SiteHeader({
           {isClient && (
             <>
               {/* Mobile hamburger */}
-              <Sheet>
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild className="md:hidden">
                   <Button
                     variant="outline"
@@ -250,6 +268,22 @@ export default function SiteHeader({
                 <SheetContent
                   side="left"
                   className="w-full sm:w-[320px] bg-background p-0 flex flex-col"
+                  // Don't return focus to the hamburger trigger when the
+                  // Sheet closes — Radix's default fights with the search
+                  // drawer's autoFocus Input on mobile (the keyboard pops up
+                  // and immediately retracts). The next pathname's content
+                  // will own focus once navigation lands.
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                  // Event-delegated close-on-link-click (mirrors the search
+                  // drawer's pattern in SearchDrawer.tsx). Closes the menu
+                  // synchronously on any anchor click inside, covering both
+                  // cross-route and same-route navigations without needing
+                  // a usePathname() effect.
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a[href]")) {
+                      setIsMobileMenuOpen(false);
+                    }
+                  }}
                 >
                   <div className="px-4 pt-6 pb-1">
                     <div className="flex items-center justify-between mb-1">
@@ -275,36 +309,15 @@ export default function SiteHeader({
                           </span>
                         </Link>
                       </SheetClose>
-                      {aiConfigured && !isCounterHidden ? (
-                        <SheetClose asChild>
-                          <button
-                            onClick={togglePanel}
-                            className={cn(
-                              "inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                              isPanelOpen
-                                ? "text-primary bg-primary/10"
-                                : "text-foreground hover:text-primary hover:bg-accent"
-                            )}
-                          >
-                            <MessageSquareDot className="w-5 h-5" />
-                            <span className="text-[10px] uppercase tracking-wide font-medium">
-                              Counter
-                            </span>
-                          </button>
-                        </SheetClose>
-                      ) : (
-                        <SheetClose asChild>
-                          <Link
-                            href="/search"
-                            className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            <Search className="w-5 h-5" />
-                            <span className="text-[10px] uppercase tracking-wide font-medium">
-                              Search
-                            </span>
-                          </Link>
-                        </SheetClose>
-                      )}
+                      {/* Close the menu Sheet BEFORE opening the search
+                          drawer (avoids the dual-focus-trap that retracts
+                          the keyboard on mobile). If search closes without
+                          navigation, the effect above reopens the menu so
+                          the user lands back where they started browsing. */}
+                      <SearchTrigger
+                        variant="mobile-sheet"
+                        onBeforeOpen={handleMobileSearchOpen}
+                      />
                       <SheetClose asChild>
                         <Link
                           href="/orders"
@@ -549,28 +562,9 @@ export default function SiteHeader({
         <div className="order-3 flex items-center gap-4">
           {isClient ? (
             <>
-              {/* Search - desktop only: SmartSearch when AI configured, keyword search otherwise */}
-              {aiConfigured && !isCounterHidden ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "hidden md:flex",
-                    isPanelOpen && "bg-primary/10 text-primary"
-                  )}
-                  onClick={togglePanel}
-                >
-                  <MessageSquareDot className={cn("h-5 w-5", isPanelOpen && "text-primary")} />
-                  <span className="sr-only">Counter — chat about our products</span>
-                </Button>
-              ) : (
-                <Button variant="ghost" size="icon" asChild className="hidden md:flex">
-                  <Link href="/search">
-                    <Search className="h-5 w-5" />
-                    <span className="sr-only">Search products</span>
-                  </Link>
-                </Button>
-              )}
+              {/* Search - desktop only */}
+              <SearchTrigger />
+
 
               {/* Account - desktop only */}
               <div className="hidden md:flex">
@@ -587,7 +581,7 @@ export default function SiteHeader({
               </div>
 
               {/* Cart - always visible */}
-              <ShoppingCart />
+              <ShoppingCart stripeConfigured={stripeConfigured} />
             </>
           ) : null}
         </div>

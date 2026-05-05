@@ -53,7 +53,7 @@ export default async function AdminDashboardPage({
   const isDemoMode = process.env.NEXT_PUBLIC_BUILD_VARIANT === "demo" || process.env.NEXT_PUBLIC_BUILD_VARIANT === "DEMO";
   const setupStatus: SetupStatus = {
     hasProducts: isDemoMode || productCount > 0,
-    hasPayments: isDemoMode || isStripeConfigured(),
+    hasPayments: isDemoMode || await isStripeConfigured(),
     hasEmail: isDemoMode || isResendConfigured(),
   };
 

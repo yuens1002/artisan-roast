@@ -42,3 +42,4 @@
 | AC-IS-5 | Storefront homepage loads without error | Navigate to /; assert URL reached (no redirect) | Page renders without error |
 | AC-IS-6 | Admin navigation links are all reachable | Navigate directly to /admin/products, /admin/orders, /admin/settings, /admin/support/plans; assert URL for each | No 404 or 500 on Products, Orders, Settings, Plans |
 | AC-IS-7 | Plans page renders without error on fresh install | Navigate to /admin/support/plans; assert page loads (plan cards or empty-state message visible; no `[object Object]` text) | Page renders; no raw object strings visible |
+| AC-IS-8 | Search Settings page renders without error on fresh install | Navigate to /admin/settings/search; assert URL reached; assert "Search drawer chips" and "Curated products" section headings present | Page renders; both sections visible (defaults to 1st label / 1st category by `order` when no settings persisted yet) |

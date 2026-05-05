@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "artisan-roast-sdk": {
+      "type": "http",
+      "url": "https://sdk.artisanroast.app/mcp"
+    }
+  }
+}

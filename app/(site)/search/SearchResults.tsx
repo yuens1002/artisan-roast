@@ -3,10 +3,8 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Loader2, Sparkles } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
-import { cn } from "@/lib/utils";
 
 interface SearchProduct {
   id: string;
@@ -48,11 +46,7 @@ interface SearchResponse {
   products: SearchProduct[];
   query: string;
   count: number;
-  intent: string | null;
-  filtersExtracted: Record<string, unknown> | null;
-  acknowledgment: string | null;
-  followUps: string[];
-  context: { sessionId: string; turnCount: number };
+  context: { sessionId: string };
 }
 
 // Generate a session ID for tracking
@@ -67,23 +61,10 @@ function getSessionId() {
   return sessionId;
 }
 
-function getAndIncrementTurnCount(): number {
-  if (typeof window === "undefined") return 0;
-
-  const current = parseInt(
-    sessionStorage.getItem("artisan_search_turn_count") ?? "0",
-    10
-  );
-  const next = current + 1;
-  sessionStorage.setItem("artisan_search_turn_count", String(next));
-  return current;
-}
-
-export default function SearchResults({ aiConfigured = false }: { aiConfigured?: boolean }) {
+export default function SearchResults() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState(searchParams.get("q") || "");
-  const [aiMode, setAiMode] = useState(searchParams.get("ai") === "true");
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,31 +79,27 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
 
     // Perform search if any param exists
     if (q || roast || origin) {
-      performSearch(q, roast, origin, aiMode);
+      performSearch(q, roast, origin);
     } else {
       setResults(null);
     }
-  }, [searchParams, aiMode]);
+  }, [searchParams]);
 
   async function performSearch(
     searchQuery: string | null,
     roast: string | null,
-    origin: string | null,
-    useAI?: boolean
+    origin: string | null
   ) {
     try {
       setIsLoading(true);
       setError(null);
 
       const sessionId = getSessionId();
-      const turnCount = getAndIncrementTurnCount();
       const params = new URLSearchParams();
       if (searchQuery) params.append("q", searchQuery);
       if (roast) params.append("roast", roast);
       if (origin) params.append("origin", origin);
       if (sessionId) params.append("sessionId", sessionId);
-      params.append("turnCount", String(turnCount));
-      if (useAI) params.append("ai", "true");
 
       const response = await fetch(`/api/search?${params.toString()}`);
 
@@ -145,16 +122,8 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
     if (query.trim()) {
       const url = new URL("/search", window.location.origin);
       url.searchParams.set("q", query.trim());
-      if (aiMode) url.searchParams.set("ai", "true");
       router.push(url.pathname + url.search);
     }
-  }
-
-  function handleFollowUp(followUpText: string) {
-    const url = new URL("/search", window.location.origin);
-    url.searchParams.set("q", followUpText);
-    if (aiMode) url.searchParams.set("ai", "true");
-    router.push(url.pathname + url.search);
   }
 
   // Helper to generate title based on active filters
@@ -177,35 +146,19 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
 
   return (
     <div className="space-y-6">
-      {/* Search Input + Ask AI toggle */}
+      {/* Search Input */}
       <div className="flex items-center gap-3 max-w-md">
         <form onSubmit={handleSearch} className="relative flex-1">
-          {aiMode ? (
-            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-          ) : (
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          )}
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder={aiMode ? "Ask anything about our coffee..." : "Search products..."}
+            placeholder="Search products..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className={cn("pl-10", aiMode && "border-primary/50 focus-visible:ring-primary/30")}
+            className="pl-10"
             autoFocus
           />
         </form>
-        {aiConfigured && (
-          <Button
-            type="button"
-            variant={aiMode ? "default" : "outline"}
-            size="sm"
-            onClick={() => setAiMode((v) => !v)}
-            className="shrink-0 gap-1.5"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Ask AI
-          </Button>
-        )}
       </div>
 
       {/* Loading State */}
@@ -225,43 +178,11 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
       {/* Results */}
       {results && !isLoading && (
         <>
-          {/* Results count + Smart Search badge */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-muted-foreground">
-              {results.count === 0
-                ? `No results found for ${getResultsTitle()}`
-                : `Found ${results.count} ${results.count === 1 ? "result" : "results"} for ${getResultsTitle()}`}
-            </p>
-            {results.intent && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                <Sparkles className="h-3 w-3" />
-                Smart Search
-              </span>
-            )}
-          </div>
-
-          {/* Agentic acknowledgment */}
-          {results.acknowledgment && (
-            <p className="text-sm text-muted-foreground italic">
-              {results.acknowledgment}
-            </p>
-          )}
-
-          {/* Follow-up chips */}
-          {results.followUps.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {results.followUps.map((followUp, i) => (
-                <Button
-                  key={i}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFollowUp(followUp)}
-                >
-                  {followUp}
-                </Button>
-              ))}
-            </div>
-          )}
+          <p className="text-muted-foreground">
+            {results.count === 0
+              ? `No results found for ${getResultsTitle()}`
+              : `Found ${results.count} ${results.count === 1 ? "result" : "results"} for ${getResultsTitle()}`}
+          </p>
 
           {results.count > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

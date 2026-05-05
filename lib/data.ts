@@ -1,4 +1,5 @@
 import { ProductType } from "@prisma/client";
+import { PRODUCT_LIST_ORDER_BY } from "./catalog-sort";
 import { prisma } from "./prisma";
 import {
   type SiteSettings,
@@ -24,13 +25,16 @@ const productCardIncludes = {
       },
     },
   },
-  // This is the key: always fetch the primary category for linking
+  // This is the key: always fetch the primary category for linking.
+  // `name` is also selected so the search drawer's MiniSearch index can
+  // boost matches against primary-category names without an extra query.
   categories: {
     where: { isPrimary: true },
     include: {
       category: {
         select: {
           slug: true,
+          name: true,
         },
       },
     },
@@ -107,30 +111,6 @@ export async function getProductBySlug(productSlug?: string | null) {
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch product.");
-  }
-}
-
-/**
- * Fetches a lightweight list of all products for the AI.
- */
-export async function getProductsForAI() {
-  try {
-    const products = await prisma.product.findMany({
-      where: {
-        type: ProductType.COFFEE,
-        isDisabled: false,
-      },
-      select: {
-        name: true,
-        slug: true,
-        tastingNotes: true,
-        type: true,
-      },
-    });
-    return products;
-  } catch (error) {
-    console.error("Database Error:", error);
-    throw new Error("Failed to fetch products for AI.");
   }
 }
 
@@ -263,6 +243,10 @@ export async function getProductsByCategorySlug(categorySlug: string) {
         isDisabled: false,
       },
       include: productCardIncludes, // <-- USE COMMON INCLUDE
+      // Same orderBy as the search drawer's /api/search/index endpoint so
+      // the category page and the chip filter present products in the
+      // same order. Shared via PRODUCT_LIST_ORDER_BY in lib/catalog-sort.ts.
+      orderBy: PRODUCT_LIST_ORDER_BY,
     });
     return products;
   } catch (error) {
@@ -863,11 +847,154 @@ const publicSettingsKeys = [
   "homepage_hero_video_poster_url",
   "homepage_hero_heading",
   "homepage_hero_tagline",
-  "ai_voice_persona",
-  "ai_voice_examples",
-  "ai_voice_surfaces",
-  "ai_smart_search_enabled",
 ] as const;
+
+// --- SEARCH DRAWER CONFIG ---
+
+const FALLBACK_SEARCH_DRAWER_CHIPS_HEADING = "Top Categories";
+const MAX_CHIPS = 6;
+const CURATED_PRODUCTS_LIMIT = 6;
+
+export interface SearchDrawerChip {
+  name: string;
+  slug: string;
+}
+
+/**
+ * Curated products for the search drawer share the ProductCard payload shape
+ * (FeaturedProduct) so they can render through the canonical
+ * `<ProductCard product={p} />` component without an adapter layer.
+ */
+export type SearchDrawerCuratedProduct = Awaited<
+  ReturnType<typeof getFeaturedProducts>
+>[number];
+
+export interface SearchDrawerConfig {
+  chipsHeading: string;
+  chips: SearchDrawerChip[];
+  curatedCategoryName: string | null;
+  curatedProducts: SearchDrawerCuratedProduct[];
+}
+
+/**
+ * Fetches the search drawer configuration:
+ *
+ * - chipsHeading: name of the admin-selected CategoryLabel (drives chip row heading)
+ * - chips: categories under that label, ordered by CategoryLabelCategory.order asc
+ * - curatedCategoryName + curatedProducts: products under the admin-selected
+ *   curated Category (default fallback section / shown when no search results)
+ *
+ * Defaults: when the chip-label setting is missing or points to a deleted label,
+ * falls back to the 1st CategoryLabel by `order` (any visibility — hidden labels
+ * work for search even though they're hidden from product menu nav). When the
+ * curated-category setting is missing or points to a deleted category, falls
+ * back to the 1st Category by `order`.
+ */
+export async function getSearchDrawerConfig(): Promise<SearchDrawerConfig> {
+  try {
+    const settingsRows = await prisma.siteSettings.findMany({
+      where: {
+        key: {
+          in: ["search_drawer_chip_label", "search_drawer_curated_category"],
+        },
+      },
+      select: { key: true, value: true },
+    });
+
+    const record = settingsRows.reduce<Record<string, string>>((acc, row) => {
+      acc[row.key] = row.value;
+      return acc;
+    }, {});
+
+    // --- Chip label resolution ---
+    // Admin setting stores CategoryLabel.id. Hidden labels (isVisible: false)
+    // are valid here — search drawer reads them anyway.
+    const chipLabelId = record.search_drawer_chip_label || null;
+    let label = chipLabelId
+      ? await prisma.categoryLabel.findUnique({
+          where: { id: chipLabelId },
+          select: {
+            name: true,
+            categories: {
+              orderBy: { order: "asc" },
+              take: MAX_CHIPS,
+              select: { category: { select: { name: true, slug: true } } },
+            },
+          },
+        })
+      : null;
+
+    // Fallback: setting missing or pointing at a deleted label → 1st by order.
+    if (!label) {
+      label = await prisma.categoryLabel.findFirst({
+        orderBy: { order: "asc" },
+        select: {
+          name: true,
+          categories: {
+            orderBy: { order: "asc" },
+            take: MAX_CHIPS,
+            select: { category: { select: { name: true, slug: true } } },
+          },
+        },
+      });
+    }
+
+    const chipsHeading = label?.name ?? FALLBACK_SEARCH_DRAWER_CHIPS_HEADING;
+    const chips: SearchDrawerChip[] =
+      label?.categories.map((c) => ({
+        name: c.category.name,
+        slug: c.category.slug,
+      })) ?? [];
+
+    // --- Curated category resolution ---
+    // Empty string sentinel = admin explicitly cleared (no curated section).
+    // Missing key OR slug pointing at a deleted category = fallback to 1st by order.
+    const hasCuratedKey = "search_drawer_curated_category" in record;
+    const curatedSlugSetting = record.search_drawer_curated_category;
+    const curatedExplicitlyCleared = hasCuratedKey && curatedSlugSetting === "";
+
+    let curatedCategoryName: string | null = null;
+    let curatedProducts: SearchDrawerCuratedProduct[] = [];
+
+    if (!curatedExplicitlyCleared) {
+      let curated = curatedSlugSetting
+        ? await prisma.category.findUnique({
+            where: { slug: curatedSlugSetting },
+            select: { name: true, slug: true },
+          })
+        : null;
+
+      if (!curated) {
+        curated = await prisma.category.findFirst({
+          orderBy: { order: "asc" },
+          select: { name: true, slug: true },
+        });
+      }
+
+      if (curated) {
+        curatedCategoryName = curated.name;
+        curatedProducts = await prisma.product.findMany({
+          where: {
+            isDisabled: false,
+            categories: { some: { category: { slug: curated.slug } } },
+          },
+          include: productCardIncludes,
+          take: CURATED_PRODUCTS_LIMIT,
+        });
+      }
+    }
+
+    return { chipsHeading, chips, curatedCategoryName, curatedProducts };
+  } catch (error) {
+    console.error("getSearchDrawerConfig failed:", error);
+    return {
+      chipsHeading: FALLBACK_SEARCH_DRAWER_CHIPS_HEADING,
+      chips: [],
+      curatedCategoryName: null,
+      curatedProducts: [],
+    };
+  }
+}
 
 /**
  * Fetches public site settings directly from the database.

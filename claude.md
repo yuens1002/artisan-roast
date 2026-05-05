@@ -2,9 +2,11 @@
 
 ## Project Overview
 
-**Type:** Full-stack E-commerce Coffee Store with AI Integration | **Live:** <https://demo.artisanroast.app/>
+**Type:** Full-stack E-commerce Coffee Store | **Live:** <https://demo.artisanroast.app/>
 
-**Tech Stack:** Next.js 16 (App Router, React 19) · TypeScript strict · PostgreSQL/Neon + Prisma ORM · Tailwind CSS 4 + shadcn/ui · Zustand (cart) · NextAuth.js v5 (GitHub/Google OAuth) · Stripe (Checkout + Billing Portal) · Google Gemini API · Jest + Testing Library · GitHub Actions + Vercel
+**Tech Stack:** Next.js 16 (App Router, React 19) · TypeScript strict · PostgreSQL/Neon + Prisma ORM · Tailwind CSS 4 + shadcn/ui · Zustand (cart) · NextAuth.js v5 (GitHub/Google OAuth) · Stripe (Checkout + Billing Portal) · Jest + Testing Library · GitHub Actions + Vercel
+
+> **Smart Search / Counter is extracted to a platform plugin** (2026-04-25, v0.101.0). The agentic search layer — NL extraction, voice examples, voice surfaces, intent classification, follow-up chips, conversational cadence — is no longer in this repo. The full archive (code + iteration history + diagnosis + rebuild plan) lives at [`docs/internal/smart-search/README.md`](docs/internal/smart-search/README.md). **Do not add AI behavior to a new `lib/ai/**` or to the `app/api/search/**` route.** Future AI work happens in the platform plugin, not here.
 
 ---
 

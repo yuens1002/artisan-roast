@@ -4,7 +4,6 @@ import {
   sendInstallEvent,
   isTelemetryDisabledByEnv,
 } from "../../lib/telemetry";
-import { DEFAULT_VOICE_EXAMPLES } from "../../lib/ai/voice-examples";
 
 export async function seedSettings(prisma: PrismaClient) {
   console.log("  📋 Creating site settings...");
@@ -360,19 +359,9 @@ export async function seedSettings(prisma: PrismaClient) {
     });
   }
 
-  // AI voice — seed default examples so the UI always reads from DB.
-  // update: {} means we never overwrite customizations the admin has already saved.
-  // NOTE: ai_voice_surfaces is intentionally NOT seeded — it is lazy-initialized by
-  // GET /api/settings/voice-surfaces on first Counter open. Seeding hardcoded defaults
-  // would prevent lazy init from ever running on fresh installs.
-  await prisma.siteSettings.upsert({
-    where: { key: "ai_voice_examples" },
-    update: {},
-    create: {
-      key: "ai_voice_examples",
-      value: JSON.stringify(DEFAULT_VOICE_EXAMPLES),
-    },
-  });
+  // Search drawer settings: chip label + curated category are seeded inside
+  // seedMenu (after the "Top Categories" CategoryLabel and Staff Picks Category
+  // exist) so the chip_label key can store the real label id.
 
   console.log("  ✅ Site settings created");
 }

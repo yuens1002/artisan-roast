@@ -23,6 +23,162 @@
 - **CardConfig**: Refactored to discriminated union (type: "trial" | "plan") — computeCardConfig() factory encapsulates card-type selection, no slug checks in the render loop
 - **MOCK_HOSTED_STATUS**: Fixture env var for dev/verification of all hosted trial states without a live service
 
+---
+
+## 0.105.0 - 2026-05-04
+
+### Added
+
+- **Stripe publishable key cross-account verification** — the backend now verifies that the publishable key belongs to the same Stripe account as the secret key before saving. Implementation creates an unconfirmed PaymentIntent with the secret key, then retrieves it using the publishable key as Bearer auth against the Stripe API (Stripe returns 4xx for mismatched accounts). The PI is always cancelled in a `finally` block. Prevents a class of misconfiguration that was previously silent.
+- **Verify button on Stripe credentials form** — secondary button in the form footer that re-runs the full validation chain (secret key → charges_enabled → test charge → publishable key cross-account check) against the currently stored credentials without saving. Useful for diagnosing payment failures when all keys appear correct. Disabled while any field has unsaved changes, during a save, or after a save error.
+- **Undo Changes recovery button** — appears after a failed save when the DB has a previously-validated state. Clicking Undo restores all three fields to their DB values, clears the error, and resets field icons to green — one-click escape from a bad edit without a page reload.
+
+### Fixed
+
+- **`charges_enabled` false positive on test accounts** — the Stripe account validation check rejected valid test keys because `charges_enabled` is a live-mode onboarding flag and may be `false` on test accounts that fully support test charges. Guard now skipped for `sk_test_*` keys; test-mode payment capability is verified instead by creating and immediately cancelling a test PaymentIntent with `pm_card_visa`.
+- **Required field validation before save** — saving with no DB row and one or more empty fields now shows per-field "Required field" hints instead of silently sending a partial payload. Errors clear as the admin types.
+- **Field icon state** — green checkmarks on initial load now only appear when a field's value matches the DB-stored state. Icons switch to a muted circle on edit (unsaved) and to a red indicator on save failure.
+- **Dirty field tracking on PUT** — the save payload now contains only fields the admin actually changed. Masked placeholder values (`••••••••1234`) are treated as unchanged and omitted from the PUT body, preventing accidental overwrites of the existing encrypted values.
+
+---
+
+## 0.104.0 - 2026-05-03
+
+### Added
+
+- **Stripe credentials admin UI** — admins can now paste their Stripe secret key, publishable key, and webhook secret directly in **Settings → Commerce → Stripe Payment**. The backend validates keys against the Stripe API before saving, encrypts the secret key and webhook secret with AES-256-GCM, and auto-generates an encryption key to the database on first use (no environment variables required for initial setup). After saving, the store is payment-ready without a redeploy.
+- **Runtime Stripe configuration gate** — the checkout button and the admin Orders page payment banner now reflect the actual saved credential state at request time (server-side DB check) instead of a build-time `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` check. Customers see the checkout button immediately after the admin saves keys; no Vercel redeploy needed.
+- **Stripe account details surface** — after saving valid keys, the Commerce settings page displays the connected Stripe account name, account ID, mode (Test / Live), and last-verified timestamp.
+- **Mode detection on secret key field** — the secret key input shows a live Test Mode / Live Mode badge as the admin types, catching key-mode mismatches before submission.
+
+---
+
+## 0.103.2 - 2026-04-27
+
+### Performance
+
+- **Product page parallelizes related/addons/category-siblings fetches** — `app/(site)/products/[slug]/page.tsx` previously ran four top-level fetch steps sequentially (`getProductBySlug` → `getRelatedProducts` → `getProductAddOns` → `getProductsByCategorySlug`). The last three only depend on results from the first and are independent of each other, so series-mode meant the page's total latency was the sum of all four for no benefit. Wrapped in `Promise.all`, fanning the latter three out concurrently — total latency now reduces to roughly the slowest top-level fetch (an individual helper like `getProductAddOns` still runs its own internal queries sequentially, so the absolute floor isn't a single round-trip). Net cut is large enough to make the result→product transition from the search drawer feel instant. No behavior change beyond timing; same data flows through `ProductClientPage`.
+
+---
+
+## 0.103.1 - 2026-04-27
+
+### Fixed
+
+- **Menu Builder mutations now invalidate the search-drawer-config cache (#10)** — when admin reordered, renamed, attached, or detached categories under the chip-label via Menu Builder, the storefront drawer chips would lag for up to 60 s due to the `unstable_cache` TTL on `getCachedSearchDrawerConfig`. Only the admin Search Settings PUT route fired `revalidateTag` — the ~18 Menu Builder mutation actions did not. Extracted a one-line helper at `lib/cache/revalidate-search-drawer.ts` and wired it into every successful mutation across `app/admin/product-menu/actions/labels.ts` and `app/admin/product-menu/actions/categories.ts`. Even when a mutation doesn't touch the chip-label, the tag is still marked stale and the next request rebuilds the tagged cache — that overhead is acceptable for low-frequency admin writes, so we call it from every relevant mutation rather than gating on whether the chip-label was touched.
+- **Consistent product order on category page + search index (#12)** — `/single-origin` and the Single Origin chip filter showed the same total count of products but in a different order above the fold. Cause: neither query had an explicit `orderBy`, so both fell back to Prisma's implementation-defined default which differed between contexts. Both `lib/data.ts` `getProductsByCategorySlug` and `app/api/search/index/route.ts` now sort by `[{ isFeatured: "desc" }, { name: "asc" }]` — featured first, then alphabetical. Test asserts the contract on the search-index route so the two surfaces don't drift.
+
+---
+
+## 0.103.0 - 2026-04-26
+
+### Added
+
+- **`<Chip>` + `<ChipPreview>` UI components** ([components/ui/chip.tsx](components/ui/chip.tsx)) — codifies the chip design language as a reusable `cva`-based component (mirrors the existing Badge pattern). Variants: `active` (bg-primary), `inactive` (bg-secondary opacity-60 hover-80), `preview` (read-only, no hover). Sizes: `nav` (text-sm rounded-md) for search-drawer-scale chips, `filter` (text-xs rounded-full) for filter-pill-scale. `aria-pressed` derived automatically from `variant === "active"` with explicit-prop override. 11 component tests.
+- **`docs/architecture/SEARCH-ARCHITECTURE.md`** — new architecture doc covering the search feature end-to-end: drawer (client-side MiniSearch) + legacy `/search` (server FTS), design principles, data flow, admin surface, and the scale envelope (target catalog ≤ ~200 products). The "Scale envelope" section documents the two scale-dependent items deliberately deferred at this size (full-catalog `/api/search/index` payload + layout-time `getSearchDrawerConfig` cached with periodic misses/revalidation), each with revisit triggers and the correct mitigation if those triggers fire.
+- **`docs/features/keyword-search-drawer/nitpicks.md`** — durable list of post-launch polish items, with status (shipped / open / deferred / won't-fix) so the queue is reviewable from the feature directory rather than scratch memory.
+- **Search drawer chip-active load animates with staggered fade-in** — chip-click product grid now reuses the homepage `<ScrollReveal>` component (same pattern `<FeaturedProducts>` uses for its product cards), re-keyed on the active chip slug so the animation re-fires on each chip change. Consistent entrance feel across the storefront.
+- **Admin auto-save error indicator** — `/admin/settings/search` now surfaces a transient "Couldn't save — try again" hint under the dropdown when a PUT fails and the field rolls back. Auto-clears after 4s or on the next successful save. `role="status"` + `aria-live="polite"`.
+
+### Fixed
+
+- **Search drawer closes on link click even when the route is unchanged** — the `usePathname()` effect (v0.102.1) didn't fire when a link inside the drawer pointed to the user's current path (e.g. user on `/products/foo`, opens search, taps Foo). Replaced with an event-delegated `onClick` on the drawer body that closes whenever any anchor inside is clicked, regardless of where it routes. The pathname effect was removed in the same pass — the delegated handler is the sole close path now and covers both cross-route and same-route navigations. 6 unit tests.
+- **Search drawer typed query clears on close (#7)** — `query` was component-local state and persisted across drawer open/close cycles, surfacing a stale query when the user reopened. Moved into the Zustand store; `close()` and the closing branch of `toggle()` now clear all three: `isOpen`, `activeChipSlug`, `query`.
+
+### Changed
+
+- **Storefront search drawer chips + admin LabelSelect preview migrated to `<Chip>` / `<ChipPreview>`** — visually identical output, but the inline className strings are gone. Review brew-method pills deliberately NOT migrated (they use bg-secondary opacity-100 for active rather than bg-primary; would need a future "subtle-active" variant).
+- **`SearchDrawer.tsx` event-delegated drawer body** — the body's outer `<div>` now carries the close-on-anchor-click handler. No regressions to the input row, chip row, or scrollable body.
+
+---
+
+## 0.102.4 - 2026-04-26
+
+### Fixed
+
+- **Mobile: search drawer keyboard stays up, menu reopens after closing search without navigating** — v0.102.2 closed the menu Sheet *before* opening the search drawer. Two side-effects: (a) Radix Sheet's close-auto-focus reclaimed focus from the search drawer's autoFocus Input on mobile, retracting the keyboard immediately after it appeared, and (b) closing the search drawer (without navigating) left the user with no menu to return to. v0.102.4 keeps the close-before-open mechanism (the dual-focus-trap was unavoidable when both overlays mounted simultaneously) and adds two fixes: (1) `onCloseAutoFocus={preventDefault}` on the menu SheetContent so the closing Sheet doesn't yank focus back to the hamburger trigger; (2) reopen the menu Sheet automatically when the search drawer closes WITHOUT a pathname change — so "tap Search → change my mind → back to the menu" works naturally.
+
+### Changed
+
+- **Mobile menu Sheet closes on navigation via pathname effect** — same shape as the search drawer's effect, removes the need for individual `<SheetClose>` wraps on every nav link.
+
+---
+
+## 0.102.3 - 2026-04-26
+
+### Changed
+
+- **Seed taste-category assignment is more discriminating** — `prisma/seed/menu.ts` `findTasteCategories` now matches against `tastingNotes` only (was matching both notes AND description, which produced ~86% overlap between Fruity & Floral and Medium Roast because marketing copy uses fruit/spice/cocoa words liberally). Adds basic coffee-domain gating: Fruity & Floral excluded from DARK roasts (caramelization suppresses bright top notes) and Spicy & Earthy excluded from LIGHT roasts (those notes need MEDIUM+ development). After reseed, F&F ∩ Medium Roast overlap drops to ~77%; further reduction requires actual tasting-note diversification in seed data (deferred).
+
+---
+
+## 0.102.2 - 2026-04-26
+
+### Fixed
+
+- **Mobile menu Sheet closes before opening the search drawer** — on mobile, tapping the Search item inside the hamburger menu was leaving the menu Sheet open behind the search drawer. Tapping a search result then navigated, search drawer auto-closed (per v0.102.1), but the menu Sheet stayed mounted over the destination. `SearchTrigger` now accepts an optional `onBeforeOpen` callback that runs synchronously before the search drawer opens; the mobile-menu wiring passes a closer for the menu Sheet so the two overlays no longer stack. Desktop is unaffected (it uses `NavigationMenu`, not Sheet).
+
+---
+
+## 0.102.1 - 2026-04-26
+
+### Fixed
+
+- **Search drawer auto-closes on navigation** — clicking a search result, curated card, or chip-active card was navigating to the product page but leaving the drawer overlay up over the destination, making the click feel unresponsive. Added a `usePathname()` effect to close the drawer on any pathname change, so every Link inside (current and future) just works without each one needing an explicit `onClick={close}`.
+
+---
+
+## 0.102.0 - 2026-04-26
+
+### Added
+
+- **Keyword search drawer (v2)**: right-anchored slide-in (vaul) drawer triggered from the storefront header. Loads the catalog index once per session and runs MiniSearch (fuzzy, field-weighted: name 4× > category names + tasting notes 2× > origin 1.5× > description 1×). Three body states (empty / chip-active / results / no-results) all share a persistent chip row. Chips drive an in-drawer category filter — no navigation, no URL change. Curated, chip-active, and no-results-fallback grids render through the canonical `<ProductCard>`; search results use a denser horizontal mini-card (image + name + RoastLevelBar + tasting notes for coffee, image + name + description for merch).
+- **Admin Search Settings** at `/admin/settings/search`: two auto-saving sections — chip Label single-select (drives the storefront chip row from a `CategoryLabel`) + Curated Category single-select. Reads-only chip preview below the Label dropdown matches storefront chip styling at 60% opacity. No Save button — every change PUTs immediately and silently rolls back on failure.
+- **Hidden "Top Categories" CategoryLabel** in seed: `isVisible: false` so it never appears in the product menu nav, but the search drawer reads labels by id without a visibility filter so its 6 attached categories (single-origin, fruity-floral, medium-roast, cold-brew-blends, drinkware, central-america) drive the chip row.
+
+### Changed
+
+- **`productCardIncludes` extended**: category include now selects `name` in addition to `slug` so the search index can boost matches against category names without an extra query. Additive — no consumer regression.
+- **Coffee primary category**: `prisma/seed/menu.ts` now assigns Single Origin (or the matching Blend variant) as `isPrimary: true` on every coffee, mirroring the data intent in `prisma/seed/products.ts`. Roast Level / Taste / Region attachments stay as secondary. Restores `/single-origin` storefront category page (was empty before — 0 attachments) and aligns with the search drawer's chip filter.
+- **Drawer chip filter matches any attached category**: filter uses `categories.some((c) => c.category.slug === activeChipSlug)` instead of primary-only. `/api/search/index` loads all categories (sorted `isPrimary desc` so `categories[0]` still resolves to primary for ProductCard URL routing). Adds ~6 KB to the single search-index fetch — cached 60s + SWR 300s. All 6 demo chips have results: single-origin (24), fruity-floral (22), medium-roast (22), cold-brew-blends (1), drinkware (4), central-america (10).
+- **Search index searches all attached category names**: `useSearchIndex` extracts `categories.map((c) => c.category.name).join(" ")` for the search field (renamed `primaryCategoryName` → `categoryNames`). Typing "medium" now finds every Medium Roast coffee, not just the few whose primary happens to be Medium Roast.
+- **Chip theming unified**: all chip surfaces (storefront search drawer, admin LabelSelect preview, review brew-method pills) share the same theming language — `bg-secondary` at 60% opacity for inactive (hover 80%), `bg-primary` for active (search drawer only). Pills/chips no longer render with a hairline near-white border; the secondary-color tint provides visual definition.
+- **`.gitattributes`**: forces LF on `*.sql` to prevent Windows CRLF from breaking Prisma's recorded migration checksums.
+
+### Removed
+
+- **Deprecated SiteSettings rows** dropped via migration `20260425200000_search_drawer_v2_label_based`: `search_drawer_chips_heading`, `search_drawer_chip_categories`. Replaced by single key `search_drawer_chip_label` (stores `CategoryLabel.id`).
+- **`TopCategoriesMultiSelect.tsx`** deleted — replaced by `LabelSelect.tsx`.
+
+### Fixed
+
+- **Drift**: re-syncs `Order.refundedAmountInCents` to `NOT NULL DEFAULT 0` (matches schema; column had been left nullable by an earlier hand-edited migration).
+- **Backup script**: `scripts/backup-database.ts` referenced a non-existent `productImage` model; updated to the actual schema (added `variantImage`, `passwordResetToken`, `telemetryEvent`, `review`, `reviewVote`, `reviewEmailLog`).
+
+---
+
+## 0.101.0 - 2026-04-25
+
+### Removed
+
+- **Smart Search / Counter extracted to platform plugin**: The agentic search layer (Counter UI, NL extraction, voice examples, voice surfaces, intent classification, follow-up chips, conversational cadence) is no longer in the core ecomm-ai-app. The feature has been hard-paused in this repo and earmarked for a platform-developed plugin (opt-in, monetized) — see `docs/internal/smart-search/README.md` for the full archive, iteration history, root-cause analysis, and rebuild plan
+- **Affected surfaces**: deleted `lib/ai/`, `lib/store/chat-panel-store.ts`, `app/(site)/_components/ai/`, `app/admin/settings/ai/`, `app/api/admin/settings/ai-search/`, `app/api/settings/voice-surfaces/`, `app/api/recommend/`, `app/api/search/__tests__/`, `types/search.ts`, and the corresponding feature docs at `docs/features/smart-search-ux/` + `docs/features/agentic-search/`
+- **SiteSettings AI rows**: migration `20260425120000_drop_smart_search_settings` deletes `ai_voice_persona`, `ai_voice_examples`, `ai_voice_surfaces`, `ai_voice_surface_prompt_hash`, `ai_smart_search_enabled` keys
+
+### Changed
+
+- **`/api/search` is keyword-only**: agentic branch removed; route handler slimmed from 443 LOC to ~125 LOC; PostgreSQL `tsvector` + `ts_rank` ranking remains the foundation
+- **FTS utilities relocated**: `tokenize` + `fullTextSearchIds` moved from `lib/ai/extraction.ts` to `lib/search/full-text.ts` (no LLM dependency)
+- **Search page**: keyword-only UI, no Ask AI toggle, no Smart Search badge, no acknowledgment, no follow-up chips
+- **Site header**: Counter trigger replaced by `Search` icon linking to `/search` (mobile and desktop)
+- **Admin nav**: `Settings → AI` entry removed from both nav config and route registry
+
+### Why
+
+Per [`docs/internal/smart-search/README.md`](docs/internal/smart-search/README.md): rule accretion across 8 iterations made the feature structurally fragile (4 sources of truth for coffee domain knowledge, ~30% false-green tests, zero observability). Platform velocity now demands a polished keyword search as the first-class core experience. Eval-driven rebuild lives with the future plugin, not in this repo.
+
+---
+
 ## 0.100.10 - 2026-04-22
 
 ### Added

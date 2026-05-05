@@ -98,7 +98,7 @@ export async function POST(
       );
     }
 
-    const stripe = getStripe();
+    const stripe = await getStripe();
     if (!stripe) {
       return NextResponse.json(
         { error: "Payments not configured" },

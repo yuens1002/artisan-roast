@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { WeightUnitOption } from "@/lib/weight-unit";
+import { StripeCredentialsForm } from "./_components/StripeCredentialsForm";
 
 export default function CommerceSettingsPage() {
   return (
@@ -17,6 +18,27 @@ export default function CommerceSettingsPage() {
         title="Commerce Settings"
         subtitle="Configure product display and commerce-related settings"
       />
+
+      <SettingsSection
+        title="Stripe Payment"
+        description={
+          <>
+            Configure your API credentials from{" "}
+            <a
+              href="https://dashboard.stripe.com/apikeys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5"
+            >
+              Stripe
+              <ExternalLink className="h-3 w-3 ml-0.5" />
+            </a>{" "}
+            to enable payments.
+          </>
+        }
+      >
+        <StripeCredentialsForm />
+      </SettingsSection>
 
       <SettingsSection
         title="Promotion Codes"

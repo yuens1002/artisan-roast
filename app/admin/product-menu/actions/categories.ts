@@ -13,6 +13,7 @@ import {
   updateCategorySchema,
 } from "@/app/admin/product-menu/types/category";
 import { generateSlug } from "@/app/admin/_hooks/useSlugGenerator";
+import { revalidateSearchDrawer } from "@/lib/cache/revalidate-search-drawer";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import {
@@ -78,6 +79,7 @@ export async function createCategory(input: unknown) {
 
     const fresh = await createCategoryWithLabels({ name, slug, labelIds });
 
+    revalidateSearchDrawer();
     return {
       ok: true,
       data: fresh,
@@ -102,12 +104,14 @@ export async function createNewCategory(input?: unknown) {
   try {
     const labelIds = parsed.data?.labelIds ?? [];
 
-    return await createWithUniqueNameAndSlug({
+    const result = await createWithUniqueNameAndSlug({
       makeName: (attempt) => makeNewItemName("Category", attempt),
       create: async ({ name, slug }) => {
         return await createCategoryWithLabels({ name, slug, labelIds });
       },
     });
+    if (result.ok) revalidateSearchDrawer();
+    return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to create new category";
     return { ok: false, error: message };
@@ -188,6 +192,7 @@ export async function cloneCategory(input: unknown) {
     });
 
     if (!created.ok) return created;
+    revalidateSearchDrawer();
     return { ok: true, data: { id: created.data.id } };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to clone category";
@@ -218,6 +223,7 @@ export async function updateCategory(id: unknown, input: unknown) {
       isVisible,
     });
 
+    revalidateSearchDrawer();
     return {
       ok: true,
       data: fresh,
@@ -235,6 +241,7 @@ export async function deleteCategory(id: unknown) {
 
   try {
     await deleteCategoryWithRelations(idParsed.data);
+    revalidateSearchDrawer();
     return { ok: true, data: { id: idParsed.data } };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to delete category";
@@ -292,6 +299,7 @@ export async function restoreCategory(input: unknown) {
       return category;
     });
 
+    revalidateSearchDrawer();
     return { ok: true as const, data: newCategory };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to restore category";

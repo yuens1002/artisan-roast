@@ -34,9 +34,9 @@ async function checkDatabase(): Promise<CheckResult> {
 }
 
 async function checkStripe(): Promise<CheckResult> {
-  const stripe = getStripe();
+  const stripe = await getStripe();
   if (!stripe) {
-    return { status: "skipped", message: "STRIPE_SECRET_KEY not set" };
+    return { status: "skipped", message: "Stripe is not configured" };
   }
 
   try {

@@ -9,7 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const stripe = getStripe();
+    const stripe = await getStripe();
 
     const session = await auth();
     if (!session?.user?.id) {

@@ -40,7 +40,7 @@ import { CartAddOnsSuggestions } from "./CartAddOnsSuggestions";
  * ShoppingCart component - manages cart UI and logic
  * Renders a cart button with badge + drawer showing cart contents
  */
-export function ShoppingCart() {
+export function ShoppingCart({ stripeConfigured = false }: { stripeConfigured?: boolean }) {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   const { toast } = useToast();
@@ -546,7 +546,6 @@ export function ShoppingCart() {
 
               {/* Checkout Button */}
               {(() => {
-                const stripeConfigured = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
                 const hasSubscription = items.some(
                   (item) => item.purchaseType === "SUBSCRIPTION"
                 );

@@ -1,0 +1,11 @@
+* text=auto eol=lf
+
+# Prisma migrations must always use LF — Prisma computes a checksum on the
+# file content and stores it in `_prisma_migrations.checksum`. CRLF on
+# checkout (Windows) makes the on-disk content drift from the recorded
+# checksum and breaks `prisma migrate dev`.
+*.sql text eol=lf
+
+# Same reasoning for shell scripts and other text formats that are
+# semantically LF.
+*.sh text eol=lf

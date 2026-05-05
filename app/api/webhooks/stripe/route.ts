@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { getStripe } from "@/lib/services/stripe";
+import { getStripe, getStripeWebhookSecret } from "@/lib/services/stripe";
 import { verifyWebhook } from "@/lib/payments/stripe/verify";
 import { dispatchEvent } from "./handlers";
 
 export async function POST(req: NextRequest) {
-  const stripe = getStripe();
+  const stripe = await getStripe();
   if (!stripe) {
     return NextResponse.json(
       { error: "Payments not configured" },
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const verifyResult = verifyWebhook({
     body,
     signature,
-    secret: process.env.STRIPE_WEBHOOK_SECRET,
+    secret: (await getStripeWebhookSecret()) ?? undefined,
     stripe,
   });
 

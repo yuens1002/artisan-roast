@@ -123,7 +123,7 @@
       "Bash(kill:*)",
       "Bash(xargs:*)",
       "Bash(for:*)",
-      "Edit",
+      "Edit(**)",
       "ToolSearch"
     ]
   },
@@ -140,6 +140,11 @@
           {
             "type": "command",
             "command": "if [ -f .claude/hooks/pre-pr-precheck-node.js ]; then node .claude/hooks/pre-pr-precheck-node.js; else exit 0; fi",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "if [ -f .claude/hooks/pre-pr-via-release-node.js ]; then node .claude/hooks/pre-pr-via-release-node.js; else exit 0; fi",
             "timeout": 10
           },
           {

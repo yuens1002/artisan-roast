@@ -1,25 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { isAIConfigured } from "@/lib/ai-client";
-import { getPublicSiteSettings } from "@/lib/data";
-import { DEFAULT_VOICE_EXAMPLES } from "@/lib/ai/voice-examples";
-import { buildCatalogSnapshot } from "@/lib/ai/catalog";
-import { buildSystemPrompt } from "@/lib/ai/prompts";
-import {
-  extractAgenticFilters,
-  fullTextSearchIds,
-  isNaturalLanguageQuery,
-  isSalutation,
-  parseConversationHistory,
-  validateFollowUps,
-} from "@/lib/ai/extraction";
-import type { AgenticExtraction } from "@/types/search";
-
-// ---------------------------------------------------------------------------
-// Route handler
-// ---------------------------------------------------------------------------
+import { fullTextSearchIds } from "@/lib/search/full-text";
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,17 +9,22 @@ export async function GET(request: NextRequest) {
     const query = urlParams.get("q");
     const roast = urlParams.get("roast");
     const origin = urlParams.get("origin");
-    const forceAI = urlParams.get("ai") === "true";
     const sessionId = urlParams.get("sessionId") ?? "";
-    const parsedTurnCount = parseInt(urlParams.get("turnCount") ?? "0", 10);
-    const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
-    const pageTitle = urlParams.get("pageTitle") ?? undefined;
-    const conversationHistory = parseConversationHistory(urlParams.get("history"));
 
+    const PAGE_SIZE = 7;
+
+    // Note: NO type filter — keyword search now includes both COFFEE and MERCH.
+    // Roast / origin URL params still narrow the result (roast → coffee
+    // category; origin → product.origin array), but type is unconstrained
+    // unless the URL explicitly asks for one (which today it doesn't).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whereClause: any = { isDisabled: false, type: ProductType.COFFEE };
+    const whereClause: any = { isDisabled: false };
     let searchQuery = "";
     let ftsOrderedIds: string[] = [];
+    let ftsTotalMatches = 0;
+    // Honest no-results: when query has tokens but FTS returns zero, we should
+    // return empty — not fall through to "all products in this roast category".
+    let queryProducedZeroMatches = false;
 
     if (query && query.trim().length > 0) {
       searchQuery = query.trim().toLowerCase();
@@ -48,7 +35,6 @@ export async function GET(request: NextRequest) {
         whereClause.categories = {
           some: { category: { slug: `${level}-roast` } },
         };
-        whereClause.type = ProductType.COFFEE;
 
         const remainingQuery = searchQuery
           .replace(/\b(light|medium|dark)\s*roast\b/i, " ")
@@ -57,19 +43,27 @@ export async function GET(request: NextRequest) {
         if (remainingQuery.length > 0) {
           const ftsIds = await fullTextSearchIds(remainingQuery);
           if (ftsIds.length > 0) {
-            whereClause.id = { in: ftsIds };
-            ftsOrderedIds = ftsIds;
+            ftsTotalMatches = ftsIds.length;
+            ftsOrderedIds = ftsIds.slice(0, PAGE_SIZE);
+            whereClause.id = { in: ftsOrderedIds };
+          } else {
+            // Honest no-results: query had tokens but matched nothing within
+            // this roast category. Don't return all products in the category.
+            queryProducedZeroMatches = true;
           }
         }
       } else {
         const ftsIds = await fullTextSearchIds(searchQuery);
         if (ftsIds.length > 0) {
-          whereClause.id = { in: ftsIds };
-          ftsOrderedIds = ftsIds;
+          ftsTotalMatches = ftsIds.length;
+          ftsOrderedIds = ftsIds.slice(0, PAGE_SIZE);
+          whereClause.id = { in: ftsOrderedIds };
         } else {
+          // Fall back to a name contains match. The previous "origin hasSome
+          // [query]" clause was effectively dead code (origins are discrete
+          // strings; free-text query rarely matches one) so it's removed.
           whereClause.OR = [
             { name: { contains: searchQuery, mode: "insensitive" } },
-            { origin: { hasSome: [searchQuery] } },
           ];
         }
       }
@@ -80,205 +74,11 @@ export async function GET(request: NextRequest) {
         ? roast.toLowerCase()
         : `${roast.toLowerCase()}-roast`;
       whereClause.categories = { some: { category: { slug: roastSlug } } };
-      whereClause.type = ProductType.COFFEE;
     }
 
     if (origin) {
       whereClause.origin = { has: origin };
     }
-
-    // -------------------------------------------------------------------------
-    // Salutation detection — greeting-only input returns surface string, no search
-    // -------------------------------------------------------------------------
-
-    if (query && forceAI && isSalutation(query)) {
-      const { aiVoiceSurfaces } = await getPublicSiteSettings();
-      const salutation = aiVoiceSurfaces?.salutation;
-      const { DEFAULT_VOICE_SURFACES } = await import("@/lib/ai/voice-surfaces");
-      return NextResponse.json({
-        products: [],
-        query: searchQuery,
-        count: 0,
-        intent: null,
-        filtersExtracted: null,
-        acknowledgment: salutation ?? DEFAULT_VOICE_SURFACES.salutation,
-        followUpQuestion: null,
-        followUps: [],
-        recommendedProductName: null,
-        aiFailed: false,
-        isSalutation: true,
-        context: { sessionId, turnCount },
-      });
-    }
-
-    // -------------------------------------------------------------------------
-    // Agentic step — NL extraction (skipped for keyword queries or if AI off)
-    // -------------------------------------------------------------------------
-
-    let agenticData: AgenticExtraction | null = null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let orderBy: any = undefined;
-
-    if (query && (forceAI || isNaturalLanguageQuery(query)) && (await isAIConfigured())) {
-      const { aiVoicePersona, aiVoiceExamples } = await getPublicSiteSettings();
-      const voiceExamples = aiVoiceExamples.length > 0 ? aiVoiceExamples : DEFAULT_VOICE_EXAMPLES;
-      const catalogSnapshot = await buildCatalogSnapshot();
-      const systemPrompt = buildSystemPrompt(voiceExamples, aiVoicePersona, pageTitle, catalogSnapshot);
-      agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle, conversationHistory);
-
-      if (agenticData?.filtersExtracted) {
-        const {
-          roastLevel,
-          origin: extractedOrigin,
-          flavorProfile,
-          isOrganic,
-          processing,
-          variety,
-          priceMaxCents,
-          priceMinCents,
-          sortBy,
-        } = agenticData.filtersExtracted;
-
-        const hasAnyFilter = !!(
-          roastLevel ||
-          extractedOrigin ||
-          (flavorProfile && flavorProfile.length > 0) ||
-          isOrganic !== undefined ||
-          processing ||
-          variety ||
-          priceMaxCents !== undefined ||
-          priceMinCents !== undefined ||
-          sortBy
-        );
-        if (hasAnyFilter) {
-          delete whereClause.OR;
-          delete whereClause.id;
-          ftsOrderedIds = [];
-        } else {
-          delete whereClause.OR;
-        }
-
-        if (roastLevel && !roast) {
-          const roastSlug = `${roastLevel.toLowerCase()}-roast`;
-          whereClause.categories = { some: { category: { slug: roastSlug } } };
-        }
-
-        if (extractedOrigin && !origin) {
-          whereClause.origin = Array.isArray(extractedOrigin)
-            ? { hasSome: extractedOrigin }
-            : { has: extractedOrigin };
-        }
-
-        if (flavorProfile && flavorProfile.length > 0) {
-          const flavorEntries = flavorProfile.flatMap((f) => [
-            { description: { contains: f, mode: "insensitive" as const } },
-            { tastingNotes: { hasSome: [f.charAt(0).toUpperCase() + f.slice(1)] } },
-          ]);
-          whereClause.OR = flavorEntries;
-        }
-
-        if (isOrganic !== undefined) {
-          whereClause.isOrganic = isOrganic;
-        }
-
-        if (processing) {
-          whereClause.processing = { contains: processing, mode: "insensitive" };
-        }
-
-        if (variety) {
-          whereClause.variety = { contains: variety, mode: "insensitive" };
-        }
-
-        if (priceMaxCents !== undefined || priceMinCents !== undefined) {
-          const priceFilter: Record<string, number> = {};
-          if (priceMinCents !== undefined) priceFilter.gte = priceMinCents;
-          if (priceMaxCents !== undefined) priceFilter.lte = priceMaxCents;
-          whereClause.variants = {
-            some: {
-              isDisabled: false,
-              purchaseOptions: { some: { priceInCents: priceFilter } },
-            },
-          };
-        }
-
-        if (sortBy) {
-          const sortMap: Record<string, object> = {
-            newest: { createdAt: "desc" },
-            top_rated: { averageRating: "desc" },
-          };
-          const supportedSort = sortMap[sortBy];
-          if (supportedSort) {
-            orderBy = supportedSort;
-          }
-        }
-
-        // productType "merch" removes coffee-specific filters; unspecified falls through as coffee.
-        if (agenticData.filtersExtracted.productType === "merch") {
-          delete whereClause.type;
-          delete whereClause.categories;
-          delete whereClause.origin;
-          delete whereClause.OR;
-          delete whereClause.id;
-          ftsOrderedIds = [];
-          const keywords = agenticData.filtersExtracted.productKeywords ?? [];
-          if (keywords.length > 0) {
-            whereClause.OR = keywords.flatMap((kw) => [
-              { name: { contains: kw, mode: "insensitive" as const } },
-              { description: { contains: kw, mode: "insensitive" as const } },
-            ]);
-          } else if (query) {
-            // Fallback to raw query if AI didn't extract keywords
-            whereClause.OR = [
-              { name: { contains: query, mode: "insensitive" as const } },
-              { description: { contains: query, mode: "insensitive" as const } },
-            ];
-          }
-        } else {
-          const hasCoffeeFilters = !!(
-            roastLevel ||
-            extractedOrigin ||
-            (flavorProfile && flavorProfile.length > 0) ||
-            isOrganic !== undefined ||
-            processing ||
-            variety
-          );
-          if (hasCoffeeFilters) {
-            whereClause.type = ProductType.COFFEE;
-          }
-        }
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // Intent classification — gate routing before DB query
-    // -------------------------------------------------------------------------
-
-    if (agenticData) {
-      if (agenticData.intent === "how_to" || agenticData.intent === "compare" || agenticData.intent === "recommend") {
-        return NextResponse.json({
-          products: [], query: searchQuery, count: 0,
-          intent: agenticData.intent, filtersExtracted: null,
-          acknowledgment: agenticData.acknowledgment || null,
-          followUpQuestion: agenticData.followUpQuestion || null, followUps: agenticData.followUps ?? [],
-          recommendedProductName: null, aiFailed: false, context: { sessionId, turnCount },
-        });
-      }
-
-      if (agenticData.intent === "reorder") {
-        const redirect = agenticData.acknowledgment || "For orders and account stuff, you'd want to head to your account page — I'm really just here for the coffee.";
-        return NextResponse.json({
-          products: [], query: searchQuery, count: 0,
-          intent: agenticData.intent, filtersExtracted: null,
-          acknowledgment: redirect,
-          followUpQuestion: null, followUps: [], recommendedProductName: null,
-          aiFailed: false, context: { sessionId, turnCount },
-        });
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // Track search activity
-    // -------------------------------------------------------------------------
 
     const session = await auth();
     if (sessionId && query) {
@@ -296,45 +96,57 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // -------------------------------------------------------------------------
-    // Execute Prisma query
-    // -------------------------------------------------------------------------
+    // Honest no-results short circuit — return empty before the DB query
+    if (queryProducedZeroMatches) {
+      return NextResponse.json({
+        products: [],
+        query: searchQuery,
+        count: 0,
+        returnedCount: 0,
+        context: { sessionId },
+      });
+    }
 
-    const products = await prisma.product.findMany({
-      where: whereClause,
-      ...(orderBy ? { orderBy } : {}),
-      include: {
-        categories: {
-          include: { category: { select: { name: true, slug: true } } },
-          where: { isPrimary: true },
-          take: 1,
-        },
-        variants: {
-          where: { isDisabled: false },
-          include: {
-            images: {
-              select: { url: true, altText: true },
-              orderBy: { order: "asc" as const },
-              take: 1,
-            },
-            purchaseOptions: {
-              select: {
-                id: true,
-                type: true,
-                priceInCents: true,
-                billingInterval: true,
-                billingIntervalCount: true,
+    // Total count: FTS path knows it from the ranked id list; fallback path counts at DB.
+    const isFtsPath = ftsOrderedIds.length > 0;
+    const [totalCount, products] = await Promise.all([
+      isFtsPath
+        ? Promise.resolve(ftsTotalMatches)
+        : prisma.product.count({ where: whereClause }),
+      prisma.product.findMany({
+        where: whereClause,
+        include: {
+          categories: {
+            include: { category: { select: { name: true, slug: true } } },
+            where: { isPrimary: true },
+            take: 1,
+          },
+          variants: {
+            where: { isDisabled: false },
+            include: {
+              images: {
+                select: { url: true, altText: true },
+                orderBy: { order: "asc" as const },
+                take: 1,
+              },
+              purchaseOptions: {
+                select: {
+                  id: true,
+                  type: true,
+                  priceInCents: true,
+                  billingInterval: true,
+                  billingIntervalCount: true,
+                },
               },
             },
           },
         },
-      },
-      take: 7,
-    });
+        ...(isFtsPath ? {} : { take: PAGE_SIZE }),
+      }),
+    ]);
 
-    // Preserve full-text search ranking order
     let orderedProducts = products;
-    if (ftsOrderedIds.length > 0 && !orderBy) {
+    if (isFtsPath) {
       const rankByIdMap = new Map(ftsOrderedIds.map((id, idx) => [id, idx]));
       orderedProducts = [...products].sort((a, b) => {
         const rankA = rankByIdMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
@@ -343,57 +155,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // App-side price sort (Prisma can't do nested aggregate orderBy)
-    const extractedSortBy = agenticData?.filtersExtracted?.sortBy;
-    if (extractedSortBy === "price_desc" || extractedSortBy === "price_asc") {
-      const getMinPrice = (p: (typeof orderedProducts)[0]): number => {
-        const prices = p.variants.flatMap((v) => v.purchaseOptions.map((po) => po.priceInCents));
-        return prices.length > 0 ? Math.min(...prices) : Infinity;
-      };
-      orderedProducts = [...orderedProducts].sort((a, b) =>
-        extractedSortBy === "price_desc"
-          ? getMinPrice(b) - getMinPrice(a)
-          : getMinPrice(a) - getMinPrice(b)
-      );
-    }
-
-    // Result reconciliation — promote named product to position 1
-    const recommendedName = agenticData?.recommendedProductName;
-    if (recommendedName && orderedProducts.length > 1) {
-      const recIdx = orderedProducts.findIndex(
-        (p) => p.name.toLowerCase() === recommendedName.toLowerCase()
-      );
-      if (recIdx > 0) {
-        const [rec] = orderedProducts.splice(recIdx, 1);
-        orderedProducts = [rec, ...orderedProducts];
-      }
-    }
-
-    // Cadence enforcement — specific queries (≤3 results) don't need narrowing chips
-    if (agenticData && orderedProducts.length > 0 && orderedProducts.length <= 3) {
-      agenticData.followUps = [];
-      agenticData.followUpQuestion = "";
-    }
-
-    const aiFailed = forceAI && !agenticData;
-
-    // Pre-validate follow-up chips — remove any that return 0 products
-    const rawFollowUps = agenticData?.followUps ?? [];
-    const validatedFollowUps =
-      rawFollowUps.length > 0 ? await validateFollowUps(rawFollowUps) : rawFollowUps;
-
     return NextResponse.json({
       products: orderedProducts,
       query: searchQuery,
-      count: products.length,
-      intent: agenticData?.intent ?? null,
-      filtersExtracted: agenticData?.filtersExtracted ?? null,
-      acknowledgment: agenticData?.acknowledgment ?? null,
-      followUpQuestion: agenticData?.followUpQuestion ?? null,
-      followUps: validatedFollowUps,
-      recommendedProductName: agenticData?.recommendedProductName ?? null,
-      aiFailed,
-      context: { sessionId, turnCount },
+      count: totalCount,
+      returnedCount: orderedProducts.length,
+      context: { sessionId },
     });
   } catch (error) {
     console.error("Error searching products:", error);

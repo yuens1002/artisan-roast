@@ -1,12 +1,13 @@
-"use client";
-
 import OrderManagementClient from "./OrderManagementClient";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { IntegrationBanner } from "@/components/shared/IntegrationBanner";
+import { getStripeConfigStatus } from "@/lib/payments/credentials";
 
-const stripeConfigured = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-
-export default function AdminOrdersPage() {
+export default async function AdminOrdersPage() {
+  const status = await getStripeConfigStatus();
+  const stripeConfigured =
+    (status.hasSecretKey && !status.decryptionError) ||
+    !!process.env.STRIPE_SECRET_KEY;
   return (
     <>
       <PageTitle

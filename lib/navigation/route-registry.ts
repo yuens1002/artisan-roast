@@ -443,10 +443,10 @@ const routeEntries: RouteEntry[] = [
     isNavigable: true,
   },
   {
-    id: "admin.settings.ai",
-    pathname: "/admin/settings/ai",
+    id: "admin.settings.search",
+    pathname: "/admin/settings/search",
     matchMode: "exact",
-    label: "AI",
+    label: "Search",
     parentId: "admin.settings",
     isNavigable: true,
   },

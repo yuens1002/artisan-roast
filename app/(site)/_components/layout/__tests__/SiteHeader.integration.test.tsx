@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import SiteHeader from "@/app/(site)/_components/layout/SiteHeader";
 
 // Mock next-auth/react
@@ -7,12 +7,14 @@ jest.mock("next-auth/react", () => ({
   signOut: jest.fn(),
 }));
 
-// Mock next/navigation
+// Dynamic pathname mock — tests can mutate `mockPathname` and rerender to
+// simulate Next router navigation.
+let mockPathname = "/";
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: jest.fn(),
   }),
-  usePathname: () => "/",
+  usePathname: () => mockPathname,
 }));
 
 // Mock components that have external dependencies
@@ -114,6 +116,53 @@ describe("SiteHeader - Category Menu Integration", () => {
       // Page link should be rendered
       // Note: In actual render, navigation might be hidden in test environment
       expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
+    });
+  });
+
+  describe("Mobile menu — close on link click (event delegation)", () => {
+    beforeEach(() => {
+      mockPathname = "/";
+    });
+
+    it("closes the mobile Sheet when any anchor inside is clicked", async () => {
+      // The pathname-effect-based close was removed in favor of an
+      // event-delegated onClick handler on SheetContent. This covers both
+      // cross-route navigations AND same-pathname clicks (the Next router
+      // doesn't re-fire usePathname when the destination equals current).
+      // Unit-level coverage of the handler itself lives in
+      // menu-close-on-link-click.test.tsx; this test asserts the handler
+      // is wired into the rendered SheetContent.
+      render(
+        <SiteHeader
+          categoryGroups={mockCategoryGroups}
+          user={null}
+          pages={[]}
+        />
+      );
+
+      const trigger = await screen.findByRole("button", { name: /open menu/i });
+      await act(async () => {
+        fireEvent.click(trigger);
+      });
+
+      expect(await screen.findByText("Menu")).toBeInTheDocument();
+
+      // SheetContent renders into a Radix portal at document.body, so query
+      // through screen (which roots at document) rather than the test
+      // container. The Home link is rendered unconditionally inside the
+      // mobile menu.
+      const homeAnchors = screen.getAllByRole("link", { name: /home/i });
+      const homeAnchor = homeAnchors.find(
+        (a) => a.getAttribute("href") === "/"
+      );
+      expect(homeAnchor).toBeTruthy();
+      await act(async () => {
+        fireEvent.click(homeAnchor!);
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByText("Menu")).not.toBeInTheDocument();
+      });
     });
   });
 

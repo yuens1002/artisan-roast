@@ -17,7 +17,7 @@ The payments system uses a **processor-agnostic architecture** that normalizes p
 
 ## Directory Structure
 
-```
+```text
 
 lib/
 ├── payments/
@@ -129,7 +129,7 @@ interface NormalizedSubscriptionData {
 
 ## Data Flow
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              WEBHOOK REQUEST                                │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -217,7 +217,7 @@ To add support for a new processor (e.g., PayPal):
 
 ### 1. Create Processor Directory
 
-```
+```text
 lib/payments/paypal/
 ├── adapter.ts      # PayPal → Normalized converters
 ├── verify.ts       # Webhook signature verification
@@ -247,7 +247,7 @@ export async function normalizePayPalCheckout(
 
 ### 3. Create Webhook Route
 
-```
+```text
 app/api/webhooks/paypal/
 ├── route.ts
 └── handlers/
@@ -335,9 +335,57 @@ The original webhook handler (`route.ts`) was ~1,972 lines. After refactoring:
 - Total across all modules: ~1,400 lines
 - Each handler: 25-150 lines (focused, testable)
 
+## Credential Storage (v0.103.x+)
+
+Stripe credentials can be stored in two ways:
+
+### Environment Variables (existing, always takes precedence)
+
+```bash
+STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+These are resolved first in `getStripe()` and `getStripeWebhookSecret()`. When set, the DB credentials are ignored.
+
+### Admin UI (DB-backed, encrypted)
+
+Credentials entered via `/admin/settings/commerce` are stored in the `PaymentProcessorConfig` table. Both the secret key and webhook secret are encrypted at rest using AES-256-GCM. The encryption key must be set as an env var:
+
+```bash
+# Generate with: openssl rand -hex 32
+PAYMENT_CREDENTIALS_ENCRYPTION_KEY=<64 hex chars>
+```
+
+**Resolution order** (both `getStripe()` and `getStripeWebhookSecret()`):
+
+1. `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` env var — if set, use immediately (no DB read)
+2. `PaymentProcessorConfig` DB row for `processor = "stripe"` — decrypted with `PAYMENT_CREDENTIALS_ENCRYPTION_KEY`
+3. `null` — Stripe is not configured
+
+**Encryption envelope format:**
+
+```text
+v1:{base64(iv)}:{base64(authTag)}:{base64(ciphertext)}
+```
+
+The `v1` prefix allows algorithm rotation. Decryption rejects unknown versions.
+
+**After saving new credentials,** call `resetStripeClient()` (already done by `PUT /api/admin/settings/stripe`) to clear the singleton so the next request re-reads from the new source.
+
+**Key files:**
+
+- `lib/payments/credentials/encryption.ts` — AES-256-GCM encrypt/decrypt
+- `lib/payments/credentials/index.ts` — DB access layer (`loadStripeCredentials`, `saveStripeCredentials`, `clearStripeCredentials`)
+- `lib/services/stripe.ts` — `getStripe()`, `getStripeWebhookSecret()`, `resetStripeClient()`
+- `app/api/admin/settings/stripe/route.ts` — Admin credential management API (GET/POST/PUT/DELETE)
+- `app/admin/settings/commerce/_components/StripeCredentialsForm.tsx` — Admin UI form
+
 ## Future Considerations
 
 1. **PayPal Integration** - Follow the "Adding a New Processor" guide above
 2. **Square Integration** - Same pattern applies
 3. **Installment Payments** - Stripe Klarna/Afterpay can be added to adapter
 4. **Multi-Currency** - Normalized types already support `totalInCents`, extend with currency field if needed
+5. **Encryption key rotation** - Currently manual: if `PAYMENT_CREDENTIALS_ENCRYPTION_KEY` changes, existing DB rows fail to decrypt and admin re-enters keys via the same form. Auto-rotation tooling is deferred.

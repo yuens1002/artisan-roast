@@ -1,10 +1,10 @@
-import { getCategoryLabels, getPublicSiteSettings } from "@/lib/data";
+import { getCategoryLabels } from "@/lib/data";
 import { auth } from "@/auth";
 import SiteHeader from "@/app/(site)/_components/layout/SiteHeader";
 import { getPagesForHeader } from "@/app/actions";
 import { getProductMenuSettings } from "@/lib/product-menu-settings";
 import { getSiteMetadata } from "@/lib/site-metadata";
-import { isAIConfigured } from "@/lib/ai-client";
+import { getStripeConfigStatus } from "@/lib/payments/credentials";
 
 /**
  * SiteHeaderWrapper is a Server Component responsible for fetching global,
@@ -14,17 +14,19 @@ import { isAIConfigured } from "@/lib/ai-client";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [labels, session, headerPages, productMenuSettings, siteMetadata, aiConfigured, siteSettings] =
+  const [labels, session, headerPages, productMenuSettings, siteMetadata, stripeStatus] =
     await Promise.all([
       getCategoryLabels(),
       auth(),
       getPagesForHeader(),
       getProductMenuSettings(),
       getSiteMetadata(),
-      isAIConfigured(),
-      getPublicSiteSettings(),
+      getStripeConfigStatus(),
     ]);
-  const smartSearchActive = aiConfigured && siteSettings.smartSearchEnabled;
+
+  const stripeConfigured =
+    (stripeStatus.hasSecretKey && !stripeStatus.decryptionError) ||
+    !!process.env.STRIPE_SECRET_KEY;
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!labels || labels.length === 0) {
@@ -36,7 +38,7 @@ export default async function SiteHeaderWrapper() {
         productMenuIcon={productMenuSettings.icon}
         productMenuText={productMenuSettings.text}
         storeName={siteMetadata.storeName}
-        aiConfigured={smartSearchActive}
+        stripeConfigured={stripeConfigured}
       />
     );
   }
@@ -79,7 +81,7 @@ export default async function SiteHeaderWrapper() {
       productMenuIcon={productMenuSettings.icon}
       productMenuText={productMenuSettings.text}
       storeName={siteMetadata.storeName}
-      aiConfigured={smartSearchActive}
+      stripeConfigured={stripeConfigured}
     />
   );
 }

@@ -58,7 +58,7 @@ export async function POST(
     }
 
     // Issue Stripe refund before marking order as refunded
-    const stripe = getStripe();
+    const stripe = await getStripe();
     let stripeRefundSucceeded = false;
     if (order.stripePaymentIntentId && stripe) {
       try {

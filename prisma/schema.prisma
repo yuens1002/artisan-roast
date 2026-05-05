@@ -697,3 +697,26 @@ model ReviewEmailLog {
   @@unique([orderId, userId, productId])
   @@index([userId])
 }
+
+model PaymentProcessorConfig {
+  id             String    @id @default(cuid())
+  processor      String    @unique // "stripe" | future: "paypal" | "square"
+  isActive       Boolean   @default(false)
+
+  // Encrypted at rest (AES-256-GCM, format: v1:{base64(iv)}:{base64(authTag)}:{base64(ciphertext)})
+  secretKey      String?
+  webhookSecret  String?
+
+  // Stored plaintext (public key — safe to store unencrypted)
+  publishableKey String?
+
+  // Account metadata populated during validation
+  accountId      String?
+  accountName    String?
+  isTestMode     Boolean?
+
+  lastValidatedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+}

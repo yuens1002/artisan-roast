@@ -114,7 +114,7 @@ export async function cancelSubscription(id: string) {
     };
   }
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
   if (!stripe) return { success: false, error: "Payments not configured" };
 
   // Cancel at period end - customer keeps access until period ends
@@ -165,7 +165,7 @@ export async function skipBillingPeriod(id: string) {
     subscription.deliverySchedule
   );
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
   if (!stripe) return { success: false, error: "Payments not configured" };
 
   // Pause collection - void next invoice, auto-resume after one period
@@ -213,7 +213,7 @@ export async function resumeSubscription(id: string) {
     return { success: false, error: "Can only resume paused subscriptions" };
   }
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
   if (!stripe) return { success: false, error: "Payments not configured" };
 
   // Remove pause_collection to resume billing

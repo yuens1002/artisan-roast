@@ -1,0 +1,52 @@
+name: Re-request Copilot review on push
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+    tags-ignore:
+      - '**'
+
+concurrency:
+  group: copilot-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  copilot-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Re-request Copilot review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --head "$GITHUB_REF_NAME" \
+            --state open \
+            --json number \
+            -q '.[0].number // empty')
+          if [ -n "$PR" ]; then
+            STATUS=$(curl -sS \
+              -o /tmp/reviewer-response.json \
+              -w "%{http_code}" \
+              -X POST \
+              -H "Authorization: token $GH_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"reviewers":["copilot"]}' \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR/requested_reviewers")
+            RESPONSE=$(cat /tmp/reviewer-response.json)
+            if [ "$STATUS" = "201" ]; then
+              echo "Re-requested Copilot review on PR #$PR"
+            elif [ "$STATUS" = "422" ] && echo "$RESPONSE" | grep -qi "already"; then
+              echo "Copilot review already requested on PR #$PR — skipping"
+            else
+              echo "ERROR: status $STATUS requesting Copilot review on PR #$PR" >&2
+              echo "Response: $RESPONSE" >&2
+              exit 1
+            fi
+          else
+            echo "No open PR for branch $GITHUB_REF_NAME — skipping"
+          fi

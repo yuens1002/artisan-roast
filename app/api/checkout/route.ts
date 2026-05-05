@@ -7,7 +7,7 @@ import { getAllowPromoCodes } from "@/lib/config/app-settings";
 
 export async function POST(req: NextRequest) {
   try {
-    const stripe = getStripe();
+    const stripe = await getStripe();
     if (!stripe) {
       return NextResponse.json(
         { error: "Payments not configured" },

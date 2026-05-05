@@ -76,6 +76,7 @@ next-env.d.ts
 !.claude/settings.json
 !.claude/hooks/
 !.claude/commands/
+!.claude/skills/
 !.claude/retro-log.md
 # Runtime stamp files written by hooks (not source)
 .claude/hooks/.*-stamp*.json

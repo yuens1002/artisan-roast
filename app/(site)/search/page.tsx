@@ -5,7 +5,6 @@ import PageContainer from "@/components/shared/PageContainer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { getSiteMetadata } from "@/lib/site-metadata";
-import { isAIConfigured } from "@/lib/ai-client";
 
 export async function generateMetadata() {
   const { storeName } = await getSiteMetadata();
@@ -16,8 +15,6 @@ export async function generateMetadata() {
 }
 
 export default async function SearchPage() {
-  const aiConfigured = await isAIConfigured();
-
   return (
     <PageContainer>
       <div className="mb-6">
@@ -31,7 +28,7 @@ export default async function SearchPage() {
       </div>
 
       <Suspense fallback={<SearchLoadingSkeleton />}>
-        <SearchResults aiConfigured={aiConfigured} />
+        <SearchResults />
       </Suspense>
     </PageContainer>
   );

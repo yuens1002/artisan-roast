@@ -158,10 +158,3 @@ export interface ProductCardProps {
   cardPaddingClass?: string; // allows overriding default padding (e.g., p-2 for tight carousels)
 }
 
-/**
- * Props for the <AiHelperModal> component.
- */
-export interface AiHelperModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}

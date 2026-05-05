@@ -108,21 +108,25 @@ async function restoreDatabase(backupFile?: string) {
     await prisma.$connect();
     console.log("✅ Connected to database\n");
 
-    // Restoration order - respects foreign key constraints
+    // Restoration order - respects foreign key constraints.
+    // MUST mirror the table list in scripts/backup-database.ts so a backup
+    // taken there can be fully restored here.
     const restoreOrder = [
       "user",
       "account",
       "session",
       "verificationToken",
+      "passwordResetToken",
       "siteSettings",
+      "telemetryEvent",
       "address",
       "categoryLabel", // Must come before category
       "category",
       "categoryLabelCategory", // Join table after both categoryLabel and category
       "tag",
       "product",
-      "productImage",
       "productVariant",
+      "variantImage", // Images live on variants, not products directly
       "purchaseOption",
       "addOnLink",
       "categoriesOnProducts",
@@ -136,6 +140,10 @@ async function restoreDatabase(backupFile?: string) {
       "page",
       "block",
       "userActivity",
+      "productMenuDraft",
+      "review",
+      "reviewVote",
+      "reviewEmailLog",
     ];
 
     console.log("Restoring data...");

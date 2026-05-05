@@ -354,7 +354,30 @@
       "acs_total": 24,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/iter-7-contracts/acs.md",
-      "notes": "23/24 ACs verified. 13 FN (code review) + 8 TST (1285 tests, 0 failures) + 2 REG (precheck clean, tests pass). 9 DEFERRED (6 UI + 3 REG — interactive AI queries). 1 iteration: TST tests added post-verification. AC-FN-8 deviation: SiteSettings KV instead of Store model field."
+      "notes": "23/24 ACs verified. 13 FN (code review) + 8 TST (1285 tests, 0 failures) + 2 REG (precheck clean, tests pass). 9 DEFERRED (6 UI + 3 REG — interactive AI queries). 1 iteration: TST tests added post-verification. AC-FN-8 deviation: SiteSettings KV instead of Store model field. SUPERSEDED 2026-04-25 by feat/counter-strip per Smart Search downgrade decision."
+    },
+    "feat/counter-strip": {
+      "status": "verified",
+      "acs_passed": 0,
+      "acs_total": 0,
+      "tasks": [],
+      "notes": "Strip-only branch — no formal ACs. Removes Smart Search / Counter surface per docs/internal/smart-search/README.md. Verification = npm run precheck (0 errors) + npm run test:ci passes + manual confirmation that /api/search returns keyword results and no Counter UI remains in storefront/admin. SHIPPED in v0.101.0 (PR #342)."
+    },
+    "feat/keyword-search-drawer": {
+      "status": "verified",
+      "acs_passed": 48,
+      "acs_total": 48,
+      "tasks": [],
+      "acs_doc": "docs/features/keyword-search-drawer/v2/acs.md",
+      "notes": "v2 verified 48/48 across 2 iterations. Iter-1: 46/48 (2 missing test files). Iter-2: 48/48 after writing lib/__tests__/search-drawer-config.test.ts (7 tests) + app/(site)/_components/search/__tests__/store.test.ts (11 tests) + tightening AC-FN-6 text. 103 test suites / 1180 tests pass; precheck clean. Agent + QC columns filled. Reviewer column open for human. Open follow-up (post-verification, awaiting reviewer call): chip filter UX vs seed primary-category coverage — option 1 (seed fix, applied uncommitted) restores Single Origin coverage but leaves Roast/Taste/Region chips empty; option 2 (relax filter to .some-match, scoped to /api/search/index only) unblocks all 6 chips."
+    },
+    "feat/admin-stripe-payments": {
+      "status": "verified",
+      "acs_passed": 25,
+      "acs_total": 27,
+      "tasks": [],
+      "acs_doc": "docs/features/admin-stripe-payments/acs.md",
+      "notes": "25/27 ACs verified (2 SKIP: UI-3 requires env change, UI-7 requires live Stripe keys). 12 UI (screenshots + code review) + 12 FN (code review) + 6 TST (test run) + 5 REG (test run + code review). 1263 tests, 0 failures. QC column filled. 0 iterations needed. Ready for human review."
     }
   }
 }

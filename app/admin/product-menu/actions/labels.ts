@@ -18,6 +18,7 @@ import {
   reorderCategoryLabels,
   updateCategoryLabel,
 } from "@/app/admin/product-menu/data/labels";
+import { revalidateSearchDrawer } from "@/lib/cache/revalidate-search-drawer";
 import {
   makeCloneName,
   makeNewItemName,
@@ -52,6 +53,7 @@ export async function createLabel(input: unknown) {
       icon: icon ?? null,
       afterLabelId: afterLabelId ?? null,
     });
+    revalidateSearchDrawer();
     return { ok: true as const, data: label };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to create label";
@@ -65,7 +67,7 @@ export async function createLabel(input: unknown) {
  */
 export async function createNewLabel() {
   try {
-    return await retryWithUniqueConstraint({
+    const result = await retryWithUniqueConstraint({
       makeName: (attempt) => makeNewItemName("Label", attempt),
       create: async (name) => {
         return await createCategoryLabel({
@@ -76,6 +78,8 @@ export async function createNewLabel() {
       },
       errorMessage: "Could not generate unique label name",
     });
+    if (result.ok) revalidateSearchDrawer();
+    return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to create label";
     return { ok: false as const, error: message };
@@ -103,6 +107,7 @@ export async function updateLabel(id: unknown, input: unknown) {
       ...(isVisible !== undefined ? { isVisible } : {}),
       ...(autoOrder !== undefined ? { autoOrder } : {}),
     });
+    revalidateSearchDrawer();
     return { ok: true as const, data: label };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to update label";
@@ -116,6 +121,7 @@ export async function deleteLabel(id: unknown) {
 
   try {
     await deleteCategoryLabel(idParsed.data);
+    revalidateSearchDrawer();
     return { ok: true as const, data: { id: idParsed.data } };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to delete label";
@@ -129,6 +135,7 @@ export async function reorderLabels(labelIds: unknown) {
 
   try {
     await reorderCategoryLabels(arr.data);
+    revalidateSearchDrawer();
     return { ok: true as const, data: {} };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to reorder labels";
@@ -146,6 +153,7 @@ export async function attachCategory(labelId: unknown, categoryId: unknown) {
 
   try {
     await attachCategoryToLabel(parsed.data);
+    revalidateSearchDrawer();
     return { ok: true as const, data: {} };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to attach category";
@@ -163,6 +171,7 @@ export async function detachCategory(labelId: unknown, categoryId: unknown) {
 
   try {
     await detachCategoryFromLabel(parsed.data);
+    revalidateSearchDrawer();
     return { ok: true as const, data: {} };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to detach category";
@@ -180,6 +189,7 @@ export async function reorderCategoriesInLabel(labelId: unknown, categoryIds: un
 
   try {
     await reorderCategoriesInLabelData(parsed.data);
+    revalidateSearchDrawer();
     return { ok: true as const, data: {} };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to reorder categories";
@@ -197,6 +207,7 @@ export async function autoSortCategoriesInLabel(labelId: unknown) {
       where: { id: idParsed.data },
       data: { autoOrder: true },
     });
+    revalidateSearchDrawer();
     return { ok: true as const, data: {} };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to auto-sort categories";
@@ -224,7 +235,7 @@ export async function cloneLabel(input: unknown) {
 
     const baseName = stripCopySuffix(original.name);
 
-    return await retryWithUniqueConstraint({
+    const result = await retryWithUniqueConstraint({
       makeName: (attempt) => makeCloneName(baseName, attempt),
       create: async (name) => {
         return await prisma.$transaction(async (tx) => {
@@ -254,6 +265,8 @@ export async function cloneLabel(input: unknown) {
       },
       errorMessage: "Could not generate unique label name",
     });
+    if (result.ok) revalidateSearchDrawer();
+    return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to clone label";
     return { ok: false as const, error: message };
@@ -289,6 +302,7 @@ export async function batchMoveCategoriesToLabel(input: unknown) {
 
   try {
     await batchMoveCategoriesToLabelData(parsed.data);
+    revalidateSearchDrawer();
     return { ok: true as const, data: {} };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to batch move categories";
@@ -348,6 +362,7 @@ export async function restoreLabel(input: unknown) {
       return label;
     });
 
+    revalidateSearchDrawer();
     return { ok: true as const, data: newLabel };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to restore label";

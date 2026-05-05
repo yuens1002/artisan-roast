@@ -13,7 +13,7 @@ export default async function AdminSubscriptionsPage() {
         title="Subscriptions"
         subtitle="Manage customer subscription orders"
       />
-      {!isStripeConfigured() && (
+      {!(await isStripeConfigured()) && (
         <div className="mb-4">
           <IntegrationBanner service="Stripe" />
         </div>

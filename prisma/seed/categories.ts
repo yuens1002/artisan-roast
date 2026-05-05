@@ -61,6 +61,19 @@ export async function seedCategories(prisma: PrismaClient) {
     },
   });
 
+  // One-shot slug migration: align any pre-existing "Staff Picks" category
+  // (which may have been created with a non-canonical slug like "new-category"
+  // via admin UI) to the canonical slug "staff-picks" so the search drawer
+  // settings reference resolves and seedMenu's upsert by slug succeeds.
+  // Idempotent: no-op once aligned.
+  // The 6 demo chip categories + Staff Picks are then created/maintained by
+  // seedMenu (CATEGORY_DEFS in prisma/seed/menu.ts). Adding them here would
+  // be dead code since seedMenu deletes anything not in CATEGORY_DEFS.
+  await prisma.category.updateMany({
+    where: { name: "Staff Picks", slug: { not: "staff-picks" } },
+    data: { slug: "staff-picks" },
+  });
+
   // Roast Level Categories
   const _catDark = await prisma.category.upsert({
     where: { slug: "dark-roast" },
