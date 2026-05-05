@@ -160,7 +160,18 @@ export async function getTrialStatus(): Promise<TrialStatus | null> {
       return null;
     }
 
-    return (await response.json()) as TrialStatus;
+    const data: unknown = await response.json();
+    if (
+      !data ||
+      typeof data !== "object" ||
+      !["ACTIVE", "EXPIRED", "CONVERTED", "CANCELLED"].includes(
+        (data as Record<string, unknown>).status as string
+      )
+    ) {
+      console.error("getTrialStatus: unexpected response shape", data);
+      return null;
+    }
+    return data as TrialStatus;
   } catch (error) {
     console.error("getTrialStatus error:", error);
     return null;

@@ -32,7 +32,13 @@ export async function GET() {
     return NextResponse.json({ error: auth.error }, { status: 403 });
   }
 
+  // Single-tenant assumption: each store has its own DB, so findMany() with no
+  // where clause returns only this store's data. Not multi-tenant safe.
   const archive = archiver("zip", { zlib: { level: 9 } });
+  archive.on("error", (err: Error) => {
+    console.error("Export archive error:", err);
+    archive.abort();
+  });
 
   const [products, orders, users, siteSettings] = await Promise.all([
     prisma.product.findMany(),

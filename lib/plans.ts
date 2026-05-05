@@ -172,7 +172,7 @@ const MOCK_PLANS: Plan[] = [
         "Cancel anytime during your trial — no contract, no commitment",
       ],
     },
-    cancelModal: {
+    actionModal: {
       heading: "Cancel your trial?",
       description: "Your trial will be cancelled and your store deprovisioned. Tell us why before you go — your feedback helps us improve.",
       reasons: [
@@ -222,7 +222,7 @@ const MOCK_PLANS: Plan[] = [
         "Custom domain assignment held while subscription is active",
       ],
     },
-    cancelModal: {
+    actionModal: {
       heading: "Cancel your subscription?",
       description: "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve.",
       reasons: [
@@ -234,6 +234,7 @@ const MOCK_PLANS: Plan[] = [
       ],
       keepLabel: "Keep subscription",
       confirmLabel: "Continue to Stripe",
+      confirmIcon: "external-link",
     },
   },
 ];

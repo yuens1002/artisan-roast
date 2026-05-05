@@ -129,8 +129,13 @@ export async function submitCancellation(
     return { success: false, error: "Invalid cancellation request" };
   }
 
-  // No-card variant: mocked client-side persistence until upstream lands.
+  // No-card variant: upstream cancel endpoint not yet shipped. Log the reason
+  // so feedback isn't silently lost — replace with upstream call when it lands.
   if (parsed.data.variant === "no-card") {
+    console.info("trial:cancel:no-card", {
+      reason: parsed.data.reason,
+      otherText: parsed.data.otherText,
+    });
     return { success: true };
   }
 

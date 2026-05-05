@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UsageBar, getNextRenewalDate } from "../UsageBar";
 import { refreshLicense } from "../actions";
 import { startCheckout } from "./actions";
-import { CancelTrialDialog } from "./_components/CancelTrialDialog";
+import { ConfirmActionDialog } from "./_components/ConfirmActionDialog";
 
 import type {
   LicenseInfo,
@@ -73,6 +73,7 @@ function formatPriceLabel(plan: Plan): string | null {
 // ---------------------------------------------------------------------------
 
 interface PlanCardConfig {
+  type: "plan";
   plan: Plan;
   status: "active" | "inactive" | "none";
   badge: { label: string; variant: "secondary" | "destructive" | "outline" } | null;
@@ -86,12 +87,22 @@ interface PlanCardConfig {
   } | null;
 }
 
+interface TrialCardConfig {
+  type: "trial";
+  plan: Plan;
+  trialStatus: TrialStatusActive | TrialStatusExpired;
+  extendUrl: string;
+}
+
+type CardConfig = TrialCardConfig | PlanCardConfig;
+
 function computePlanCardConfig(
   plan: Plan,
   license: LicenseInfo
 ): PlanCardConfig {
   if (license.plan?.slug === plan.slug) {
     return {
+      type: "plan",
       plan,
       status: "active",
       badge: { label: "Active", variant: "secondary" },
@@ -110,6 +121,7 @@ function computePlanCardConfig(
 
   if (license.lapsed?.planSlug === plan.slug) {
     return {
+      type: "plan",
       plan,
       status: "inactive",
       badge: { label: "Inactive", variant: "outline" },
@@ -127,6 +139,7 @@ function computePlanCardConfig(
   // Free plan: show "Current Plan" when user has no active paid plan
   if (plan.price === 0 && !license.plan) {
     return {
+      type: "plan",
       plan,
       status: "active",
       badge: { label: "Current Plan", variant: "secondary" },
@@ -140,6 +153,7 @@ function computePlanCardConfig(
   }
 
   return {
+    type: "plan",
     plan,
     status: "none",
     badge: null,
@@ -148,6 +162,22 @@ function computePlanCardConfig(
     renewalDate: null,
     inactiveInfo: null,
   };
+}
+
+function computeCardConfig(
+  plan: Plan,
+  license: LicenseInfo,
+  trialStatus: TrialStatus | null | undefined,
+  extendUrl: string,
+): CardConfig {
+  if (
+    plan.slug === "house-blend-trial" &&
+    trialStatus &&
+    (trialStatus.status === "ACTIVE" || trialStatus.status === "EXPIRED")
+  ) {
+    return { type: "trial", plan, trialStatus, extendUrl };
+  }
+  return computePlanCardConfig(plan, license);
 }
 
 // ---------------------------------------------------------------------------
@@ -178,10 +208,20 @@ export function PlanPageClient({
   const [isPending, startTransition] = useTransition();
   const [cancelOpen, setCancelOpen] = useState(false);
 
-  // Card-added flag drives the Cancel dialog variant. Defaults to false
-  // when not in hosted mode or trial isn't active.
+  const cardConfigs = plans.map((plan) =>
+    computeCardConfig(plan, license, trialStatus, extendUrl ?? "")
+  );
+
+  const trialConfig = cardConfigs.find((c): c is TrialCardConfig => c.type === "trial");
+
+  // Modal copy comes directly from the trial plan's payload — no slug lookup.
+  const actionModalConfig = trialConfig?.plan.actionModal;
+
+  // ACTIVE and CANCELLED both have cardAdded on the status object.
   const cardAdded =
-    trialStatus?.status === "ACTIVE" ? trialStatus.cardAdded : false;
+    trialStatus?.status === "ACTIVE" || trialStatus?.status === "CANCELLED"
+      ? trialStatus.cardAdded
+      : false;
 
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
@@ -250,35 +290,22 @@ export function PlanPageClient({
 
       {hasPlans ? (
         <div className="grid gap-4 md:grid-cols-2">
-          {plans.map((plan) => {
-            // Hosted-mode Trial card uses a dedicated renderer with its own
-            // action layout (Cancel text-link + Add Billing button).
-            if (
-              plan.slug === "house-blend-trial" &&
-              trialStatus &&
-              (trialStatus.status === "ACTIVE" ||
-                trialStatus.status === "EXPIRED")
-            ) {
-              return (
-                <TrialCard
-                  key={plan.slug}
-                  plan={plan}
-                  trialStatus={trialStatus}
-                  extendUrl={extendUrl ?? ""}
-                  onCancelTrial={() => setCancelOpen(true)}
-                />
-              );
-            }
-            const config = computePlanCardConfig(plan, license);
-            return (
+          {cardConfigs.map((config) =>
+            config.type === "trial" ? (
+              <TrialCard
+                key={config.plan.slug}
+                config={config}
+                onCancelTrial={() => setCancelOpen(true)}
+              />
+            ) : (
               <PlanCard
                 key={config.plan.slug}
                 config={config}
                 isPending={isPending}
                 onSubscribe={handleSubscribe}
               />
-            );
-          })}
+            )
+          )}
         </div>
       ) : (
         <div className="rounded-lg border border-dashed py-12 text-center">
@@ -290,11 +317,14 @@ export function PlanPageClient({
         </div>
       )}
 
-      <CancelTrialDialog
-        open={cancelOpen}
-        onOpenChange={setCancelOpen}
-        cardAdded={cardAdded}
-      />
+      {trialStatus && (
+        <ConfirmActionDialog
+          open={cancelOpen}
+          onOpenChange={setCancelOpen}
+          cardAdded={cardAdded}
+          config={actionModalConfig}
+        />
+      )}
     </div>
   );
 }
@@ -631,18 +661,12 @@ function PlanCard({
 // ---------------------------------------------------------------------------
 
 interface TrialCardProps {
-  plan: Plan;
-  trialStatus: TrialStatusActive | TrialStatusExpired;
-  extendUrl: string;
+  config: TrialCardConfig;
   onCancelTrial: () => void;
 }
 
-function TrialCard({
-  plan,
-  trialStatus,
-  extendUrl,
-  onCancelTrial,
-}: TrialCardProps) {
+function TrialCard({ config, onCancelTrial }: TrialCardProps) {
+  const { plan, trialStatus, extendUrl } = config;
   // Sub-state badge label
   const badgeLabel =
     trialStatus.status === "EXPIRED"
@@ -720,7 +744,7 @@ function TrialCard({
           cardAdded=false: Cancel text-link + Add Billing.
           cardAdded=true:  Manage Billing only — cancellation goes through Stripe. */}
       <div className="flex items-center gap-2 mt-auto pt-5">
-        {!cardAdded && (
+        {!cardAdded && plan.actionModal && (
           <>
             <button
               type="button"

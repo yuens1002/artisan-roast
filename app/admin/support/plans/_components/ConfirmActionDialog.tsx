@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { DynamicIcon } from "@/components/shared/icons/DynamicIcon";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,19 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 import { submitCancellation } from "../actions";
-
-// ---------------------------------------------------------------------------
-// Reason options — final list locked here; matches the dialog spec in
-// docs/features/hosting-extension/trial-ui-plan.md.
-// ---------------------------------------------------------------------------
-
-const REASON_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "too-expensive", label: "Too expensive" },
-  { value: "missing-features", label: "Missing features" },
-  { value: "switching", label: "Switching to another platform" },
-  { value: "no-longer-needed", label: "Don't need it anymore" },
-  { value: "other", label: "Other" },
-];
+import type { ConfirmActionConfig } from "@/lib/plan-types";
 
 const OTHER_TEXT_MAX = 500;
 
@@ -44,35 +33,41 @@ const OTHER_TEXT_MAX = 500;
 // Props
 // ---------------------------------------------------------------------------
 
-interface CancelTrialDialogProps {
+interface ConfirmActionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** When true, the customer has billing on file — flow redirects to
    *  Stripe Portal. When false, a UI-mock cancel is captured client-side. */
   cardAdded: boolean;
+  /** Modal copy + reason list from the plan payload. */
+  config?: ConfirmActionConfig;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function CancelTrialDialog({
+export function ConfirmActionDialog({
   open,
   onOpenChange,
   cardAdded,
-}: CancelTrialDialogProps) {
+  config,
+}: ConfirmActionDialogProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [reason, setReason] = useState<string>("");
   const [otherText, setOtherText] = useState<string>("");
 
   const variant = cardAdded ? "card-added" : "no-card";
-  const heading = "Cancel your trial?";
-  const description = cardAdded
-    ? "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve."
-    : "Your trial will be cancelled and your store deprovisioned. Tell us why before you go — your feedback helps us improve.";
-  const keepLabel = cardAdded ? "Keep subscription" : "Keep trial";
-  const confirmLabel = cardAdded ? "Continue to Stripe" : "Cancel trial";
+  const heading = config?.heading ?? "Cancel your trial?";
+  const description = config?.description ?? (
+    cardAdded
+      ? "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve."
+      : "Your trial will be cancelled and your store deprovisioned. Tell us why before you go — your feedback helps us improve."
+  );
+  const keepLabel = config?.keepLabel ?? (cardAdded ? "Keep subscription" : "Keep trial");
+  const confirmLabel = config?.confirmLabel ?? (cardAdded ? "Continue to Stripe" : "Cancel trial");
+  const reasonOptions = config?.reasons ?? [];
 
   function reset() {
     setReason("");
@@ -104,7 +99,7 @@ export function CancelTrialDialog({
 
       if (!result.success) {
         toast({
-          title: "Could not submit cancellation",
+          title: "Could not submit",
           description: result.error,
           variant: "destructive",
         });
@@ -112,18 +107,12 @@ export function CancelTrialDialog({
       }
 
       if (result.portalUrl) {
-        // Card-added variant: open Stripe Portal in a new tab and close.
         window.open(result.portalUrl, "_blank", "noopener,noreferrer");
         handleOpenChange(false);
         return;
       }
 
-      // No-card variant: UI mock confirms.
-      toast({
-        title: cardAdded
-          ? "Cancellation request received"
-          : "Trial cancellation request received",
-      });
+      toast({ title: "Request received" });
       handleOpenChange(false);
     });
   }
@@ -140,13 +129,13 @@ export function CancelTrialDialog({
 
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label htmlFor="cancel-reason">Reason for cancelling</Label>
+            <Label htmlFor="confirm-reason">Reason</Label>
             <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger id="cancel-reason">
+              <SelectTrigger id="confirm-reason">
                 <SelectValue placeholder="Pick a reason" />
               </SelectTrigger>
               <SelectContent>
-                {REASON_OPTIONS.map((opt) => (
+                {reasonOptions.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
@@ -157,9 +146,9 @@ export function CancelTrialDialog({
 
           {showOtherTextarea && (
             <div className="space-y-2">
-              <Label htmlFor="cancel-other">Tell us a bit more</Label>
+              <Label htmlFor="confirm-other">Tell us a bit more</Label>
               <Textarea
-                id="cancel-other"
+                id="confirm-other"
                 placeholder="What are we missing?"
                 value={otherText}
                 onChange={(e) => setOtherText(e.target.value)}
@@ -188,7 +177,9 @@ export function CancelTrialDialog({
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {confirmLabel}
-            {cardAdded && <ExternalLink className="ml-1.5 h-3.5 w-3.5" />}
+            {config?.confirmIcon && (
+              <DynamicIcon name={config.confirmIcon} size={14} className="ml-1.5" />
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
