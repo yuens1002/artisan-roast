@@ -128,6 +128,44 @@ const MOCK_FIXTURES: Record<string, TrialStatus> = {
 };
 
 // ---------------------------------------------------------------------------
+// Type guard
+// ---------------------------------------------------------------------------
+
+function isValidTrialStatus(data: unknown): data is TrialStatus {
+  if (!data || typeof data !== "object") return false;
+  const d = data as Record<string, unknown>;
+  const status = d.status;
+
+  if (status === "ACTIVE" || status === "CANCELLED") {
+    return (
+      typeof d.cardAdded === "boolean" &&
+      typeof d.daysRemaining === "number" &&
+      typeof d.daysLimit === "number" &&
+      (status === "ACTIVE" || typeof d.deprovisionAt === "string")
+    );
+  }
+  if (status === "EXPIRED") {
+    return (
+      d.cardAdded === false &&
+      d.daysRemaining === 0 &&
+      typeof d.daysLimit === "number" &&
+      typeof d.deprovisionAt === "string"
+    );
+  }
+  if (status === "CONVERTED") {
+    const plan = d.plan as Record<string, unknown> | undefined;
+    return (
+      !!plan &&
+      typeof plan.name === "string" &&
+      typeof plan.renewsAt === "string" &&
+      typeof plan.price === "number" &&
+      typeof plan.currency === "string"
+    );
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // getTrialStatus
 //   Server-side fetch to the configured hosting service. Returns null when
 //   hosted mode is off, when env vars are missing, or when the upstream
@@ -161,17 +199,11 @@ export async function getTrialStatus(): Promise<TrialStatus | null> {
     }
 
     const data: unknown = await response.json();
-    if (
-      !data ||
-      typeof data !== "object" ||
-      !["ACTIVE", "EXPIRED", "CONVERTED", "CANCELLED"].includes(
-        (data as Record<string, unknown>).status as string
-      )
-    ) {
+    if (!isValidTrialStatus(data)) {
       console.error("getTrialStatus: unexpected response shape", data);
       return null;
     }
-    return data as TrialStatus;
+    return data;
   } catch (error) {
     console.error("getTrialStatus error:", error);
     return null;

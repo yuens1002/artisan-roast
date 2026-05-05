@@ -24,10 +24,12 @@ export default async function PlanPage() {
   // Trial status only when there's a trial record to fetch.
   const trialStatus = IS_HOSTED ? await getTrialStatus() : null;
 
-  // Trial card visibility rule: show only when trial is ACTIVE or EXPIRED.
+  // Trial card visibility rule: show when trial is ACTIVE, EXPIRED, or CANCELLED.
   // Hide on CONVERTED, on direct-subscribe (no trial record), and on self-hosted.
   const showTrialCard =
-    trialStatus?.status === "ACTIVE" || trialStatus?.status === "EXPIRED";
+    trialStatus?.status === "ACTIVE" ||
+    trialStatus?.status === "EXPIRED" ||
+    trialStatus?.status === "CANCELLED";
   const renderedPlans = visiblePlans.filter((p) => {
     if (p.slug === "house-blend-trial") return showTrialCard;
     return true;

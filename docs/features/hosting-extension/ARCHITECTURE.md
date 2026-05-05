@@ -91,6 +91,7 @@ The store renders eight visibility states based on `IS_HOSTED` and the upstream 
 | Trial · active · no-card | House Blend Trial *(active)* + House Blend *(none)* | hidden | visible |
 | Trial · active · card-added | House Blend Trial *(extended)* + House Blend *(none)* | hidden | visible |
 | Trial · expired (grace period) | House Blend Trial *(expired)* + House Blend *(none)* | hidden | visible |
+| Trial · cancelled (access until deprovisionAt) | House Blend Trial *(cancelled)* + House Blend *(none)* | hidden | visible |
 | Hosted · converted from trial | House Blend *(active)* — Trial card hidden | **visible** | visible |
 | Hosted · direct-subscribe (no prior trial) | House Blend *(active)* — Trial card hidden | **visible** | visible |
 | Deprovisioned | (terminal — store no longer accessible) | n/a | n/a |
@@ -98,7 +99,10 @@ The store renders eight visibility states based on `IS_HOSTED` and the upstream 
 **Trial card visibility rule:**
 
 ```ts
-const showTrialCard = trialStatus?.status === "ACTIVE" || trialStatus?.status === "EXPIRED";
+const showTrialCard =
+  trialStatus?.status === "ACTIVE" ||
+  trialStatus?.status === "EXPIRED" ||
+  trialStatus?.status === "CANCELLED";
 ```
 
 The Trial card hides on `CONVERTED`, on direct-subscribe (no trial record — `getTrialStatus()` returns null), and on self-hosted (`IS_HOSTED` false). Filtering of plan-catalog entries is declarative: each entry carries a `visibility: "self-hosted" | "hosted"` discriminator, and `PlanPageClient` filters by `IS_HOSTED` before rendering.
@@ -151,7 +155,7 @@ Every upstream call has a fallback:
 
 | Call | Fallback | UI Result |
 |---|---|---|
-| `getTrialStatus()` | returns `null` on 5xx / network error | Trial card shows error fallback ("Trial info unavailable"); House Blend card still renders |
+| `getTrialStatus()` | returns `null` on 5xx / network error | Trial card is omitted entirely; House Blend card still renders |
 | `submitCancellation()` | client error toast | Modal stays open; reason not persisted |
 | Domain endpoints (future) | toast + inline error | Domain section shows error state; rest of page intact |
 
@@ -203,6 +207,13 @@ type TrialStatus =
       status: "CONVERTED";
       plan: { name: string; renewsAt: string; price: number; currency: string };
       support: { pools: Array<{ slug: string; label: string; limit: number; used: number }> };
+    }
+  | {
+      status: "CANCELLED";
+      cardAdded: true;
+      daysRemaining: number;       // days until deprovision
+      daysLimit: number;
+      deprovisionAt: string;       // ISO 8601 — when store gets torn down
     };
 ```
 
@@ -211,6 +222,7 @@ Errors (5xx, timeout, parse failure): return `null`. Fetch never throws.
 ### `POST /api/billing/portal`
 
 Existing license-authed endpoint. Called from:
+
 - House Blend (post-conversion) "Manage Billing" CTA
 - Cancel modal "Continue to Stripe" button (card-added trial variant)
 
@@ -242,6 +254,7 @@ Called from the Hosting Settings page (`/admin/settings/hosting`), gated on `sta
 Independent of hosted mode — the Download Your Data card on `/admin/support/terms` Data Privacy tab is visible to all builds, including self-hosted. Streams a ZIP from `GET /api/admin/export` (admin-auth, `archiver` library).
 
 ZIP contents:
+
 - `data/*.json` — one file per Prisma model
 - `media/*` — assets pulled from Vercel Blob
 - `manifest.json` — export metadata (timestamp, store ID, schema version)
@@ -292,7 +305,7 @@ app/admin/settings/hosting/            (future — Domain Management body of wor
 
 | Failure | Surface | Behavior |
 |---|---|---|
-| `getTrialStatus()` returns `null` | Plans page | Trial card renders error fallback; House Blend card unaffected |
+| `getTrialStatus()` returns `null` | Plans page | Trial card is omitted; House Blend card unaffected |
 | `submitCancellation()` upstream error | Cancel modal | Toast; modal stays open; user can retry |
 | `POST /api/billing/portal` failure | Manage Billing / Continue to Stripe | Toast: "Could not open billing portal" |
 | Domain endpoints failure (future) | Custom Domain section | Inline error state with retry; rest of page intact |
@@ -309,7 +322,8 @@ The store never crashes on upstream failure. Self-hosted users encountering an u
 | House Blend Trial | active | `status === "ACTIVE" && !cardAdded` | "Active Trial" | Clock | Cancel · Add Billing |
 | House Blend Trial | active (extended) | `status === "ACTIVE" && cardAdded` | "Extended Trial" | Clock | Cancel · Add Billing *(disabled + tooltip)* |
 | House Blend Trial | active (expired) | `status === "EXPIRED"` | "Expired" | Clock | Cancel · Add Billing |
-| House Blend | none | `status === "ACTIVE" \|\| "EXPIRED"` | — | — | Details · Subscribe Now |
+| House Blend Trial | active (cancelled) | `status === "CANCELLED"` | "Cancelled" | Clock | Manage Billing |
+| House Blend | none | `status === "ACTIVE" \|\| "EXPIRED" \|\| "CANCELLED"` | — | — | Details · Subscribe Now |
 | House Blend | active | `status === "CONVERTED"` | "Active" | CheckCircle2 | Details · Manage Billing |
 
 Cancel is rendered as a text link (not a primary button) — minor affordance. Add Billing and Subscribe Now open Stripe Payment Link URLs in new tabs.
@@ -323,7 +337,7 @@ Cancel is rendered as a text link (not a primary button) — minor affordance. A
 | Build-time `IS_HOSTED` constant via `HOSTED_TRIAL_ID` env presence | Mirrors `IS_DEMO`; enables dead-code elimination so OSS / self-hosted builds carry no hosted-mode bytes |
 | Visibility discriminator on plan entries | Declarative filter in `PlanPageClient`; no conditional JSX; same shape as `support-services` |
 | Two distinct cards (Trial + House Blend) during trial | Lets the customer cancel from one card OR opt in from the other at any point — both options always present |
-| Trial card hides on CONVERTED + direct-subscribe | Single visibility rule (`status === ACTIVE \|\| EXPIRED`) covers both; visually identical post-conversion regardless of trial history |
+| Trial card hides on CONVERTED + direct-subscribe | Single visibility rule (`status === ACTIVE \|\| EXPIRED \|\| CANCELLED`) covers both; visually identical post-conversion regardless of trial history |
 | Reuse PlanCard / UsageBar primitives | Zero new card components; trial-days bar is just another `UsagePool` shape with a formatter override |
 | Cancel modal reason capture in all variants | Reason is real product feedback; same UX shape across no-card / card-added / hosted-paid cancel flows |
 | No-card cancel UI mocks the call until upstream endpoint ships | Pre-launch; broken-in-isolation paths are acceptable while the integration matures |

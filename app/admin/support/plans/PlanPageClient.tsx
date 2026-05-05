@@ -42,6 +42,7 @@ import type {
   TrialStatus,
   TrialStatusActive,
   TrialStatusExpired,
+  TrialStatusCancelled,
 } from "@/lib/hosted";
 
 // ---------------------------------------------------------------------------
@@ -90,7 +91,7 @@ interface PlanCardConfig {
 interface TrialCardConfig {
   type: "trial";
   plan: Plan;
-  trialStatus: TrialStatusActive | TrialStatusExpired;
+  trialStatus: TrialStatusActive | TrialStatusExpired | TrialStatusCancelled;
   extendUrl: string;
 }
 
@@ -173,7 +174,7 @@ function computeCardConfig(
   if (
     plan.slug === "house-blend-trial" &&
     trialStatus &&
-    (trialStatus.status === "ACTIVE" || trialStatus.status === "EXPIRED")
+    (trialStatus.status === "ACTIVE" || trialStatus.status === "EXPIRED" || trialStatus.status === "CANCELLED")
   ) {
     return { type: "trial", plan, trialStatus, extendUrl };
   }
@@ -671,9 +672,11 @@ function TrialCard({ config, onCancelTrial }: TrialCardProps) {
   const badgeLabel =
     trialStatus.status === "EXPIRED"
       ? "Expired"
-      : trialStatus.cardAdded
-        ? "Extended Trial"
-        : "Active Trial";
+      : trialStatus.status === "CANCELLED"
+        ? "Cancelled"
+        : trialStatus.cardAdded
+          ? "Extended Trial"
+          : "Active Trial";
 
   // Trial-days pool — UsageBar consumes the standard CreditPool shape with a
   // formatter override so it reads "X / Y remaining" instead of "X / Y used".
@@ -688,7 +691,8 @@ function TrialCard({ config, onCancelTrial }: TrialCardProps) {
     `${pool.remaining} / ${pool.limit} remaining`;
 
   const cardAdded =
-    trialStatus.status === "ACTIVE" && trialStatus.cardAdded;
+    (trialStatus.status === "ACTIVE" || trialStatus.status === "CANCELLED") &&
+    trialStatus.cardAdded;
 
   const tagline =
     "Risk-free for 14 days — full hosting, no card, no commitment.";
@@ -716,9 +720,10 @@ function TrialCard({ config, onCancelTrial }: TrialCardProps) {
           formatter={formatTrialDays}
         />
 
-        {trialStatus.status === "EXPIRED" && trialStatus.deprovisionAt && (
+        {(trialStatus.status === "EXPIRED" || trialStatus.status === "CANCELLED") && trialStatus.deprovisionAt && (
           <p className="text-xs text-muted-foreground">
-            Trial ended. Store will be removed on{" "}
+            {trialStatus.status === "CANCELLED" ? "Subscription cancelled." : "Trial ended."}{" "}
+            Store will be removed on{" "}
             {new Date(trialStatus.deprovisionAt).toLocaleDateString("en-US", {
               month: "long",
               day: "numeric",
@@ -741,45 +746,54 @@ function TrialCard({ config, onCancelTrial }: TrialCardProps) {
       </div>
 
       {/* Actions — No Details (Trial card has no detail page, per AC-UI-18).
-          cardAdded=false: Cancel text-link + Add Billing.
-          cardAdded=true:  Manage Billing only — cancellation goes through Stripe. */}
+          cardAdded=false: Cancel text-link (if actionModal present) + Add Billing.
+          cardAdded=true:  Manage Billing only — cancellation goes through Stripe.
+          Add Billing is always shown when !cardAdded, independent of actionModal. */}
       <div className="flex items-center gap-2 mt-auto pt-5">
-        {!cardAdded && plan.actionModal && (
+        {!cardAdded && (
           <>
-            <button
-              type="button"
-              onClick={onCancelTrial}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Cancel
-            </button>
-            <div className="flex-1" />
-            <Button size="sm" asChild disabled={!extendUrl}>
-              <a
-                href={extendUrl || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
+            {plan.actionModal && (
+              <button
+                type="button"
+                onClick={onCancelTrial}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
+                Cancel
+              </button>
+            )}
+            <div className="flex-1" />
+            {extendUrl ? (
+              <Button size="sm" asChild>
+                <a href={extendUrl} target="_blank" rel="noopener noreferrer">
+                  Add Billing
+                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                </a>
+              </Button>
+            ) : (
+              <Button size="sm" disabled>
                 Add Billing
                 <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-              </a>
-            </Button>
+              </Button>
+            )}
           </>
         )}
         {cardAdded && (
           <>
             <div className="flex-1" />
             {/* URL interim: replace with billing portal URL from provider payload */}
-            <Button size="sm" variant="outline" asChild disabled={!extendUrl}>
-              <a
-                href={extendUrl || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+            {extendUrl ? (
+              <Button size="sm" variant="outline" asChild>
+                <a href={extendUrl} target="_blank" rel="noopener noreferrer">
+                  Manage Billing
+                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                </a>
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" disabled>
                 Manage Billing
                 <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-              </a>
-            </Button>
+              </Button>
+            )}
           </>
         )}
       </div>
