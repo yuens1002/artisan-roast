@@ -167,9 +167,19 @@ The House Blend card takes over as the active subscription card. There is intent
 
 Slug: `house-blend` · Visibility: `hosted`
 
-### State 1 — None (pre-conversion, during trial)
+Each state is driven by a `status` field on the plan entry in the license response — independent of any other plan's state. The store renders the House Blend card in whichever state the platform reports for that specific plan slug.
 
-**Trigger:** `status === "ACTIVE" || "EXPIRED"` (House Blend card is in `none` state while Trial card is visible)
+```ts
+type HouseBlendPlanStatus =
+  | { status: "none" }
+  | { status: "active"; snapshotAt: string; availableActions: AvailableAction[];
+      support: { pools: UsagePool[] } }
+  | { status: "expired"; deactivatedAt: string; previousFeatures: string[]; renewUrl: string };
+```
+
+### State 1 — None
+
+**Trigger:** `plan.status === "none"`
 
 | Element | Data source |
 |---------|-------------|
@@ -183,9 +193,9 @@ Slug: `house-blend` · Visibility: `hosted`
 
 ---
 
-### State 2 — Active (CONVERTED / direct-subscribe)
+### State 2 — Active
 
-**Trigger:** `license.plan.slug === "house-blend"` (platform supplies this in the license response)
+**Trigger:** `plan.status === "active"`
 
 | Element | Data source |
 |---------|-------------|
@@ -193,25 +203,27 @@ Slug: `house-blend` · Visibility: `hosted`
 | Tagline | `plan.description` |
 | Badge | `"Active"` |
 | Badge icon | `CheckCircle2` |
-| Renewal date | `license.plan.snapshotAt` → computed renewal date |
-| Support pools | `license.support.pools[]` — UsageBar per pool |
+| Renewal date | `plan.snapshotAt` → computed renewal date |
+| Support pools | `plan.support.pools[]` — UsageBar per pool |
 | View Details link | navigates to `/admin/support/plans/house-blend` |
-| Manage Billing button | URL from `license.availableActions` — platform embeds portal URL in license response |
+| Manage Billing button | from `plan.availableActions` — platform embeds the billing portal action |
 
-The active state is fully driven by the license response (`LicenseInfo`), not the plan catalog entry. `availableActions` must include a `{ slug: "manage-billing", label: "Manage Billing", icon: "external-link", url: "<portal_url>" }` entry.
+`availableActions` entry: `{ slug: "manage-billing", label: "Manage Billing", icon: "external-link", url: "/api/billing/portal" }`. Store POSTs to that URL (Bearer license key) on click; response returns a fresh Stripe Portal session URL for redirect.
 
 ---
 
-### State 3 — Inactive / lapsed
+### State 3 — Expired
 
-**Trigger:** `license.lapsed.planSlug === "house-blend"`
+**Trigger:** `plan.status === "expired"`
+
+Same shape as the Trial card's `EXPIRED` state — a status discriminant with inline fields on the plan entry itself, not a global lapsed object.
 
 | Element | Data source |
 |---------|-------------|
 | Badge | `"Inactive"` |
-| Deactivation date | `license.lapsed.deactivatedAt` |
-| Previous features | `license.lapsed.previousFeatures[]` |
-| Renew CTA | `license.lapsed.renewUrl` |
+| Deactivation date | `plan.deactivatedAt` |
+| Previous features | `plan.previousFeatures[]` |
+| Renew CTA | `plan.renewUrl` |
 
 ---
 
@@ -256,14 +268,17 @@ Currently three CTA URLs arrive via env vars. The plan is to move these to the p
 
 ## State matrix
 
-| `TrialStatus.status` | `cardAdded` | Trial card rendered? | Trial card state | House Blend state |
-|----------------------|-------------|----------------------|------------------|-------------------|
-| `ACTIVE`             | `false`     | ✓                    | Active (14d)     | None              |
-| `ACTIVE`             | `true`      | ✓                    | Extended (30d)   | None              |
-| `EXPIRED`            | `false`     | ✓                    | Expired          | None              |
-| `CANCELLED`          | `true`      | ✓ *(not yet impl.)*  | Grace period     | None              |
-| `CONVERTED`          | —           | ✗                    | —                | Active            |
-| `null` (error/none)  | —           | ✗                    | —                | None or Active    |
+Each card's state is independent. The Trial card reads from `TrialStatus`; the House Blend card reads from its own `plan.status`.
+
+| `TrialStatus.status` | `cardAdded` | Trial card | Trial card state | House Blend `plan.status` | House Blend state |
+|----------------------|-------------|------------|------------------|---------------------------|-------------------|
+| `ACTIVE`             | `false`     | ✓          | Active (14d)      | `"none"`                  | None              |
+| `ACTIVE`             | `true`      | ✓          | Extended (30d)    | `"none"`                  | None              |
+| `EXPIRED`            | `false`     | ✓          | Expired           | `"none"`                  | None              |
+| `CANCELLED`          | `true`      | ✓ *(TBI)*  | Grace period      | `"none"`                  | None              |
+| `CONVERTED`          | —           | ✗          | —                 | `"active"`                | Active            |
+| `null` (no trial)    | —           | ✗          | —                 | `"none"` or `"active"`    | None or Active    |
+| `null` (no trial)    | —           | ✗          | —                 | `"expired"`               | Expired           |
 
 ---
 
@@ -278,9 +293,9 @@ Currently three CTA URLs arrive via env vars. The plan is to move these to the p
 
 3. ✅ **Trial card on CONVERTED / direct-subscribe** — Hidden in both cases. Once a customer has subscribed or cancelled, there is no path back to the trial. Both states show only the active House Blend card.
 
-4. ✅ **Manage Billing on active House Blend** — Confirmed delivery via `license.availableActions`. The `manage-billing` entry will have:
+4. ✅ **Manage Billing on active House Blend** — Delivered via `plan.availableActions` on the House Blend plan entry (per-plan, not global). The `manage-billing` entry will have:
    - `url`: the platform billing portal endpoint path (`/api/billing/portal`). The store POSTs to this endpoint (Bearer license key) on click; the response contains the Stripe Portal session URL for redirect.
    - `icon`: `"external-link"` (signals external redirect — store resolves via `resolveIconComponent`)
-   - A pre-generated Stripe Portal URL is **not** embedded in the license response (sessions have a TTL).
+   - A pre-generated Stripe Portal URL is **not** embedded in the plan status (sessions have a TTL).
 
 5. ✅ **`actionModal` on plan entries** — `actionModal` is optional on any plan. If absent, the action dialog trigger CTA is hidden (no fallback copy rendered). If present, all fields are required — `confirmIcon` is the only optional field (display hint only). Platform should populate `actionModal` on both `house-blend-trial` and `house-blend`.

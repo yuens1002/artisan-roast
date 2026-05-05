@@ -145,7 +145,7 @@ Visible to all users (not gated on `IS_HOSTED`) on `/admin/support/terms` Data P
 
 - `lib/hosted.ts` — exports `IS_HOSTED`, `getTrialStatus()`, `submitCancellation()`, `TrialStatus` type
 - `lib/__tests__/hosted.test.ts`
-- `app/admin/support/plans/_components/CancelTrialDialog.tsx`
+- `app/admin/support/plans/_components/ConfirmActionDialog.tsx`
 - `app/admin/support/terms/_components/DownloadDataCard.tsx`
 - `app/api/admin/export/route.ts`
 

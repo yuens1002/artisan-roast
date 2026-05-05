@@ -266,7 +266,7 @@ app/admin/support/
 ├── plans/
 │   ├── PlanPageClient.tsx             filters by IS_HOSTED; maps TrialStatus → PlanCard config
 │   └── _components/
-│       └── CancelTrialDialog.tsx     reason dropdown + Other-textarea + submit
+│       └── ConfirmActionDialog.tsx     reason dropdown + Other-textarea + submit
 └── terms/
     ├── page.tsx                       Data Privacy tab adds Download Your Data card
     └── _components/
