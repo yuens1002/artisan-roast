@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.105.3 - 2026-05-06
+
+### Fixed
+
+- **Plans page fallback (empty response)**: `fetchPlans()` now falls back to the full mock plan catalog (all 4 plans) when the platform API responds successfully but returns an empty list — covers production cases where plans are not yet seeded, and ensures hosted instances still see their plan cards
+- **Plans page visibility filter**: `filterPlansByVisibility` now treats `visibility: null` as `"self-hosted"` — platform DB rows without a visibility value are included in self-hosted mode and excluded from hosted mode
+
 ## 0.105.2 - 2026-05-06
 
 ### Fixed

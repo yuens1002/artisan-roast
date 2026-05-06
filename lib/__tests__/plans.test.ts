@@ -109,17 +109,21 @@ describe("fetchPlans", () => {
     expect(plans).toEqual(mockPlans);
   });
 
-  // Empty response: platform returns { plans: [] } → self-hosted fallback
-  it("returns self-hosted fallback plans when platform returns empty plans list", async () => {
+  // Empty response: platform returns { plans: [] } → full mock fallback (all 4 plans, so hosted instances still see their cards)
+  it("returns full mock plans when platform returns empty plans list", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ plans: [] }),
     });
 
     const plans = await fetchPlans();
-    expect(plans).toHaveLength(2);
-    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
-    expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
+    expect(plans).toHaveLength(4);
+    expect(plans.map((p) => p.slug)).toEqual([
+      "free",
+      "priority-support",
+      "house-blend-trial",
+      "house-blend",
+    ]);
   });
 });
 
@@ -141,7 +145,7 @@ describe("filterPlansByVisibility", () => {
       interval: "month",
       features: [],
       highlight: false,
-      visibility: visibility as "self-hosted" | "hosted",
+      visibility,
       details: {},
     };
   }
