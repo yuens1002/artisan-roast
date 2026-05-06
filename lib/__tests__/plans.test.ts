@@ -128,7 +128,10 @@ describe("fetchPlans", () => {
 // ---------------------------------------------------------------------------
 
 describe("filterPlansByVisibility", () => {
-  function makePlan(slug: string, visibility: "self-hosted" | "hosted"): Plan {
+  function makePlan(
+    slug: string,
+    visibility: "self-hosted" | "hosted" | null
+  ): Plan {
     return {
       slug,
       name: slug,
@@ -138,7 +141,7 @@ describe("filterPlansByVisibility", () => {
       interval: "month",
       features: [],
       highlight: false,
-      visibility,
+      visibility: visibility as "self-hosted" | "hosted",
       details: {},
     };
   }
@@ -161,6 +164,25 @@ describe("filterPlansByVisibility", () => {
       "house-blend-trial",
       "house-blend",
     ]);
+  });
+
+  it("includes null-visibility plans in self-hosted mode (platform DB gap)", () => {
+    const mixed = [
+      makePlan("free", null),
+      makePlan("priority-support", null),
+      makePlan("house-blend", "hosted"),
+    ];
+    const filtered = filterPlansByVisibility(mixed, false);
+    expect(filtered.map((p) => p.slug)).toEqual(["free", "priority-support"]);
+  });
+
+  it("excludes null-visibility plans in hosted mode", () => {
+    const mixed = [
+      makePlan("free", null),
+      makePlan("house-blend", "hosted"),
+    ];
+    const filtered = filterPlansByVisibility(mixed, true);
+    expect(filtered.map((p) => p.slug)).toEqual(["house-blend"]);
   });
 
   it("returns empty array when catalog is empty", () => {

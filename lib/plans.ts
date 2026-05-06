@@ -70,16 +70,18 @@ export function invalidatePlansCache(): void {
 /**
  * Filter the plan catalog by build-mode visibility.
  *
- * Self-hosted instances see only `visibility: "self-hosted"` plans;
- * hosted instances see only `visibility: "hosted"` plans. The two sets
- * are disjoint — no plan is visible in both modes.
+ * Self-hosted instances see only `visibility: "self-hosted"` plans (or null —
+ * platform DB may not have visibility set yet on legacy rows).
+ * Hosted instances see only `visibility: "hosted"` plans.
  */
 export function filterPlansByVisibility(
   plans: Plan[],
   isHosted: boolean
 ): Plan[] {
-  const target = isHosted ? "hosted" : "self-hosted";
-  return plans.filter((p) => p.visibility === target);
+  if (isHosted) {
+    return plans.filter((p) => p.visibility === "hosted");
+  }
+  return plans.filter((p) => !p.visibility || p.visibility === "self-hosted");
 }
 
 // ---------------------------------------------------------------------------
