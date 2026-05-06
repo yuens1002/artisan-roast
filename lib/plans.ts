@@ -50,6 +50,10 @@ export async function fetchPlans(): Promise<Plan[]> {
 
     const data = (await response.json()) as PlansResponse;
     const plans = data.plans || [];
+    if (plans.length === 0) {
+      console.warn("Plans API returned empty list — using self-hosted fallback");
+      return SELF_HOSTED_FALLBACK_PLANS;
+    }
     cached = { data: plans, expiresAt: Date.now() + CACHE_TTL };
     return plans;
   } catch (error) {

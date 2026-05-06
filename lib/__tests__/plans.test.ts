@@ -109,15 +109,17 @@ describe("fetchPlans", () => {
     expect(plans).toEqual(mockPlans);
   });
 
-  // Empty response: platform returns { plans: [] }
-  it("returns empty array when platform returns empty plans list", async () => {
+  // Empty response: platform returns { plans: [] } → self-hosted fallback
+  it("returns self-hosted fallback plans when platform returns empty plans list", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ plans: [] }),
     });
 
     const plans = await fetchPlans();
-    expect(plans).toEqual([]);
+    expect(plans).toHaveLength(2);
+    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
+    expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
   });
 });
 
