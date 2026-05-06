@@ -1,7 +1,7 @@
 /**
  * Tests for fetchPlans() from lib/plans.ts
  *
- * AC-E2E-9: Platform unreachable → returns empty array, no crash
+ * AC-E2E-9: Platform unreachable → returns self-hosted fallback plans (Community + Priority Support), no crash
  */
 
 // ---------------------------------------------------------------------------
@@ -24,17 +24,19 @@ describe("fetchPlans", () => {
     invalidatePlansCache();
   });
 
-  // AC-E2E-9: Network error → empty array, no crash
-  it("returns empty array when fetch throws (network error)", async () => {
+  // AC-E2E-9: Network error → self-hosted fallback, no crash
+  it("returns self-hosted fallback plans when fetch throws (network error)", async () => {
     mockFetch.mockRejectedValueOnce(new Error("fetch failed"));
 
     const plans = await fetchPlans();
 
-    expect(plans).toEqual([]);
+    expect(plans).toHaveLength(2);
+    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
+    expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
   });
 
-  // AC-E2E-9: Platform returns 500 → empty array
-  it("returns empty array when platform returns 500", async () => {
+  // AC-E2E-9: Platform returns 500 → self-hosted fallback
+  it("returns self-hosted fallback plans when platform returns 500", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 500,
@@ -42,11 +44,13 @@ describe("fetchPlans", () => {
 
     const plans = await fetchPlans();
 
-    expect(plans).toEqual([]);
+    expect(plans).toHaveLength(2);
+    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
+    expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
   });
 
-  // AC-E2E-9: Platform returns 503 → empty array
-  it("returns empty array when platform returns 503", async () => {
+  // AC-E2E-9: Platform returns 503 → self-hosted fallback
+  it("returns self-hosted fallback plans when platform returns 503", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 503,
@@ -54,7 +58,9 @@ describe("fetchPlans", () => {
 
     const plans = await fetchPlans();
 
-    expect(plans).toEqual([]);
+    expect(plans).toHaveLength(2);
+    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
+    expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
   });
 
   // Happy path: platform returns plans

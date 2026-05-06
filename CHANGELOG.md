@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.105.2 - 2026-05-06
+
+### Fixed
+
+- **Plans page fallback**: `fetchPlans()` now returns Community + Priority Support plans on platform API error or timeout instead of an empty array, preventing the "Plans could not be loaded" blank state on self-hosted stores
+
 ## 0.105.1 - 2026-05-05
 
 ### Added
