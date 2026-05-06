@@ -2,7 +2,7 @@
  * Plans Module — Fetches available subscription plans from the platform.
  *
  * Public endpoint, no auth required. Cached for 24 hours.
- * Returns empty array on error (graceful fallback).
+ * Falls back to self-hosted plans on error so Community + Priority Support are always visible.
  */
 
 import type { Plan, PlansResponse } from "./plan-types";
@@ -45,7 +45,7 @@ export async function fetchPlans(): Promise<Plan[]> {
 
     if (!response.ok) {
       console.error("Plans fetch failed:", response.status);
-      return [];
+      return SELF_HOSTED_FALLBACK_PLANS;
     }
 
     const data = (await response.json()) as PlansResponse;
@@ -54,7 +54,7 @@ export async function fetchPlans(): Promise<Plan[]> {
     return plans;
   } catch (error) {
     console.error("Plans fetch error:", error);
-    return [];
+    return SELF_HOSTED_FALLBACK_PLANS;
   }
 }
 
@@ -79,7 +79,7 @@ export function filterPlansByVisibility(
 }
 
 // ---------------------------------------------------------------------------
-// Mock plans (for MOCK_LICENSE_TIER env var)
+// Mock plans (for MOCK_LICENSE_TIER env var) + self-hosted fallback
 // ---------------------------------------------------------------------------
 
 const MOCK_PLANS: Plan[] = [
@@ -238,3 +238,7 @@ const MOCK_PLANS: Plan[] = [
     },
   },
 ];
+
+const SELF_HOSTED_FALLBACK_PLANS: Plan[] = MOCK_PLANS.filter(
+  (p) => p.visibility === "self-hosted"
+);
