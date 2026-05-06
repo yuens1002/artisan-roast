@@ -30,10 +30,9 @@ describe("fetchPlans", () => {
 
     const plans = await fetchPlans();
 
-    expect(plans.length).toBeGreaterThan(0);
+    expect(plans).toHaveLength(2);
+    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
     expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
-    expect(plans.map((p) => p.slug)).toContain("free");
-    expect(plans.map((p) => p.slug)).toContain("priority-support");
   });
 
   // AC-E2E-9: Platform returns 500 → self-hosted fallback
@@ -45,7 +44,8 @@ describe("fetchPlans", () => {
 
     const plans = await fetchPlans();
 
-    expect(plans.length).toBeGreaterThan(0);
+    expect(plans).toHaveLength(2);
+    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
     expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
   });
 
@@ -58,7 +58,8 @@ describe("fetchPlans", () => {
 
     const plans = await fetchPlans();
 
-    expect(plans.length).toBeGreaterThan(0);
+    expect(plans).toHaveLength(2);
+    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
     expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
   });
 
