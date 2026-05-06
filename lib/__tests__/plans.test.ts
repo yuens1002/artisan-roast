@@ -109,15 +109,21 @@ describe("fetchPlans", () => {
     expect(plans).toEqual(mockPlans);
   });
 
-  // Empty response: platform returns { plans: [] }
-  it("returns empty array when platform returns empty plans list", async () => {
+  // Empty response: platform returns { plans: [] } → full mock fallback (all 4 plans, so hosted instances still see their cards)
+  it("returns full mock plans when platform returns empty plans list", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ plans: [] }),
     });
 
     const plans = await fetchPlans();
-    expect(plans).toEqual([]);
+    expect(plans).toHaveLength(4);
+    expect(plans.map((p) => p.slug)).toEqual([
+      "free",
+      "priority-support",
+      "house-blend-trial",
+      "house-blend",
+    ]);
   });
 });
 
@@ -126,7 +132,10 @@ describe("fetchPlans", () => {
 // ---------------------------------------------------------------------------
 
 describe("filterPlansByVisibility", () => {
-  function makePlan(slug: string, visibility: "self-hosted" | "hosted"): Plan {
+  function makePlan(
+    slug: string,
+    visibility: "self-hosted" | "hosted" | null
+  ): Plan {
     return {
       slug,
       name: slug,
@@ -159,6 +168,25 @@ describe("filterPlansByVisibility", () => {
       "house-blend-trial",
       "house-blend",
     ]);
+  });
+
+  it("includes null-visibility plans in self-hosted mode (platform DB gap)", () => {
+    const mixed = [
+      makePlan("free", null),
+      makePlan("priority-support", null),
+      makePlan("house-blend", "hosted"),
+    ];
+    const filtered = filterPlansByVisibility(mixed, false);
+    expect(filtered.map((p) => p.slug)).toEqual(["free", "priority-support"]);
+  });
+
+  it("excludes null-visibility plans in hosted mode", () => {
+    const mixed = [
+      makePlan("free", null),
+      makePlan("house-blend", "hosted"),
+    ];
+    const filtered = filterPlansByVisibility(mixed, true);
+    expect(filtered.map((p) => p.slug)).toEqual(["house-blend"]);
   });
 
   it("returns empty array when catalog is empty", () => {
