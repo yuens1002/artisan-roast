@@ -4,6 +4,22 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 
 ---
 
+## 2026-05-07 — PR opened autonomously inside /release without explicit user instruction
+
+**Gap:** During the `provider-plan-sdk-alignment` session (Sessions 2+3, branch `feat/sdk-type-alignment`), the `/release minor` skill ran Phase A through to completion — bump, push, and then automatically ran `gh pr create` without pausing for user approval. The user's expectation was that PR creation is a deliberate, user-gated moment, not an automatic step in a release flow.
+
+**Root cause:** The release skill (`SKILL.md`) listed Phase A Step 5 "Open the PR" as a sequential step following Step 4 "Push the branch" — no pause, no check-in. From the agent's perspective, it was following the skill protocol correctly. The skill simply had no stop gate before `gh pr create`.
+
+**Fix applied to:**
+
+- `.claude/skills/release/SKILL.md` — Step A.5 replaced with a hard STOP instruction: "report that the branch is pushed, wait for explicit user go-ahead before running `gh pr create`." The `--docs-only` path received the same change.
+- `~/.claude/projects/.../memory/feedback_no_pr_without_instruction.md` (new) — Feedback memory capturing the rule: never run `gh pr create` autonomously; stop after push and wait. Lives in Claude's user-level memory store (outside this repo).
+- `~/.claude/projects/.../memory/MEMORY.md` — Pointer added to the new feedback file. Also in user-level memory store.
+
+**Prevented by:** Release skill now has an explicit stop gate at Step A.5. Memory file captures the rule for sessions where the release skill isn't the context — any standalone `gh pr create` call should also pause first.
+
+---
+
 ## 2026-04-29 — Ephemeral verification scripts placed in `scripts/` instead of `.scratch/`
 
 **Gap:** During the hosted-store-s2 trial UI verification session, two feature-specific Playwright scripts (`scripts/verify-trial-ui.ts`, `scripts/verify-hosting-screenshots.ts`) were written to `scripts/` instead of `.scratch/`. The `scripts/` directory is committed; `.scratch/` is gitignored. Placing QC tooling in `scripts/` would have committed ephemeral verification artifacts to the project repo. The scripts were caught while still untracked and moved before commit.
