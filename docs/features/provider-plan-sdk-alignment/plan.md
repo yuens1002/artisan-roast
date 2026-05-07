@@ -1,18 +1,24 @@
 # provider-plan-sdk-alignment
 
-Three sequential sessions deleting the local `lib/plan-types.ts` and rewriting the plan card renderer to consume the `artisan-roast-sdk` `HydratedPlan` contract.
+Aligning the store's plan card renderer to consume the `artisan-roast-sdk` `HydratedPlan` contract — deleting local type duplicates and rendering all plan state from payload data with no hardcoded logic.
 
 ## Dependency order
 
-```
-Session 1 — SDK repo: Priority Support scaffolds + slug fix (v0.3.2)
+```text
+[SDK prereq]       Priority Support scaffolds + slug fix (v0.3.2)               ✓ merged
   ↓
-Session 2 — ecomm: sdk-type-alignment (install SDK, delete plan-types.ts, fix consumers)
+Session 1 — Store: sdk-type-alignment (install SDK, delete plan-types.ts)        ✓ merged
   ↓
-Session 3 — ecomm: provider-driven-plan-cards (PlanPageClient rewrite, dispatch on state.status)
+Session 2 — Store: provider-driven-plan-cards (PlanPageClient rewrite)           ✓ merged
+  ↓
+[SDK prereq]       usagepool-extension — ProgressBar→UsagePool, icon/countLabel  ← SDK work
+  ↓
+Session 3 — Store: plan-card-corrections (pool rendering, CTA layout, shim)      ← blocked on SDK
 ```
 
-## Session 1 — SDK: Priority Support scaffolds
+**SDK prerequisite docs:** `artisan-roast-sdk/docs/provider-plan-spec/usagepool-extension/`
+
+## SDK Prerequisite — Priority Support scaffolds
 
 **Repo:** `artisan-roast-sdk` | **Branch:** `feat/priority-support-scaffolds` | **Produces:** v0.3.2
 
@@ -26,13 +32,13 @@ Session 3 — ecomm: provider-driven-plan-cards (PlanPageClient rewrite, dispatc
 
 Use `mcp__artisan-roast-sdk__scaffold_plan_state` to generate initial shapes; use `mcp__artisan-roast-sdk__validate_plan_payload` to verify each before committing.
 
-**ACs:** `session-1/ACs.md` (tracked in SDK repo; copy here for cross-repo reference)
+**ACs:** tracked in SDK repo — `artisan-roast-sdk/docs/provider-plan-spec/priority-support-scaffolds/ACs.md`
 
 ---
 
-## Session 2 — Store: sdk-type-alignment
+## Session 1 — Store: sdk-type-alignment
 
-**Repo:** `ecomm-ai-app` | **Branch:** `feat/sdk-type-alignment` | **ACs:** `session-2/ACs.md`
+**Repo:** `ecomm-ai-app` | **Branch:** `feat/sdk-type-alignment` | **ACs:** `session-1/ACs.md`
 
 **Goal:** Delete `lib/plan-types.ts`. Import all types from SDK. No UI changes.
 
@@ -57,9 +63,9 @@ Use `mcp__artisan-roast-sdk__scaffold_plan_state` to generate initial shapes; us
 
 ---
 
-## Session 3 — Store: provider-driven-plan-cards
+## Session 2 — Store: provider-driven-plan-cards
 
-**Repo:** `ecomm-ai-app` | **Branch:** `feat/provider-driven-plan-cards` | **ACs:** `session-3/ACs.md`
+**Repo:** `ecomm-ai-app` | **Branch:** `feat/provider-driven-plan-cards` | **ACs:** `session-2/ACs.md`
 
 **Goal:** Rewrite `PlanPageClient` to dispatch on `plan.state.status`. No slug checks.
 
@@ -90,20 +96,60 @@ All 6 scenarios verified in `.screenshots/provider-plan-sdk-alignment-session3/`
 
 ---
 
-## Verification registration
+## SDK Prerequisite — usagepool-extension
 
-`.claude/verification-status.json`:
-- `feat/sdk-type-alignment` → `{ status: "planned", acs_total: 9 }`
-- `feat/provider-driven-plan-cards` → `{ status: "planned", acs_total: 12 }`
+**Repo:** `artisan-roast-sdk` | **Branch:** `feat/usagepool-extension` | **Produces:** v0.3.3
+**Full plan + ACs:** `artisan-roast-sdk/docs/provider-plan-spec/usagepool-extension/`
 
-## Commit schedule (Session 2)
+**Type changes:**
+
+- `ProgressBar` removed; `TrialState` + `ExpiredState` use `pools: UsagePool[]`
+- `UsagePool.icon?: string` — Lucide icon before pool label
+- `UsagePool.countLabel?: string` — unit suffix; store renders `{used} / {limit} {countLabel}`
+
+**Scaffold corrections:** description fix, pool icons/labels, trial pools shape, `TRIAL_ACTIVE_CARD_ADDED` actions, `TRIAL_EXPIRED` redesign, billing actions on `CONVERTED`/`DIRECT_SUBSCRIBE`, `INACTIVE` inactiveItems.
+
+---
+
+## Session 3 — Store: plan-card-corrections
+
+**Repo:** `ecomm-ai-app` | **Branch:** `feat/plan-card-corrections` | **ACs:** `session-3/ACs.md`
+**Prerequisite:** SDK `feat/usagepool-extension` (v0.3.3) merged + dep bumped in store
+
+### What to build
+
+**`PlanPageClient.tsx` — rendering corrections:**
+
+- **Pool icon**: render `pool.icon` (via `resolveIconComponent`) before pool label if present
+- **Pool count**: render `{pool.used} / {pool.limit} {pool.countLabel}` — store provides only the spaces and `/`; fall back to `{used} / {limit}` when `countLabel` absent
+- **Trial pools**: render `TrialState.pools` and `ExpiredState.pools` identically to `ActiveState.pools` — no separate `ProgressBar` renderer
+- **`descText` position**: render above pool bars, not below
+- **CTA layout rule** (replaces Session 3 rule):
+
+| CTAs total | Layout |
+|-----------|--------|
+| 1 | Single inline button |
+| 2 | Left: secondary/ghost · Right: primary |
+| 3+ | All in ⋮ overflow menu |
+| Mobile (any) | Single ⋮ menu, primary first |
+
+Pool CTAs count toward the total.
+
+**`page.tsx` — shim corrections:**
+
+- Fix `hydrateFromLicense`: NONE-state plans were returning `actions: []` — pass `plan.state.actions` through
+- Fix `TRIAL_EXPIRED` shim: produce `[extend-trial (primary), end-trial (ghost)]` actions and trial-days pool
+
+---
+
+## Commit schedule (Session 1 — sdk-type-alignment)
 
 1. `feat(sdk-align): install artisan-roast-sdk file dep`
 2. `feat(sdk-align): delete plan-types.ts + fix all consumers for SDK types`
 3. `feat(sdk-align): add MOCK_HYDRATED_PLANS from SDK scaffolds`
 4. `bump version to X.Y.Z`
 
-## Commit schedule (Session 3)
+## Commit schedule (Session 2 — provider-driven-plan-cards)
 
 1. `feat(plan-cards): rewrite PlanPageClient to dispatch on plan.state.status`
 2. `feat(plan-cards): wire page.tsx to pass HydratedPlan[] with local hydration shim`
