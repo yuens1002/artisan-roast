@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { activateLicense, refreshLicense } from "../actions";
 import { DownloadDataCard } from "./_components/DownloadDataCard";
 import type { LicenseInfo } from "@/lib/license-types";
-import type { Plan } from "@/lib/plan-types";
+import type { Plan } from "artisan-roast-sdk/plans";
 
 // ---------------------------------------------------------------------------
 // Props

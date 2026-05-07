@@ -1,7 +1,7 @@
 import { validateLicense, getLicenseKey } from "@/lib/license";
 import { fetchPlans } from "@/lib/plans";
 import { TermsPageClient } from "./TermsPageClient";
-import type { Plan } from "@/lib/plan-types";
+import type { Plan } from "artisan-roast-sdk/plans";
 
 export default async function TermsPage() {
   const [license, plans] = await Promise.all([

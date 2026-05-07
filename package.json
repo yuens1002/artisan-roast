@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.105.3",
+  "version": "0.106.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -41,6 +41,7 @@
     "theme:add": "tsx scripts/add-theme.ts"
   },
   "dependencies": {
+    "artisan-roast-sdk": "github:yuens1002/artisan-roast-sdk#feat/priority-support-scaffolds",
     "@auth/prisma-adapter": "^2.11.1",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.0.2",

@@ -5,7 +5,7 @@
  * Falls back to self-hosted plans on error so Community + Priority Support are always visible.
  */
 
-import type { Plan, PlansResponse } from "./plan-types";
+import type { HydratedPlan, Plan } from "artisan-roast-sdk/plans";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -48,12 +48,17 @@ export async function fetchPlans(): Promise<Plan[]> {
       return SELF_HOSTED_FALLBACK_PLANS;
     }
 
-    const data = (await response.json()) as PlansResponse;
-    const plans = data.plans || [];
-    if (plans.length === 0) {
+    const raw = (await response.json()) as { plans: (Omit<Plan, "visibility"> & { visibility: Plan["visibility"] | null })[] };
+    const rawPlans = raw.plans || [];
+    if (rawPlans.length === 0) {
       console.warn("Plans API returned empty list — using full mock fallback");
       return MOCK_PLANS;
     }
+    // Normalize null visibility from legacy DB rows → "self-hosted"
+    const plans: Plan[] = rawPlans.map((p) => ({
+      ...p,
+      visibility: p.visibility ?? "self-hosted",
+    }));
     cached = { data: plans, expiresAt: Date.now() + CACHE_TTL };
     return plans;
   } catch (error) {
@@ -70,18 +75,18 @@ export function invalidatePlansCache(): void {
 /**
  * Filter the plan catalog by build-mode visibility.
  *
- * Self-hosted instances see only `visibility: "self-hosted"` plans (or null —
- * platform DB may not have visibility set yet on legacy rows).
+ * Self-hosted instances see only `visibility: "self-hosted"` plans.
  * Hosted instances see only `visibility: "hosted"` plans.
+ * Generic so it works with both Plan[] and HydratedPlan[] without losing type info.
  */
-export function filterPlansByVisibility(
-  plans: Plan[],
+export function filterPlansByVisibility<T extends Plan>(
+  plans: T[],
   isHosted: boolean
-): Plan[] {
+): T[] {
   if (isHosted) {
     return plans.filter((p) => p.visibility === "hosted");
   }
-  return plans.filter((p) => !p.visibility || p.visibility === "self-hosted");
+  return plans.filter((p) => p.visibility === "self-hosted");
 }
 
 // ---------------------------------------------------------------------------
@@ -101,12 +106,14 @@ const MOCK_PLANS: Plan[] = [
     visibility: "self-hosted",
     saleLabel: "Forever",
     details: {
-      benefits: [
-        "Full e-commerce platform",
-        "Unlimited products & orders",
-        "Community support via GitHub",
-        "Self-hosted — you own your data",
-      ],
+      benefits: {
+        activeItems: [
+          "Full e-commerce platform",
+          "Unlimited products & orders",
+          "Community support via GitHub",
+          "Self-hosted — you own your data",
+        ],
+      },
       excludes: [
         "Priority support tickets",
         "1:1 video sessions",
@@ -129,15 +136,17 @@ const MOCK_PLANS: Plan[] = [
     saleEndsAt: "2026-04-25T00:00:00Z",
     saleLabel: "Launch Special",
     details: {
-      benefits: [
-        "Priority email support with 48-hr SLA",
-        "5 support tickets per month",
-        "1 one-on-one session per month (30 min)",
-        "Anonymous GitHub issue tracking & transparency",
-      ],
+      benefits: {
+        activeItems: [
+          "Priority email support with 48-hr SLA",
+          "5 support tickets per month",
+          "1 one-on-one session per month (30 min)",
+          "Anonymous GitHub issue tracking & transparency",
+        ],
+      },
       sla: {
         responseTime: "48 hours",
-        availability: "Business days (Mon\u2013Fri)",
+        availability: "Business days (Mon–Fri)",
       },
       quotas: [
         { icon: "ticket", slug: "tickets", label: "Priority Tickets", limit: 5 },
@@ -159,6 +168,24 @@ const MOCK_PLANS: Plan[] = [
         "Purchased add-on credits never expire",
       ],
     },
+    actionModals: [
+      {
+        slug: "cancel-subscription",
+        heading: "Cancel your subscription?",
+        description: "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve.",
+        reasonsLabel: "Reason for cancelling",
+        reasons: [
+          { value: "too-expensive", label: "Too expensive" },
+          { value: "missing-features", label: "Missing features" },
+          { value: "switching", label: "Switching to another platform" },
+          { value: "no-longer-needed", label: "Don't need it anymore" },
+          { value: "other", label: "Other" },
+        ],
+        keepLabel: "Keep subscription",
+        confirmLabel: "Continue to Stripe",
+        confirmIcon: "external-link",
+      },
+    ],
   },
   {
     slug: "house-blend-trial",
@@ -171,26 +198,32 @@ const MOCK_PLANS: Plan[] = [
     highlight: false,
     visibility: "hosted",
     details: {
-      benefits: [
-        "No billing needed — or add billing to extend your trial up to 30 days",
-        "You own your trial data — download a ZIP anytime during the trial",
-        "100% feature parity from day 1 — subscribe anytime to assign a custom domain",
-        "Cancel anytime during your trial — no contract, no commitment",
-      ],
+      benefits: {
+        activeItems: [
+          "No billing needed — or add billing to extend your trial up to 30 days",
+          "You own your trial data — download a ZIP anytime during the trial",
+          "100% feature parity from day 1 — subscribe anytime to assign a custom domain",
+          "Cancel anytime during your trial — no contract, no commitment",
+        ],
+      },
     },
-    actionModal: {
-      heading: "Cancel your trial?",
-      description: "Your trial will be cancelled and your store deprovisioned. Tell us why before you go — your feedback helps us improve.",
-      reasons: [
-        { value: "too-expensive", label: "Too expensive" },
-        { value: "missing-features", label: "Missing features" },
-        { value: "switching", label: "Switching to another platform" },
-        { value: "no-longer-needed", label: "Don't need it anymore" },
-        { value: "other", label: "Other" },
-      ],
-      keepLabel: "Keep trial",
-      confirmLabel: "Cancel trial",
-    },
+    actionModals: [
+      {
+        slug: "cancel-trial",
+        heading: "Cancel your trial?",
+        description: "Your trial will be cancelled and your store deprovisioned. Tell us why before you go — your feedback helps us improve.",
+        reasonsLabel: "Reason for cancelling",
+        reasons: [
+          { value: "too-expensive", label: "Too expensive" },
+          { value: "missing-features", label: "Missing features" },
+          { value: "switching", label: "Switching to another platform" },
+          { value: "no-longer-needed", label: "Don't need it anymore" },
+          { value: "other", label: "Other" },
+        ],
+        keepLabel: "Keep trial",
+        confirmLabel: "Cancel trial",
+      },
+    ],
   },
   {
     slug: "house-blend",
@@ -203,12 +236,14 @@ const MOCK_PLANS: Plan[] = [
     highlight: true,
     visibility: "hosted",
     details: {
-      benefits: [
-        "Fully managed hosting — we run the infrastructure",
-        "Custom domain on your store",
-        "Automatic backups and security updates",
-        "5 priority support tickets, 48-hr SLA",
-      ],
+      benefits: {
+        activeItems: [
+          "Fully managed hosting — we run the infrastructure",
+          "Custom domain on your store",
+          "Automatic backups and security updates",
+          "5 priority support tickets, 48-hr SLA",
+        ],
+      },
       sla: {
         responseTime: "48 hours",
         availability: "Business days (Mon–Fri)",
@@ -228,23 +263,39 @@ const MOCK_PLANS: Plan[] = [
         "Custom domain assignment held while subscription is active",
       ],
     },
-    actionModal: {
-      heading: "Cancel your subscription?",
-      description: "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve.",
-      reasons: [
-        { value: "too-expensive", label: "Too expensive" },
-        { value: "missing-features", label: "Missing features" },
-        { value: "switching", label: "Switching to another platform" },
-        { value: "no-longer-needed", label: "Don't need it anymore" },
-        { value: "other", label: "Other" },
-      ],
-      keepLabel: "Keep subscription",
-      confirmLabel: "Continue to Stripe",
-      confirmIcon: "external-link",
-    },
+    actionModals: [
+      {
+        slug: "cancel-subscription",
+        heading: "Cancel your subscription?",
+        description: "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve.",
+        reasonsLabel: "Reason for cancelling",
+        reasons: [
+          { value: "too-expensive", label: "Too expensive" },
+          { value: "missing-features", label: "Missing features" },
+          { value: "switching", label: "Switching to another platform" },
+          { value: "no-longer-needed", label: "Don't need it anymore" },
+          { value: "other", label: "Other" },
+        ],
+        keepLabel: "Keep subscription",
+        confirmLabel: "Continue to Stripe",
+        confirmIcon: "external-link",
+      },
+    ],
   },
 ];
 
 const SELF_HOSTED_FALLBACK_PLANS: Plan[] = MOCK_PLANS.filter(
   (p) => p.visibility === "self-hosted"
 );
+
+/** Dev mock set for MOCK_LICENSE_TIER-based HydratedPlan rendering. */
+export function getMockHydratedPlans(): HydratedPlan[] {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { SCENARIOS } = require("artisan-roast-sdk") as { SCENARIOS: Record<string, HydratedPlan> };
+  return [
+    SCENARIOS.SELF_HOSTED_FREE,
+    SCENARIOS.PRIORITY_SUPPORT_NONE,
+    SCENARIOS.TRIAL_ACTIVE_NO_CARD,
+    SCENARIOS.CONVERTED,
+  ].filter(Boolean) as HydratedPlan[];
+}

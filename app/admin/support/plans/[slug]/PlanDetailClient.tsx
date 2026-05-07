@@ -10,7 +10,7 @@ import {
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Separator } from "@/components/ui/separator";
 import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
-import type { Plan } from "@/lib/plan-types";
+import type { Plan } from "artisan-roast-sdk/plans";
 import type { LicenseInfo } from "@/lib/license-types";
 
 // ---------------------------------------------------------------------------
@@ -90,11 +90,11 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
             )}
           </div>
 
-          {details.benefits && details.benefits.length > 0 && (
+          {details.benefits?.activeItems && details.benefits.activeItems.length > 0 && (
             <>
               <Separator />
               <ul className="space-y-2 text-sm">
-                {details.benefits.map((benefit) => (
+                {details.benefits.activeItems.map((benefit) => (
                   <li key={benefit} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
                     {benefit}
@@ -133,19 +133,19 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
                         </dd>
                       </div>
                     )}
-                    {details.sla.videoCallDuration && (
+                    {details.sla.sessionDuration && (
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Video call</dt>
+                        <dt className="text-muted-foreground">Session length</dt>
                         <dd className="font-medium">
-                          {details.sla.videoCallDuration}
+                          {details.sla.sessionDuration}
                         </dd>
                       </div>
                     )}
-                    {details.sla.videoCallBooking && (
+                    {details.sla.sessionBooking && (
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Booking</dt>
                         <dd className="font-medium">
-                          {details.sla.videoCallBooking}
+                          {details.sla.sessionBooking}
                         </dd>
                       </div>
                     )}

@@ -11,7 +11,7 @@
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-import type { Plan } from "../plan-types";
+import type { Plan } from "artisan-roast-sdk/plans";
 import { fetchPlans, filterPlansByVisibility, invalidatePlansCache } from "../plans";
 
 // ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ describe("fetchPlans", () => {
     expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
   });
 
-  // Happy path: platform returns plans
+  // Happy path: platform returns plans (visibility null normalized to "self-hosted")
   it("returns plans when platform responds successfully", async () => {
     const mockPlans = [
       {
@@ -75,8 +75,9 @@ describe("fetchPlans", () => {
         interval: "month" as const,
         features: ["ga", "ai-product-ops"],
         highlight: false,
+        visibility: null,
         details: {
-          benefits: ["Google Analytics integration"],
+          benefits: { activeItems: ["Google Analytics integration"] },
         },
       },
     ];
@@ -88,14 +89,17 @@ describe("fetchPlans", () => {
 
     const plans = await fetchPlans();
 
-    expect(plans).toEqual(mockPlans);
     expect(plans).toHaveLength(1);
     expect(plans[0].slug).toBe("pro");
+    // null visibility is normalized to "self-hosted" at the fetch boundary
+    expect(plans[0].visibility).toBe("self-hosted");
   });
 
   // Cache: second call uses cached data
   it("uses cached data on subsequent calls within TTL", async () => {
-    const mockPlans = [{ slug: "pro", name: "Pro" }];
+    const mockPlans = [
+      { slug: "pro", name: "Pro", visibility: "self-hosted" as const },
+    ];
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -106,7 +110,7 @@ describe("fetchPlans", () => {
     const plans = await fetchPlans();
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(plans).toEqual(mockPlans);
+    expect(plans[0].slug).toBe("pro");
   });
 
   // Empty response: platform returns { plans: [] } → full mock fallback (all 4 plans, so hosted instances still see their cards)
@@ -134,7 +138,7 @@ describe("fetchPlans", () => {
 describe("filterPlansByVisibility", () => {
   function makePlan(
     slug: string,
-    visibility: "self-hosted" | "hosted" | null
+    visibility: "self-hosted" | "hosted"
   ): Plan {
     return {
       slug,
@@ -168,25 +172,6 @@ describe("filterPlansByVisibility", () => {
       "house-blend-trial",
       "house-blend",
     ]);
-  });
-
-  it("includes null-visibility plans in self-hosted mode (platform DB gap)", () => {
-    const mixed = [
-      makePlan("free", null),
-      makePlan("priority-support", null),
-      makePlan("house-blend", "hosted"),
-    ];
-    const filtered = filterPlansByVisibility(mixed, false);
-    expect(filtered.map((p) => p.slug)).toEqual(["free", "priority-support"]);
-  });
-
-  it("excludes null-visibility plans in hosted mode", () => {
-    const mixed = [
-      makePlan("free", null),
-      makePlan("house-blend", "hosted"),
-    ];
-    const filtered = filterPlansByVisibility(mixed, true);
-    expect(filtered.map((p) => p.slug)).toEqual(["house-blend"]);
   });
 
   it("returns empty array when catalog is empty", () => {
