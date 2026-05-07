@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.106.0 - 2026-05-07
+
+### Added
+
+- **Provider-driven plan cards**: `PlanPageClient` rewritten to dispatch on `plan.state.status` — six status-specific card components (NONE/ACTIVE/TRIAL/EXPIRED/CANCELLED/INACTIVE) with no slug-based conditional rendering. Pool CTAs render inline-left on ACTIVE cards; management actions live in a 3-dot dropdown. `ConfirmActionDialog` wired via `activeModal` state driven by `action.modalSlug`.
+- **SDK type alignment**: `artisan-roast-sdk` installed as a project dependency. `lib/plan-types.ts` deleted; `Plan`, `HydratedPlan`, `ConfirmActionConfig`, and related types now imported from the SDK. `filterPlansByVisibility` made generic (`<T extends Plan>`) to work with both `Plan[]` and `HydratedPlan[]`.
+- **Dev mock scenarios**: `getMockHydratedPlans()` builds the dev scenario set from SDK SCENARIOS (SELF_HOSTED_FREE, PRIORITY_SUPPORT_NONE, TRIAL_ACTIVE_NO_CARD, CONVERTED). Individual scenarios selectable via `?scenario=KEY` query param.
+
 ## 0.105.3 - 2026-05-06
 
 ### Fixed
