@@ -107,7 +107,14 @@ Then commit the changes on that branch and follow the feature-branch path below.
    git push -u origin <branch-name>
    ```
 
-5. **Open the PR:**
+5. **STOP — wait for explicit instruction to open the PR.**
+
+   Report to the user:
+   > Branch pushed. Ready to open the PR — say the word when you want it created.
+
+   Do NOT run `gh pr create` until the user explicitly says so (e.g. "open the PR", "create the PR", "go ahead"). This applies even when the release skill is the one driving the workflow — PR creation is always a user-gated step.
+
+   When the user gives the go-ahead, run:
 
    ```bash
    gh pr create --title "<conventional-format-title> (vX.Y.Z)" --body-file <body-path> --base main
@@ -127,7 +134,7 @@ Then commit the changes on that branch and follow the feature-branch path below.
 
    This is an empty commit with no content changes. It exists only to satisfy the structural gate. Any docs commits on the branch must come *before* this marker — the marker has to be the latest commit when `gh pr create` runs.
 
-3. **Push** and **open the PR** as in the normal flow. No version bump, no CHANGELOG entry — the PR body should make clear it's a docs-only change.
+3. **Push** the branch. Then **STOP — wait for explicit user instruction** before running `gh pr create`. No version bump, no CHANGELOG entry — the PR body should make clear it's a docs-only change.
 
 ##### After PR is open
 
