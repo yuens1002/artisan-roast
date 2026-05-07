@@ -13,6 +13,8 @@ import * as fs from "fs";
 import * as path from "path";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@artisanroast.com";
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "ivcF8ZV3FnGaBJ&#8j";
 const OUT_DIR = path.join(
   process.cwd(),
   ".screenshots",
@@ -54,8 +56,8 @@ async function main() {
 
     // Log in with admin credentials
     await page.goto(`${BASE_URL}/auth/admin-signin`, { waitUntil: "networkidle2" });
-    await page.type('input[name="email"]', "admin@artisanroast.com");
-    await page.type('input[name="password"]', "ivcF8ZV3FnGaBJ&#8j");
+    await page.type('input[name="email"]', ADMIN_EMAIL);
+    await page.type('input[name="password"]', ADMIN_PASSWORD);
     await page.click('button[type="submit"]');
 
     await page.waitForFunction(
