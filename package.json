@@ -41,6 +41,7 @@
     "theme:add": "tsx scripts/add-theme.ts"
   },
   "dependencies": {
+    "artisan-roast-sdk": "file:../artisan-roast-sdk",
     "@auth/prisma-adapter": "^2.11.1",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.0.2",
