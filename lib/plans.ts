@@ -6,7 +6,6 @@
  */
 
 import type { HydratedPlan, Plan } from "artisan-roast-sdk/plans";
-import { SCENARIOS } from "artisan-roast-sdk/plans/scaffolds";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -290,9 +289,13 @@ const SELF_HOSTED_FALLBACK_PLANS: Plan[] = MOCK_PLANS.filter(
 );
 
 /** Dev mock set for MOCK_LICENSE_TIER-based HydratedPlan rendering. */
-export const MOCK_HYDRATED_PLANS: HydratedPlan[] = [
-  SCENARIOS.SELF_HOSTED_FREE,
-  SCENARIOS.PRIORITY_SUPPORT_NONE,
-  SCENARIOS.TRIAL_ACTIVE_NO_CARD,
-  SCENARIOS.CONVERTED,
-];
+export function getMockHydratedPlans(): HydratedPlan[] {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { SCENARIOS } = require("artisan-roast-sdk") as { SCENARIOS: Record<string, HydratedPlan> };
+  return [
+    SCENARIOS.SELF_HOSTED_FREE,
+    SCENARIOS.PRIORITY_SUPPORT_NONE,
+    SCENARIOS.TRIAL_ACTIVE_NO_CARD,
+    SCENARIOS.CONVERTED,
+  ].filter(Boolean) as HydratedPlan[];
+}

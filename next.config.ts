@@ -40,6 +40,7 @@ const nextConfig: NextConfig = {
     "@prisma/adapter-pg",
     "@prisma/adapter-neon",
     "@neondatabase/serverless",
+    "artisan-roast-sdk",
   ],
   images: {
     // We must whitelist the domains we'll be using for our product images.
