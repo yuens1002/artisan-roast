@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 import { submitCancellation } from "../actions";
-import type { ConfirmActionConfig } from "@/lib/plan-types";
+import type { ConfirmActionConfig } from "artisan-roast-sdk/plans";
 
 const OTHER_TEXT_MAX = 500;
 

@@ -37,7 +37,7 @@ import type {
   AvailableAction,
   CreditPool,
 } from "@/lib/license-types";
-import type { Plan } from "@/lib/plan-types";
+import type { Plan } from "artisan-roast-sdk/plans";
 import type {
   TrialStatus,
   TrialStatusActive,
@@ -215,8 +215,10 @@ export function PlanPageClient({
 
   const trialConfig = cardConfigs.find((c): c is TrialCardConfig => c.type === "trial");
 
-  // Modal copy comes directly from the trial plan's payload — no slug lookup.
-  const actionModalConfig = trialConfig?.plan.actionModal;
+  // Modal copy from the trial plan's actionModals array — slug selects the right variant.
+  const actionModalConfig = trialConfig?.plan.actionModals?.find(
+    (m) => m.slug === (cardAdded ? "cancel-stripe" : "cancel-trial")
+  );
 
   // ACTIVE and CANCELLED both have cardAdded on the status object.
   const cardAdded =
@@ -438,9 +440,9 @@ function PlanCard({
               </div>
             )}
 
-            {!isPaidActive && config.pools.length === 0 && plan.details.benefits && plan.details.benefits.length > 0 && (
+            {!isPaidActive && config.pools.length === 0 && plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
               <ul className="space-y-2 text-sm">
-                {plan.details.benefits.map((benefit) => (
+                {plan.details.benefits.activeItems.map((benefit) => (
                   <li key={benefit} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
                     {benefit}
@@ -619,9 +621,9 @@ function PlanCard({
           )}
         </div>
 
-        {plan.details.benefits && plan.details.benefits.length > 0 && (
+        {plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
           <ul className="space-y-2 text-sm">
-            {plan.details.benefits.map((benefit) => (
+            {plan.details.benefits.activeItems.map((benefit) => (
               <li key={benefit} className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
                 {benefit}
@@ -733,9 +735,9 @@ function TrialCard({ config, onCancelTrial }: TrialCardProps) {
           </p>
         )}
 
-        {plan.details.benefits && plan.details.benefits.length > 0 && (
+        {plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
           <ul className="space-y-2 text-sm">
-            {plan.details.benefits.map((benefit) => (
+            {plan.details.benefits.activeItems.map((benefit) => (
               <li key={benefit} className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
                 {benefit}
@@ -752,7 +754,7 @@ function TrialCard({ config, onCancelTrial }: TrialCardProps) {
       <div className="flex items-center gap-2 mt-auto pt-5">
         {!cardAdded && (
           <>
-            {plan.actionModal && (
+            {plan.actionModals?.find((m) => m.slug === "cancel-trial") && (
               <button
                 type="button"
                 onClick={onCancelTrial}

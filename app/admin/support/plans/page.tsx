@@ -2,7 +2,7 @@ import { validateLicense } from "@/lib/license";
 import { fetchPlans, filterPlansByVisibility } from "@/lib/plans";
 import { IS_HOSTED, getTrialStatus } from "@/lib/hosted";
 import { PlanPageClient } from "./PlanPageClient";
-import type { Plan } from "@/lib/plan-types";
+import type { Plan } from "artisan-roast-sdk/plans";
 
 export default async function PlanPage() {
   const license = await validateLicense();
