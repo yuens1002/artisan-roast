@@ -13,7 +13,7 @@ Session 2 — Store: provider-driven-plan-cards (PlanPageClient rewrite)        
   ↓
 [SDK prereq]       usagepool-extension — ProgressBar→UsagePool, icon/countLabel  ← SDK work
   ↓
-Session 3 — Store: plan-card-corrections (pool rendering, CTA layout, shim)      ← blocked on SDK
+Session 4 — Store: plan-card-corrections (pool rendering, CTA layout, shim)      ← blocked on SDK
 ```
 
 **SDK prerequisite docs:** `artisan-roast-sdk/docs/provider-plan-spec/usagepool-extension/`
@@ -111,9 +111,9 @@ All 6 scenarios verified in `.screenshots/provider-plan-sdk-alignment-session3/`
 
 ---
 
-## Session 3 — Store: plan-card-corrections
+## Session 4 — Store: plan-card-corrections
 
-**Repo:** `ecomm-ai-app` | **Branch:** `feat/plan-card-corrections` | **ACs:** `session-3/ACs.md`
+**Repo:** `ecomm-ai-app` | **Branch:** `feat/plan-card-corrections` | **ACs:** `session-4/ACs.md`
 **Prerequisite:** SDK `feat/usagepool-extension` (v0.3.3) merged + dep bumped in store
 
 ### What to build

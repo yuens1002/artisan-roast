@@ -25,11 +25,11 @@
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|----|----------|
-| AC-FN-1 | No `ProgressBar` renderer in PlanPageClient | Code review: `PlanPageClient.tsx` | No `ProgressBar` component or `progress:` binding — trial/expired pools use pool renderer | | | |
-| AC-FN-2 | CTA layout rule: 1 CTA inline | Code review: `PlanPageClient.tsx` | Single-action states render one inline `<Button>` with no menu | | | |
-| AC-FN-3 | CTA layout rule: 2 CTAs left/right | Code review: `PlanPageClient.tsx` | Two-action states render secondary/ghost left + primary right in a flex row | | | |
-| AC-FN-4 | CTA layout rule: 3+ CTAs in menu | Code review: `PlanPageClient.tsx` | Three-or-more-action states render all actions inside a `DropdownMenu` | | | |
-| AC-FN-5 | No slug checks in PlanPageClient | `grep -n "plan\.slug" PlanPageClient.tsx` | 0 results | | | |
+| AC-FN-1 | No `ProgressBar` renderer in PlanPageClient | Code review: `app/admin/support/plans/PlanPageClient.tsx` | No `ProgressBar` component or `progress:` binding — trial/expired pools use pool renderer | | | |
+| AC-FN-2 | CTA layout rule: 1 CTA inline | Code review: `app/admin/support/plans/PlanPageClient.tsx` | Single-action states render one inline `<Button>` with no menu | | | |
+| AC-FN-3 | CTA layout rule: 2 CTAs left/right | Code review: `app/admin/support/plans/PlanPageClient.tsx` | Two-action states render secondary/ghost left + primary right in a flex row | | | |
+| AC-FN-4 | CTA layout rule: 3+ CTAs in menu | Code review: `app/admin/support/plans/PlanPageClient.tsx` | Three-or-more-action states render all actions inside a `DropdownMenu` | | | |
+| AC-FN-5 | No slug checks in PlanPageClient | `grep -n "plan\.slug" app/admin/support/plans/PlanPageClient.tsx` | 0 results | | | |
 | AC-FN-6 | Shim NONE state passes actions through | Code review: `page.tsx` `hydrateFromLicense` | NONE-state plans return non-empty `state.actions` from scaffold data | | | |
 | AC-FN-7 | Shim TRIAL_EXPIRED produces correct shape | Code review: `page.tsx` `hydrateFromLicense` | Returns trial-days pool + `[extend-trial, end-trial]` actions | | | |
 

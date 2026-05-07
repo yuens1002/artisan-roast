@@ -13,8 +13,8 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Fix applied to:**
 
 - `.claude/skills/release/SKILL.md` — Step A.5 replaced with a hard STOP instruction: "report that the branch is pushed, wait for explicit user go-ahead before running `gh pr create`." The `--docs-only` path received the same change.
-- `memory/feedback_no_pr_without_instruction.md` (new) — Feedback memory capturing the rule: never run `gh pr create` autonomously; stop after push and wait.
-- `memory/MEMORY.md` — Pointer added to the new feedback file.
+- `~/.claude/projects/.../memory/feedback_no_pr_without_instruction.md` (new) — Feedback memory capturing the rule: never run `gh pr create` autonomously; stop after push and wait. Lives in Claude's user-level memory store (outside this repo).
+- `~/.claude/projects/.../memory/MEMORY.md` — Pointer added to the new feedback file. Also in user-level memory store.
 
 **Prevented by:** Release skill now has an explicit stop gate at Step A.5. Memory file captures the rule for sessions where the release skill isn't the context — any standalone `gh pr create` call should also pause first.
 
