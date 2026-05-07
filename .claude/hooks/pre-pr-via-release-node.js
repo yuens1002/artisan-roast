@@ -95,6 +95,24 @@ function main(input) {
     process.exit(0);
   }
 
+  // Worktree support: if `--head <branch>` is specified (worktree PR), check
+  // that branch's latest commit instead. The project dir is always the main
+  // checkout but the PR branch may live in a worktree with its own HEAD.
+  const headMatch = command.match(/--head\s+(\S+)/);
+  if (headMatch) {
+    try {
+      const headBranchSubject = exec(
+        `git log -1 --format=%s ${headMatch[1]}`,
+        projectDir
+      );
+      if (RELEASE_FINGERPRINT_RE.test(headBranchSubject)) {
+        process.exit(0);
+      }
+    } catch {
+      // Branch not reachable from projectDir — fall through to deny
+    }
+  }
+
   deny(
     "BLOCKED: `gh pr create` is gated to the `/release` flow.\n\n" +
       `The latest commit on this branch is:\n  ${lastSubject}\n\n` +
