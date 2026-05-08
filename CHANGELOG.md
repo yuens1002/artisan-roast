@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.106.2 - 2026-05-07
+
+### Changed
+
+- **Trial cancellation wiring**: `submitCancellation` no-card variant now calls the hosted platform cancel endpoint instead of logging; adds `docs/features/hosting-extension/trial-cancellation.md`
+
 ## 0.106.1 - 2026-05-07
 
 ### Fixed
