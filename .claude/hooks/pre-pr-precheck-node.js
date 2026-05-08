@@ -57,7 +57,11 @@ function main(input) {
   // Cross-repo skip: precheck stamps are ecomm-specific. If `--repo owner/name`
   // targets a different repo, the gate does not apply — each repo enforces its
   // own quality gates via its own hooks. Fail open if we can't verify.
-  const repoFlagMatch = command.match(/--repo\s+([\w.-]+\/[\w.-]+)/);
+  // Scope to the gh pr create invocation to avoid false matches from --repo
+  // flags belonging to other commands in the same compound line.
+  const prCreateIdx = command.search(/(?:^|&&\s*|;\s*)gh\s+pr\s+create/i);
+  const commandAfterCreate = prCreateIdx >= 0 ? command.slice(prCreateIdx) : command;
+  const repoFlagMatch = commandAfterCreate.match(/--repo[\s=]+([\w.-]+\/[\w.-]+)/);
   if (repoFlagMatch) {
     const targetRepo = repoFlagMatch[1].toLowerCase();
     try {

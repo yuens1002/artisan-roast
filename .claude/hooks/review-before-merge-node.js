@@ -97,7 +97,11 @@ function main(input) {
   // here — each repo enforces its own review gate via its own hooks.
   // Fail open: if we can't determine the current repo, allow rather than
   // blocking with a misleading message.
-  const repoFlagMatch = command.match(/--repo\s+([\w.-]+\/[\w.-]+)/);
+  // Scope to the gh pr merge invocation to avoid false matches from --repo
+  // flags belonging to other commands in the same compound line.
+  const prMergeIdx = command.search(/(?:^|[\n;&|(])\s*gh\s+pr\s+merge\b/i);
+  const commandAfterMerge = prMergeIdx >= 0 ? command.slice(prMergeIdx) : command;
+  const repoFlagMatch = commandAfterMerge.match(/--repo[\s=]+([\w.-]+\/[\w.-]+)/);
   if (repoFlagMatch) {
     const targetRepo = repoFlagMatch[1].toLowerCase();
     try {
