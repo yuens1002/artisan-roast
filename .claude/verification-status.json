@@ -387,6 +387,14 @@
       "acs_doc": "docs/features/provider-plan-sdk-alignment/session-3/ACs.md",
       "notes": "12/12 ACs verified. All 6 UI screenshots pass (ps-none, ps-active, ps-inactive, community-addons, trial-active-no-card, trial-expired). AC-UI-4 note: 3-dot menu visible on community-addons because SELF_HOSTED_FREE_WITH_ADDONS has a view-terms action — correct component behavior, AC description was written before that action existed. AC-FN-1 note: 3 plan.slug references remain (checkout arg, React key, URL path) — none are card-type discriminators. Precheck 0 errors, 1311 tests pass."
     },
+    "fix/plan-card-ui": {
+      "status": "implementing",
+      "acs_passed": 0,
+      "acs_total": 8,
+      "tasks": [],
+      "acs_doc": "docs/features/plan-card-ui/ACs.md",
+      "notes": "Store rendering fixes: 3-dot menu to header, UsageBar icon+metric, CTA row layout, iconAfter/iconBefore on all CTA buttons, secondary action slot from state.actions. Platform data fixes landed in artisan-roast-platform-wt commit ab8932d."
+    },
     "feat/admin-stripe-payments": {
       "status": "verified",
       "acs_passed": 25,
