@@ -111,10 +111,8 @@ interface CancelTrialResult {
  * Submit a trial cancellation with a captured reason.
  *
  * Variants:
- * - "no-card" — UI mock for v1; the upstream cancel endpoint is not yet
- *   shipped. Returns success without persisting. The wiring is identical
- *   to the card-added variant; only the upstream destination changes when
- *   the endpoint becomes available.
+ * - "no-card" — calls the hosted platform cancel endpoint. Sets trial
+ *   status to CANCELLED and queues deprovisioning (≤1hr cron cycle).
  * - "card-added" — calls the upstream billing portal endpoint and returns
  *   the Stripe Portal URL. The customer completes cancellation through
  *   Stripe Portal in a new tab.
@@ -130,26 +128,37 @@ export async function submitCancellation(
   }
 
   if (parsed.data.variant === "no-card") {
-    const trialId = process.env.HOSTED_TRIAL_ID;
-    const res = await fetch(
-      `${PLATFORM_API_URL}/api/trial/hosted/${trialId}/cancel`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reason: parsed.data.reason,
-          otherText: parsed.data.otherText,
-        }),
-      }
-    );
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return {
-        success: false,
-        error: (data as { error?: string }).error ?? "cancel_failed",
-      };
+    if (!PLATFORM_API_URL) {
+      return { success: false, error: "Hosting service not configured" };
     }
-    return { success: true };
+    const trialId = process.env.HOSTED_TRIAL_ID;
+    if (!trialId) {
+      return { success: false, error: "Trial ID not configured" };
+    }
+    try {
+      const res = await fetch(
+        `${PLATFORM_API_URL}/api/trial/hosted/${trialId}/cancel`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reason: parsed.data.reason,
+            otherText: parsed.data.otherText,
+          }),
+          signal: AbortSignal.timeout(10_000),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return {
+          success: false,
+          error: (data as { error?: string }).error ?? "cancel_failed",
+        };
+      }
+      return { success: true };
+    } catch {
+      return { success: false, error: "Could not reach the hosting service" };
+    }
   }
 
   // Card-added variant: fetch a Stripe Portal session URL.
