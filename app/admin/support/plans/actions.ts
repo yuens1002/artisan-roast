@@ -129,13 +129,26 @@ export async function submitCancellation(
     return { success: false, error: "Invalid cancellation request" };
   }
 
-  // No-card variant: upstream cancel endpoint not yet shipped. Log the reason
-  // so feedback isn't silently lost — replace with upstream call when it lands.
   if (parsed.data.variant === "no-card") {
-    console.info("trial:cancel:no-card", {
-      reason: parsed.data.reason,
-      otherText: parsed.data.otherText,
-    });
+    const trialId = process.env.HOSTED_TRIAL_ID;
+    const res = await fetch(
+      `${PLATFORM_API_URL}/api/trial/hosted/${trialId}/cancel`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reason: parsed.data.reason,
+          otherText: parsed.data.otherText,
+        }),
+      }
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return {
+        success: false,
+        error: (data as { error?: string }).error ?? "cancel_failed",
+      };
+    }
     return { success: true };
   }
 
