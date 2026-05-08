@@ -11,6 +11,7 @@
 import puppeteer from "puppeteer";
 import * as fs from "fs";
 import * as path from "path";
+import { SCENARIOS as SDK_SCENARIOS } from "artisan-roast-sdk/plans/scaffolds";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@artisanroast.com";
@@ -54,6 +55,16 @@ async function waitForServer(url: string, retries = 20): Promise<void> {
 }
 
 async function main() {
+  // Fail fast if any scenario key is not in the SDK — prevents silent
+  // wrong-image generation when a scenario is renamed or removed.
+  const unknownKeys = SCENARIOS.filter(({ key }) => !(key in SDK_SCENARIOS));
+  if (unknownKeys.length > 0) {
+    console.error(
+      `Unknown scenario keys (not in SDK SCENARIOS): ${unknownKeys.map((s) => s.key).join(", ")}`
+    );
+    process.exit(1);
+  }
+
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   await waitForServer(BASE_URL);

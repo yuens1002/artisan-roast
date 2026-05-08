@@ -24,7 +24,7 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require("path");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { execSync } = require("child_process");
+const { execSync, execFileSync } = require("child_process");
 
 // Matches the canonical `/release` HEAD commit fingerprints. Normal releases
 // create a `bump version to X.Y.Z` commit; `/release --docs-only` creates a
@@ -98,13 +98,24 @@ function main(input) {
   // Worktree support: if `--head <branch>` is specified (worktree PR), check
   // that branch's latest commit instead. The project dir is always the main
   // checkout but the PR branch may live in a worktree with its own HEAD.
-  const headMatch = command.match(/--head\s+(\S+)/);
+  //
+  // Match `--head` only within the `gh pr create` invocation — find the index
+  // of `gh pr create` in the command and search for `--head` only after it, so
+  // an unrelated `--head` flag in an earlier compound command can't bypass the gate.
+  //
+  // Use execFileSync (not string interpolation) to avoid command injection from
+  // a crafted branch name containing shell metacharacters.
+  const prCreateIndex = command.search(/(?:^|[\n;&|(])\s*gh\s+pr\s+create\b/i);
+  const commandAfterCreate = prCreateIndex >= 0 ? command.slice(prCreateIndex) : "";
+  const headMatch = commandAfterCreate.match(/--head\s+(\S+)/);
   if (headMatch) {
+    const headRef = headMatch[1];
     try {
-      const headBranchSubject = exec(
-        `git log -1 --format=%s ${headMatch[1]}`,
-        projectDir
-      );
+      const headBranchSubject = execFileSync(
+        "git",
+        ["log", "-1", "--format=%s", headRef],
+        { cwd: projectDir, encoding: "utf8" }
+      ).trim();
       if (RELEASE_FINGERPRINT_RE.test(headBranchSubject)) {
         process.exit(0);
       }
