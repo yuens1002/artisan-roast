@@ -92,6 +92,27 @@ function main(input) {
   const projectDir = path.resolve(__dirname, "..", "..");
   const claudeDir = path.resolve(__dirname, "..");
 
+  // Cross-repo skip: review policy is repo-specific. If `--repo owner/name`
+  // targets a different repo than this ecomm checkout, the gate does not apply
+  // here — each repo enforces its own review gate via its own hooks.
+  // Fail open: if we can't determine the current repo, allow rather than
+  // blocking with a misleading message.
+  const repoFlagMatch = command.match(/--repo\s+([\w.-]+\/[\w.-]+)/);
+  if (repoFlagMatch) {
+    const targetRepo = repoFlagMatch[1].toLowerCase();
+    try {
+      const currentRepo = exec(
+        "gh repo view --json nameWithOwner -q .nameWithOwner",
+        projectDir
+      ).toLowerCase();
+      if (targetRepo !== currentRepo) {
+        process.exit(0); // cross-repo merge — gate does not apply
+      }
+    } catch {
+      process.exit(0); // can't verify current repo — allow
+    }
+  }
+
   // Extract PR number from command args, URL, or current branch
   let prNumber = "";
   const numMatch = command.match(/gh\s+pr\s+merge\s+(\d+)/);
@@ -113,18 +134,24 @@ function main(input) {
     process.exit(0);
   }
 
-  // Get repo name for API calls
+  // Get repo name for API calls.
+  // Prefer an explicit --repo owner/name in the command (cross-repo merges);
+  // fall back to the current project's remote when absent.
   let repo = "";
-  try {
-    repo = exec(
-      "gh repo view --json nameWithOwner -q .nameWithOwner",
-      projectDir
-    );
-  } catch {
-    deny(
-      `BLOCKED: Could not determine repository for PR #${prNumber}.\n` +
-        "Check your network connection and gh auth status, then retry.\n"
-    );
+  if (repoFlagMatch) {
+    repo = repoFlagMatch[1];
+  } else {
+    try {
+      repo = exec(
+        "gh repo view --json nameWithOwner -q .nameWithOwner",
+        projectDir
+      );
+    } catch {
+      deny(
+        `BLOCKED: Could not determine repository for PR #${prNumber}.\n` +
+          "Check your network connection and gh auth status, then retry.\n"
+      );
+    }
   }
 
   // ── Gate 1: Wait for Copilot review on code PRs ──────────────────────

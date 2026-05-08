@@ -134,22 +134,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if [ -f .claude/hooks/review-before-merge-node.js ]; then node .claude/hooks/review-before-merge-node.js; else exit 0; fi",
+            "command": "ECOMM_HOOKS=\"$(git -C \"$(dirname \"$(git -C \"$CLAUDE_PROJECT_DIR\" rev-parse --git-dir 2>/dev/null)\" 2>/dev/null)\" rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$CLAUDE_PROJECT_DIR/.claude/hooks/review-before-merge-node.js\"; if [ -f \"$HOOK\" ]; then node \"$HOOK\"; else exit 0; fi",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "if [ -f .claude/hooks/pre-pr-precheck-node.js ]; then node .claude/hooks/pre-pr-precheck-node.js; else exit 0; fi",
+            "command": "HOOK=\"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-pr-precheck-node.js\"; if [ -f \"$HOOK\" ]; then node \"$HOOK\"; else exit 0; fi",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "if [ -f .claude/hooks/pre-pr-via-release-node.js ]; then node .claude/hooks/pre-pr-via-release-node.js; else exit 0; fi",
+            "command": "HOOK=\"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-pr-via-release-node.js\"; if [ -f \"$HOOK\" ]; then node \"$HOOK\"; else exit 0; fi",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "if [ -f .claude/hooks/pre-migrate-backup-node.js ]; then node .claude/hooks/pre-migrate-backup-node.js; else exit 0; fi",
+            "command": "HOOK=\"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-migrate-backup-node.js\"; if [ -f \"$HOOK\" ]; then node \"$HOOK\"; else exit 0; fi",
             "timeout": 10
           }
         ]

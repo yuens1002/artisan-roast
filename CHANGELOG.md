@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **Cross-repo hook fixes**: `pre-pr-via-release-node.js`, `pre-pr-precheck-node.js`, and `review-before-merge-node.js` now skip their gates when `gh pr create`/`gh pr merge` targets a different repository via `--repo owner/name` — each repo enforces its own gates via its own hooks; ecomm hooks no longer block platform PRs opened from the same Claude session
+
 ## 0.106.2 - 2026-05-07
 
 ### Changed

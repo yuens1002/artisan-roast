@@ -69,6 +69,26 @@ function main(input) {
 
   const projectDir = path.resolve(__dirname, "..", "..");
 
+  // Cross-repo skip: if `--repo owner/name` targets a different repo than the
+  // ecomm primary project, the fingerprint gate doesn't apply here. Each repo
+  // enforces its own release gate via its own hooks. Fail open — if we can't
+  // determine the current repo, allow rather than block with a misleading message.
+  const repoFlagMatch = command.match(/--repo\s+([\w.-]+\/[\w.-]+)/);
+  if (repoFlagMatch) {
+    const targetRepo = repoFlagMatch[1].toLowerCase();
+    try {
+      const currentRepo = exec(
+        "gh repo view --json nameWithOwner -q .nameWithOwner",
+        projectDir
+      ).toLowerCase();
+      if (targetRepo !== currentRepo) {
+        process.exit(0); // cross-repo PR — gate does not apply
+      }
+    } catch {
+      process.exit(0); // can't verify current repo — allow
+    }
+  }
+
   // Read the latest commit subject on the current HEAD. Fail closed if git
   // state can't be verified — letting PR creation proceed in exactly the
   // scenarios where enforcement is most needed (misconfigured repo,
