@@ -111,10 +111,8 @@ interface CancelTrialResult {
  * Submit a trial cancellation with a captured reason.
  *
  * Variants:
- * - "no-card" — UI mock for v1; the upstream cancel endpoint is not yet
- *   shipped. Returns success without persisting. The wiring is identical
- *   to the card-added variant; only the upstream destination changes when
- *   the endpoint becomes available.
+ * - "no-card" — calls the hosted platform cancel endpoint. Sets trial
+ *   status to CANCELLED and queues deprovisioning (≤1hr cron cycle).
  * - "card-added" — calls the upstream billing portal endpoint and returns
  *   the Stripe Portal URL. The customer completes cancellation through
  *   Stripe Portal in a new tab.
@@ -129,14 +127,45 @@ export async function submitCancellation(
     return { success: false, error: "Invalid cancellation request" };
   }
 
-  // No-card variant: upstream cancel endpoint not yet shipped. Log the reason
-  // so feedback isn't silently lost — replace with upstream call when it lands.
   if (parsed.data.variant === "no-card") {
-    console.info("trial:cancel:no-card", {
-      reason: parsed.data.reason,
-      otherText: parsed.data.otherText,
-    });
-    return { success: true };
+    if (!PLATFORM_API_URL) {
+      return { success: false, error: "Hosting service not configured" };
+    }
+    const trialId = process.env.HOSTED_TRIAL_ID;
+    if (!trialId) {
+      return { success: false, error: "Trial ID not configured" };
+    }
+    try {
+      const res = await fetch(
+        `${PLATFORM_API_URL}/api/trial/hosted/${trialId}/cancel`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reason: parsed.data.reason,
+            otherText: parsed.data.otherText,
+          }),
+          signal: AbortSignal.timeout(10_000),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const code = (data as { error?: string }).error;
+        const userMessage: Record<string, string> = {
+          already_cancelled: "Your trial has already been cancelled.",
+          not_cancellable: "Your trial cannot be cancelled at this time.",
+          use_stripe_portal: "Please cancel through your billing portal.",
+          not_found: "Trial not found — please contact support.",
+        };
+        return {
+          success: false,
+          error: userMessage[code ?? ""] ?? "Something went wrong — please try again.",
+        };
+      }
+      return { success: true };
+    } catch {
+      return { success: false, error: "Could not reach the hosting service" };
+    }
   }
 
   // Card-added variant: fetch a Stripe Portal session URL.

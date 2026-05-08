@@ -1,9 +1,6 @@
 # Hosting Extension — Trial UI · Plan
 
 **Branch:** `feat/hosted-store-s2`
-**Base:** `main`
-**Worktree:** `c:\Users\yuens\dev\hosted-store-s2`
-**ACs:** [`docs/plans/hosting-extension-trial-ui-ACs.md`](../../plans/hosting-extension-trial-ui-ACs.md)
 **Architecture reference:** [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 
 ---
