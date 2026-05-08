@@ -13,8 +13,8 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Fix applied to:**
 
 - `.claude/skills/release/SKILL.md` — Step A.5 replaced with a hard STOP instruction: "report that the branch is pushed, wait for explicit user go-ahead before running `gh pr create`." The `--docs-only` path received the same change.
-- `memory/feedback_no_pr_without_instruction.md` (new) — Feedback memory capturing the rule: never run `gh pr create` autonomously; stop after push and wait.
-- `memory/MEMORY.md` — Pointer added to the new feedback file.
+- `~/.claude/projects/.../memory/feedback_no_pr_without_instruction.md` (new) — Feedback memory capturing the rule: never run `gh pr create` autonomously; stop after push and wait. Lives in Claude's user-level memory store (outside this repo).
+- `~/.claude/projects/.../memory/MEMORY.md` — Pointer added to the new feedback file. Also in user-level memory store.
 
 **Prevented by:** Release skill now has an explicit stop gate at Step A.5. Memory file captures the rule for sessions where the release skill isn't the context — any standalone `gh pr create` call should also pause first.
 
@@ -40,10 +40,12 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Gap:** On session resume on a `pending` branch (`feat/phase2-voice-cadence`), the main thread spawned a verification sub-agent without the mandatory first line `Run the AC verification protocol from .claude/commands/ac-verify.md.`. The sub-agent improvised its own conventions: screenshots saved to `verification-screenshots/phase-2-iter-2/` instead of `.screenshots/smart-search-verify/`, and Puppeteer script written to `scripts/verify-phase2-iter2.mjs` instead of the scratchpad. Both violations required manual cleanup. The QC process was also skipped — prose notes written at the bottom of the ACs doc instead of filling individual QC cells. This pattern recurred across multiple sessions.
 
 **Root cause:** Two gaps:
+
 1. The session-start hook for `pending`/`partial` states only said "Run /verify-workflow or /ac-verify before declaring done" — vague enough that the main thread interpreted it as permission to spawn any verification sub-agent, not necessarily one that references the skill file.
 2. The exact sub-agent spawn template (with the mandatory first line) was buried inside `verify-workflow.md` with no special prominence — easy to miss when a session resumes mid-workflow without full context.
 
 **Fix applied to:**
+
 - `.claude/hooks/session-start-loop-node.js` — `pending` and `partial` cases now inject the exact mandatory first line, the sub-agent spawn template (copy-verbatim), and a specific warning referencing the 2026-04-12 incident.
 - `.claude/commands/verify-workflow.md` — Added `⚠️ CRITICAL` callout block directly above the sub-agent spawn template making the first-line requirement impossible to miss.
 
@@ -56,11 +58,13 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Gap:** Verification sub-agent (spawned for iter-3 ACs) saved Puppeteer screenshots to `docs/features/smart-search-ux/iter-3-voice-and-conversation/screenshots/` — a non-gitignored directory inside the project. Also accidentally modified `SiteHeader.tsx` and `layout.tsx` (reverting intentional layout changes) and created stray plan docs (`chat-lifecycle-ACs.md`, `chat-lifecycle-plan.md`) that were never requested.
 
 **Root cause:** Three gaps in the ac-verify skill:
+
 1. Rule 1 ("read, don't write") existed but wasn't strong enough — sub-agent still wrote to source files and created docs
 2. No explicit rule specified WHERE screenshots must be saved — sub-agent chose a seemingly logical path inside the feature directory
 3. The Puppeteer template showed `.screenshots/` in the `OUTPUT_DIR` but this wasn't marked as mandatory
 
 **Fix applied to:**
+
 - `.claude/commands/ac-verify.md` — Rule 1 rewritten as "Read, don't write — ever" with explicit prohibition on editing `.tsx`, `.ts`, `.md`, and any project file; added Rule 5 mandating `.screenshots/{feature-name}/` as the ONLY valid screenshot directory; updated Puppeteer template `OUTPUT_DIR` with mandatory comment
 - `.gitignore` — Added `**/screenshots/` pattern to gitignore any `screenshots/` subdirectory anywhere in the project tree, as a safety net against future deviations
 
@@ -75,6 +79,7 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Root cause:** No rule in the retro protocol required updating the workflow doc as part of the fix. "Update the runbook" was treated as a follow-up, not as part of completing the fix.
 
 **Fix applied to:**
+
 - `scripts/qa-agent.js` — added `RUN_ONLY` and `STOP_AFTER` env var filters for targeted local testing
 - `scripts/qa-reset.js` — new wrapper script; reads `QA_DATABASE_URL` from `.env.local`, auto-extracts Neon endpoint ID, calls `qa-teardown.js`
 - `package.json` — added `qa:reset` npm script
@@ -90,11 +95,13 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Gap:** All 24 UI ACs on `feat/support-plans-restructure` were verified via code review only — no Puppeteer screenshots were taken during `/ac-verify`, despite the workflow being designed for screenshot-based UI verification.
 
 **Root cause:** Three enforcement gaps across three layers:
+
 1. QC validator (`qc-validator.js`) accepted code evidence (file:line refs) as valid for UI ACs — it had no awareness of the How column's verification method
 2. AC-verify skill (`SKILL.md`) categorized UI ACs by method but didn't enforce that screenshot-method ACs actually produce `.png` evidence
 3. Templates (`acs-template.md`, `plan-template.md`) didn't document which How methods require screenshots vs code-only evidence
 
 **Fix applied to:**
+
 - `docs/templates/acs-template.md` — Added How column method table with evidence requirements and 50% screenshot rule
 - `docs/templates/plan-template.md` — Added How column guidance in UI ACs section
 - `.claude/hooks/qc-validator.js` — Added How-column parsing (`parseACTables` returns `how` field), `classifyHowMethod()` function, evidence-to-method matching (Rule 4), 50% screenshot minimum (Rule 6)
@@ -111,10 +118,12 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Gap:** shadcn MCP commands (`/rui`, `/iui`, `/cui`, `/ftc`) generated code using default shadcn patterns (Card wrappers, gap-6, full-width buttons) that conflicted with established project conventions. Every session required 10+ corrections for the same issues: flat cards vs Card wrappers, gap-4 vs gap-8, icon muting, button alignment, desktop max-width.
 
 **Root cause:** Two gaps:
+
 1. shadcn commands (`.claude/commands/*.md`) were bare wrappers with no project context — they called the MCP and blindly followed output
 2. No UX flow review in the plan template — post-action behavior (auto-refresh, user response paths) was discovered late during implementation
 
 **Fix applied to:**
+
 - `.claude/commands/rui.md` — Added project code conventions block (flat cards, gap-4, max-w-[72ch], icon rules, button alignment, config-driven state)
 - `.claude/commands/iui.md` — Same conventions block
 - `.claude/commands/cui.md` — Same conventions block
@@ -134,6 +143,7 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Root cause:** UI patterns were stored in memory (`ui_patterns_admin.md`) which is a linked file from `MEMORY.md`. Memory files are only read when the agent decides to check them — they're not in the always-loaded context. CLAUDE.md is the only file guaranteed to be in context every session.
 
 **Fix applied to:**
+
 - `CLAUDE.md` — Added "Admin UI conventions (always apply)" section under Code Quality with the 9 most critical rules (flat cards, gap-4, max-w-[72ch], spacing, CTAs, icons, clickable cards, auto-refresh, config-driven state)
 - Also added `/ui-guide` reminder to the shadcn skills line
 
@@ -148,6 +158,7 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Root cause:** The Edit tool uses string matching. When the agent works from a cached/stale version of the file (read earlier before change A was applied), the `old_string` may include pre-change-A content. The edit succeeds but overwrites change A with the stale version.
 
 **Fix applied to:**
+
 - `CLAUDE.md` — Added "Re-read before editing" rule as the first item under Must-have: if a file was modified earlier in the session (by agent or linter), always re-read before the next edit. Never edit from stale context.
 
 **Prevented by:** The rule is in CLAUDE.md (always loaded) and positioned as the first code quality rule for visibility. The agent must re-read any previously-modified file before editing it again.
@@ -161,6 +172,7 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Root cause:** The navigation system docs (`docs/navigation/`) were not consulted before implementing the fix. The route registry and `useHasActiveDescendant` hook exist specifically to handle the `/admin` root-prefix edge case — but the fixer didn't know this and wrote a simpler (broken) alternative. The fix also didn't read `AdminTopNav.tsx` in context of the full navigation system.
 
 **Fix applied to:**
+
 - `lib/config/admin-nav.ts` — Added `routeId?: string` to `NavItem` type; wired `routeId` to route registry IDs for all 7 `adminNavConfig` items (e.g. `"admin.dashboard"`, `"admin.settings"`)
 - `app/admin/_components/dashboard/AdminTopNav.tsx` — `NavDropdown` now uses `useHasActiveDescendant(item.routeId)` when `routeId` is present; falls back to pathname matching only for synthetic overflow "...More" item (no registry entry)
 - `claude.md` — Added `docs/navigation/` to Critical Files section with explicit "Read before any admin nav change" instruction and warning about the Dashboard regression
@@ -176,6 +188,7 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Root cause:** No rule distinguished between user *directives* (implement this) and user *observations* (I notice this problem). The agent pattern-matched "problem described → implement fix" without considering that the reviewer may be surfacing an issue for discussion, not issuing a work order.
 
 **Fix applied to:**
+
 - `memory/feedback_reviewer_observation_cadence.md` (new) — Captures the rule and the why: user states observations immediately by habit; agent must log, explain causes, hold for direction before writing code.
 - `memory/MEMORY.md` — Pointer added to the new feedback file.
 
@@ -190,6 +203,7 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Root cause:** No step in the release workflow required updating ROADMAP.md. CHANGELOG.md and package.json had enforcement (they're part of the release checklist), but ROADMAP.md was convention-only with no enforced touchpoint.
 
 **Fix applied to:**
+
 - `.claude/commands/release.md` — Added ROADMAP.md update as Step 3 in the Pre-PR Checklist (Scenario A) and as Step 1 in Scenario B (tag creation). Both scenarios now explicitly require updating "Now", moving shipped items, and confirming Next is accurate before tagging.
 - `docs/ROADMAP.md` — Brought fully current: Now = v0.100.7, Shipped table covers v0.99.x–v0.100.7, Next = Iter 4 conversation context, Backlog = Phase B personalization. Convention section now includes "On every release: update the Now section, move shipped items to Shipped table."
 
@@ -202,10 +216,12 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 **Gap:** During the iter-7 review walkthrough, the user stated "clicking on a chip does not show up as a user response." The agent immediately read source files and implemented a two-file code fix (`ChatPanel.tsx` + `chat-panel-store.ts`). The user had to say "we are getting ahead of ourselves" and then "pls do not fix my observation" before the changes were reverted. This happened after an existing feedback memory (`feedback_reviewer_observation_cadence.md`) already captured this rule — the memory file was not enough.
 
 **Root cause:** Two gaps:
+
 1. The feedback memory rule required signal words to trigger ("I notice X," "this seems wrong"). A plain behavioral statement — "clicking on a chip does not show up as a user response" — didn't pattern-match to "observation" because it sounds like a factual report, not a review comment.
 2. The rule existed only in a memory file (loaded on demand) but not in CLAUDE.md (always loaded). Memory files are easy to act against when a plausible action is available.
 
 **Fix applied to:**
+
 - `CLAUDE.md` — Added rule #11: "During review: never implement ad-hoc. ANY statement about current behavior is an observation, not a directive. Log → explain → hold."
 - `memory/feedback_reviewer_observation_cadence.md` — Strengthened: explicit that the trigger is ANY behavioral statement, no signal words required. Added the 2026-04-22 incident as a named example. Added "do not start reading implementation files to prepare a fix."
 
