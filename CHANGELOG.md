@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+## 0.107.0 - 2026-05-08
+
 ### Changed
 
 - **Cross-repo hook fixes**: `pre-pr-via-release-node.js`, `pre-pr-precheck-node.js`, and `review-before-merge-node.js` now skip their gates when `gh pr create`/`gh pr merge` targets a different repository via `--repo owner/name` — each repo enforces its own gates via its own hooks; ecomm hooks no longer block platform PRs opened from the same Claude session
+- **SDK pinned to v0.4.0**: `artisan-roast-sdk` updated from branch pointer to `v0.4.0` release tag
+- **Plans page — live resolved endpoint**: `GET /api/plans/resolved` replaces the local `hydrateFromLicense` shim; Bearer `LICENSE_KEY` auth, 60s in-process cache; falls back to catalog + NONE state when `LICENSE_KEY` absent
+- **TrialCard + ExpiredCard — SDK v0.4.0 pool shape**: `state.progress` removed; progress bar now reads from `state.pools.find("trial-days")` (`used`/`limit`/`countLabel`) per SDK v0.4.0 contract
 
 ## 0.106.2 - 2026-05-07
 
