@@ -53,7 +53,7 @@ The `card-added` variant is unchanged — it still opens a Stripe Portal session
 { "reason": "too-soon" | "missing-features" | "too-expensive" | "switching" | "other", "otherText"?: string }
 ```
 
-**Responses:**
+**Responses** (upstream endpoint — the store action wraps these into `CancelTrialResult { success, error? }`):
 
 | Status | Body | Meaning |
 |--------|------|---------|

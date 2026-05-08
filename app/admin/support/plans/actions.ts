@@ -150,9 +150,16 @@ export async function submitCancellation(
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        const code = (data as { error?: string }).error;
+        const userMessage: Record<string, string> = {
+          already_cancelled: "Your trial has already been cancelled.",
+          not_cancellable: "Your trial cannot be cancelled at this time.",
+          use_stripe_portal: "Please cancel through your billing portal.",
+          not_found: "Trial not found — please contact support.",
+        };
         return {
           success: false,
-          error: (data as { error?: string }).error ?? "cancel_failed",
+          error: userMessage[code ?? ""] ?? "Something went wrong — please try again.",
         };
       }
       return { success: true };
