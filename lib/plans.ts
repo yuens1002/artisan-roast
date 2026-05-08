@@ -15,6 +15,8 @@ const PLATFORM_URL = (
   process.env.PLATFORM_URL || "https://manage.artisanroast.app"
 ).replace(/\/+$/, "");
 
+const RESOLVED_PLANS_TTL = 60 * 1000; // 60 seconds
+
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 // ---------------------------------------------------------------------------
@@ -70,6 +72,50 @@ export async function fetchPlans(): Promise<Plan[]> {
 /** Clear plans cache. */
 export function invalidatePlansCache(): void {
   cached = null;
+}
+
+// ---------------------------------------------------------------------------
+// Resolved plans (authenticated, per-license-key, 60s TTL)
+// ---------------------------------------------------------------------------
+
+let resolvedCache: { data: HydratedPlan[]; expiresAt: number } | null = null;
+
+/**
+ * Fetch fully-hydrated plans from the platform for the current license key.
+ * Requires `LICENSE_KEY` env var. Cached 60s.
+ * Returns null when not configured (self-hosted stores without a license key).
+ */
+export async function getResolvedPlans(): Promise<HydratedPlan[] | null> {
+  const licenseKey = process.env.LICENSE_KEY;
+  if (!licenseKey) return null;
+
+  if (resolvedCache && Date.now() < resolvedCache.expiresAt) {
+    return resolvedCache.data;
+  }
+
+  try {
+    const response = await fetch(`${PLATFORM_URL}/api/plans/resolved`, {
+      headers: { Authorization: `Bearer ${licenseKey}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!response.ok) {
+      console.error("Resolved plans fetch failed:", response.status);
+      return null;
+    }
+
+    const json = (await response.json()) as { plans: HydratedPlan[] };
+    resolvedCache = { data: json.plans, expiresAt: Date.now() + RESOLVED_PLANS_TTL };
+    return json.plans;
+  } catch (error) {
+    console.error("Resolved plans fetch error:", error);
+    return null;
+  }
+}
+
+/** Clear resolved plans cache (call after license key changes). */
+export function invalidateResolvedPlansCache(): void {
+  resolvedCache = null;
 }
 
 /**

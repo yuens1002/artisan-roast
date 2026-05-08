@@ -573,10 +573,11 @@ function TrialCard({
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
-  // progress.value = days remaining; bar shows consumed portion
+  // trial-days pool: used = consumed days, limit = total days; bar shows consumed portion
+  const trialDaysPool = state.pools?.find((p) => p.slug === "trial-days");
   const pct =
-    state.progress.total > 0
-      ? ((state.progress.total - state.progress.value) / state.progress.total) * 100
+    trialDaysPool && trialDaysPool.limit > 0
+      ? (trialDaysPool.used / trialDaysPool.limit) * 100
       : 0;
   const ghostActions = state.actions.filter((a) => a.variant === "ghost");
   const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
@@ -602,11 +603,11 @@ function TrialCard({
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{state.progress.label}</span>
+              <span className="font-medium">{trialDaysPool?.label ?? "Trial days"}</span>
             </div>
             <span className="tabular-nums text-muted-foreground">
-              {state.progress.value} / {state.progress.total}{" "}
-              {state.progress.countLabel}
+              {trialDaysPool ? trialDaysPool.limit - trialDaysPool.used : 0} / {trialDaysPool?.limit ?? 0}{" "}
+              {trialDaysPool?.countLabel ?? "days"}
             </span>
           </div>
           <Progress value={pct} className="h-2" />
@@ -683,9 +684,10 @@ function ExpiredCard({
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
+  const trialDaysPool = state.pools?.find((p) => p.slug === "trial-days");
   const pct =
-    state.progress.total > 0
-      ? ((state.progress.total - state.progress.value) / state.progress.total) * 100
+    trialDaysPool && trialDaysPool.limit > 0
+      ? (trialDaysPool.used / trialDaysPool.limit) * 100
       : 100;
   const ghostActions = state.actions.filter((a) => a.variant === "ghost");
   const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
@@ -711,11 +713,11 @@ function ExpiredCard({
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{state.progress.label}</span>
+              <span className="font-medium">{trialDaysPool?.label ?? "Trial days"}</span>
             </div>
             <span className="tabular-nums text-muted-foreground">
-              {state.progress.value} / {state.progress.total}{" "}
-              {state.progress.countLabel}
+              {trialDaysPool ? trialDaysPool.limit - trialDaysPool.used : 0} / {trialDaysPool?.limit ?? 0}{" "}
+              {trialDaysPool?.countLabel ?? "days"}
             </span>
           </div>
           <Progress value={pct} className="h-2" />
