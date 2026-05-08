@@ -11,6 +11,7 @@
 import puppeteer from "puppeteer";
 import * as fs from "fs";
 import * as path from "path";
+import { SCENARIOS as SDK_SCENARIOS } from "artisan-roast-sdk/plans/scaffolds";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@artisanroast.com";
@@ -18,16 +19,26 @@ const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "ivcF8ZV3FnGaBJ&#8j";
 const OUT_DIR = path.join(
   process.cwd(),
   ".screenshots",
-  "provider-plan-sdk-alignment-session3"
+  process.env.SCREENSHOT_DIR ?? "plan-scenarios-all"
 );
 
+// All SDK scenarios — covers every plan/state combination
 const SCENARIOS = [
-  { key: "PRIORITY_SUPPORT_NONE", file: "ps-none.png" },
-  { key: "PRIORITY_SUPPORT_ACTIVE", file: "ps-active.png" },
-  { key: "PRIORITY_SUPPORT_INACTIVE", file: "ps-inactive.png" },
-  { key: "SELF_HOSTED_FREE_WITH_ADDONS", file: "community-addons.png" },
-  { key: "TRIAL_ACTIVE_NO_CARD", file: "trial-active-no-card.png" },
-  { key: "TRIAL_EXPIRED", file: "trial-expired.png" },
+  // Self-hosted community plans
+  { key: "SELF_HOSTED_FREE",             file: "01-community-none.png" },
+  { key: "SELF_HOSTED_FREE_WITH_ADDONS", file: "02-community-addons.png" },
+  // Priority Support states
+  { key: "PRIORITY_SUPPORT_NONE",        file: "03-ps-none.png" },
+  { key: "PRIORITY_SUPPORT_ACTIVE",      file: "04-ps-active.png" },
+  { key: "PRIORITY_SUPPORT_INACTIVE",    file: "05-ps-inactive.png" },
+  // Trial states
+  { key: "TRIAL_ACTIVE_NO_CARD",         file: "06-trial-active-no-card.png" },
+  { key: "TRIAL_ACTIVE_CARD_ADDED",      file: "07-trial-active-card-added.png" },
+  { key: "TRIAL_EXPIRED",               file: "08-trial-expired.png" },
+  // Post-trial / converted states
+  { key: "CONVERTED",                   file: "09-converted.png" },
+  { key: "DIRECT_SUBSCRIBE",            file: "10-direct-subscribe.png" },
+  { key: "INACTIVE",                    file: "11-inactive.png" },
 ];
 
 async function waitForServer(url: string, retries = 20): Promise<void> {
@@ -44,6 +55,16 @@ async function waitForServer(url: string, retries = 20): Promise<void> {
 }
 
 async function main() {
+  // Fail fast if any scenario key is not in the SDK — prevents silent
+  // wrong-image generation when a scenario is renamed or removed.
+  const unknownKeys = SCENARIOS.filter(({ key }) => !(key in SDK_SCENARIOS));
+  if (unknownKeys.length > 0) {
+    console.error(
+      `Unknown scenario keys (not in SDK SCENARIOS): ${unknownKeys.map((s) => s.key).join(", ")}`
+    );
+    process.exit(1);
+  }
+
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   await waitForServer(BASE_URL);

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.106.1 - 2026-05-07
+
+### Fixed
+
+- **Pre-PR hook — worktree support**: `pre-pr-via-release-node.js` now checks the `--head <branch>` latest commit when the flag is present, allowing docs-only PRs opened from git worktrees to pass the release fingerprint gate
+
+### Changed
+
+- **Screenshot script**: `scripts/screenshot-plan-scenarios.ts` expanded to cover all SDK plan scenarios with numbered filenames and `SCREENSHOT_DIR` env override
+
 ## 0.106.0 - 2026-05-07
 
 ### Added
