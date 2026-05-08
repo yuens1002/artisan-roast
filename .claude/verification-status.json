@@ -388,12 +388,12 @@
       "notes": "12/12 ACs verified. All 6 UI screenshots pass (ps-none, ps-active, ps-inactive, community-addons, trial-active-no-card, trial-expired). AC-UI-4 note: 3-dot menu visible on community-addons because SELF_HOSTED_FREE_WITH_ADDONS has a view-terms action — correct component behavior, AC description was written before that action existed. AC-FN-1 note: 3 plan.slug references remain (checkout arg, React key, URL path) — none are card-type discriminators. Precheck 0 errors, 1311 tests pass."
     },
     "fix/plan-card-ui": {
-      "status": "implementing",
-      "acs_passed": 0,
-      "acs_total": 8,
+      "status": "verified",
+      "acs_passed": 11,
+      "acs_total": 11,
       "tasks": [],
       "acs_doc": "docs/features/plan-card-ui/ACs.md",
-      "notes": "Store rendering fixes: 3-dot menu to header, UsageBar icon+metric, CTA row layout, iconAfter/iconBefore on all CTA buttons, secondary action slot from state.actions. Platform data fixes landed in artisan-roast-platform-wt commit ab8932d."
+      "notes": "11/11 ACs verified. 8 UI (screenshots) + 2 FN (code review) + 3 REG (precheck 0 errors, 1318 tests, typecheck clean). PoolBar: icon from pool.icon via PlanBadgeIcon + metric {used}/{total} {countLabel}. ActiveCard: 3-dot moved to header (pool CTAs), bottom row = ghost left + primary right. TrialCard/ExpiredCard: state.progress replaced with state.pools[trial-days]. NoneCard/InactiveCard: hardcoded Link removed, payload-driven ghost-left + primary-right. page.tsx shim updated to emit pools[] instead of progress for TRIAL/EXPIRED states."
     },
     "feat/admin-stripe-payments": {
       "status": "verified",
