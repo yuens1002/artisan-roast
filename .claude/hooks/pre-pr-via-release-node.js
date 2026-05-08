@@ -69,6 +69,32 @@ function main(input) {
 
   const projectDir = path.resolve(__dirname, "..", "..");
 
+  // Scope all flag parsing to the `gh pr create` invocation — a `--repo` or
+  // `--head` belonging to an earlier/other command in a compound line should
+  // not influence this gate.
+  const prCreateIdx = command.search(/(?:^|[\n;&|(])\s*gh\s+pr\s+create\b/i);
+  const commandAfterCreate = prCreateIdx >= 0 ? command.slice(prCreateIdx) : command;
+
+  // Cross-repo skip: if `--repo owner/name` targets a different repo than the
+  // ecomm primary project, the fingerprint gate doesn't apply here. Each repo
+  // enforces its own release gate via its own hooks. Fail open — if we can't
+  // determine the current repo, allow rather than block with a misleading message.
+  const repoFlagMatch = commandAfterCreate.match(/--repo[\s=]+([\w.-]+\/[\w.-]+)/);
+  if (repoFlagMatch) {
+    const targetRepo = repoFlagMatch[1].toLowerCase();
+    try {
+      const currentRepo = exec(
+        "gh repo view --json nameWithOwner -q .nameWithOwner",
+        projectDir
+      ).toLowerCase();
+      if (targetRepo !== currentRepo) {
+        process.exit(0); // cross-repo PR — gate does not apply
+      }
+    } catch {
+      process.exit(0); // can't verify current repo — allow
+    }
+  }
+
   // Read the latest commit subject on the current HEAD. Fail closed if git
   // state can't be verified — letting PR creation proceed in exactly the
   // scenarios where enforcement is most needed (misconfigured repo,
@@ -98,15 +124,9 @@ function main(input) {
   // Worktree support: if `--head <branch>` is specified (worktree PR), check
   // that branch's latest commit instead. The project dir is always the main
   // checkout but the PR branch may live in a worktree with its own HEAD.
-  //
-  // Match `--head` only within the `gh pr create` invocation — find the index
-  // of `gh pr create` in the command and search for `--head` only after it, so
-  // an unrelated `--head` flag in an earlier compound command can't bypass the gate.
-  //
+  // commandAfterCreate is already scoped to the gh pr create invocation above.
   // Use execFileSync (not string interpolation) to avoid command injection from
   // a crafted branch name containing shell metacharacters.
-  const prCreateIndex = command.search(/(?:^|[\n;&|(])\s*gh\s+pr\s+create\b/i);
-  const commandAfterCreate = prCreateIndex >= 0 ? command.slice(prCreateIndex) : "";
   const headMatch = commandAfterCreate.match(/--head\s+(\S+)/);
   if (headMatch) {
     const headRef = headMatch[1];
