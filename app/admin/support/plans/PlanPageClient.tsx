@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { resolveIconComponent } from "@/components/shared/icons/DynamicIcon";
+import { IS_DEMO } from "@/lib/demo";
 import { Progress } from "@/components/ui/progress";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,7 @@ function PlanBadgeIcon({
 
 function formatPriceLabel(plan: HydratedPlan): string | null {
   if (!plan.saleLabel && !plan.saleEndsAt) return null;
+  if (plan.saleEndsAt && new Date(plan.saleEndsAt) <= new Date()) return null;
   const parts: string[] = [];
   if (plan.saleLabel) parts.push(plan.saleLabel);
   if (plan.saleEndsAt) {
@@ -107,6 +109,7 @@ interface PlanPageClientProps {
 
 export function PlanPageClient({ license, plans }: PlanPageClientProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [activeModal, setActiveModal] = useState<{
@@ -154,7 +157,13 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
       return;
     }
     if (action.url) {
-      window.open(action.url, "_blank", "noopener,noreferrer");
+      if (action.url.startsWith("/")) {
+        router.push(action.url);
+      } else if (IS_DEMO) {
+        handleSubscribe(plan.slug);
+      } else {
+        window.open(action.url, "_blank", "noopener,noreferrer");
+      }
       return;
     }
     if (action.endpoint) {
@@ -327,7 +336,7 @@ function PoolBar({ pool }: { pool: SdkUsagePool }) {
           <PlanBadgeIcon name={pool.icon} className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{pool.label}</span>
         </div>
-        <span className="tabular-nums text-muted-foreground">
+        <span className="tabular-nums">
           {pool.used} / {total} {pool.countLabel}
         </span>
       </div>
@@ -392,8 +401,13 @@ function NoneCard({
         )}
       </div>
 
-      {plan.details.benefits?.activeItems &&
-        plan.details.benefits.activeItems.length > 0 && (
+      {plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
+        <>
+          {plan.details.benefits.activeHeader && (
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {plan.details.benefits.activeHeader}
+            </p>
+          )}
           <ul className="space-y-2 text-sm">
             {plan.details.benefits.activeItems.map((benefit) => (
               <li key={benefit} className="flex items-start gap-2">
@@ -402,7 +416,8 @@ function NoneCard({
               </li>
             ))}
           </ul>
-        )}
+        </>
+      )}
 
       <div className="flex items-center gap-2 mt-auto pt-0">
         {ghostAction && (
@@ -420,6 +435,7 @@ function NoneCard({
         {primaryActions.length > 0 && <div className="flex-1" />}
         {primaryActions.map((action) => {
           const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
           return (
             <Button
               key={action.slug}
@@ -434,6 +450,7 @@ function NoneCard({
               {isPending && action.variant === "primary" && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
               {action.label}
               {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
             </Button>
@@ -464,7 +481,7 @@ function ActiveCard({
   const pools = state.pools ?? [];
   const poolCtaActions = pools.flatMap((p) => (p.cta ? [p.cta] : []));
   const ghostActions = state.actions.filter((a) => a.variant === "ghost");
-  const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
+  const menuActions = state.actions.filter((a) => a.variant !== "ghost");
 
   return (
     <div
@@ -476,43 +493,10 @@ function ActiveCard({
           <h3 className="text-lg font-semibold">{plan.name}</h3>
           <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Badge variant="secondary" className="gap-1.5">
-            <PlanBadgeIcon name={state.badgeIcon} fallback={CheckCircle2} className="h-3.5 w-3.5" />
-            {state.badge}
-          </Badge>
-          {poolCtaActions.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">Actions</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {poolCtaActions.map((action) => {
-                  const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
-                  return (
-                    <DropdownMenuItem
-                      key={action.slug}
-                      onClick={() => onAction(action, plan)}
-                    >
-                      {action.label}
-                      {Icon && (
-                        <Icon className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
-                      )}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+        <Badge variant="secondary" className="gap-1.5 shrink-0">
+          <PlanBadgeIcon name={state.badgeIcon} fallback={CheckCircle2} className="h-3.5 w-3.5" />
+          {state.badge}
+        </Badge>
       </div>
 
       <div className="space-y-5 flex-1">
@@ -533,7 +517,7 @@ function ActiveCard({
         )}
       </div>
 
-      {/* Bottom CTA: ghost actions left, primary actions right */}
+      {/* Bottom CTA: ghost links + pool CTAs left, 3-dot management menu right */}
       <div className="flex items-center gap-2 mt-auto pt-5">
         {ghostActions.map((action) => (
           <button
@@ -548,9 +532,9 @@ function ActiveCard({
             {action.label}
           </button>
         ))}
-        {primaryActions.length > 0 && <div className="flex-1" />}
-        {primaryActions.map((action) => {
+        {poolCtaActions.map((action) => {
           const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
           return (
             <Button
               key={action.slug}
@@ -562,14 +546,46 @@ function ActiveCard({
                 onAction(action, plan);
               }}
             >
-              {isPending && action.variant === "primary" && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
               {action.label}
-              {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
+              {Icon && <Icon className="ml-1.5 h-3.5 w-3.5 text-muted-foreground" />}
             </Button>
           );
         })}
+        {menuActions.length > 0 && <div className="flex-1" />}
+        {menuActions.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">Actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {menuActions.map((action) => {
+                const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+                const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
+                return (
+                  <DropdownMenuItem
+                    key={action.slug}
+                    onClick={() => onAction(action, plan)}
+                  >
+                    {IconBefore && <IconBefore className="mr-2 h-3.5 w-3.5" />}
+                    {action.label}
+                    {Icon && (
+                      <Icon className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </div>
   );
@@ -590,10 +606,7 @@ function TrialCard({
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
-  const trialPool = state.pools?.find((p) => p.slug === "trial-days");
-  const trialTotal = trialPool ? trialPool.limit + (trialPool.purchased ?? 0) : 0;
-  const trialRemaining = trialPool ? Math.max(0, trialTotal - trialPool.used) : 0;
-  const pct = trialPool && trialTotal > 0 ? (trialPool.used / trialTotal) * 100 : 0;
+  const pools = state.pools ?? [];
   const ghostActions = state.actions.filter((a) => a.variant === "ghost");
   const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
 
@@ -614,19 +627,7 @@ function TrialCard({
       </div>
 
       <div className="space-y-5 flex-1">
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{trialPool?.label ?? "Trial days remaining"}</span>
-            </div>
-            <span className="tabular-nums text-muted-foreground">
-              {trialRemaining} / {trialTotal}{" "}
-              {trialPool?.countLabel ?? "days"}
-            </span>
-          </div>
-          <Progress value={pct} className="h-2" />
-        </div>
+        {pools.map((pool) => <PoolBar key={pool.slug} pool={pool} />)}
 
         {state.statusInfo && (
           <p className="text-sm text-muted-foreground">
@@ -634,8 +635,13 @@ function TrialCard({
           </p>
         )}
 
-        {plan.details.benefits?.activeItems &&
-          plan.details.benefits.activeItems.length > 0 && (
+        {plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
+          <>
+            {plan.details.benefits.activeHeader && (
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {plan.details.benefits.activeHeader}
+              </p>
+            )}
             <ul className="space-y-2 text-sm">
               {plan.details.benefits.activeItems.map((benefit) => (
                 <li key={benefit} className="flex items-start gap-2">
@@ -644,7 +650,8 @@ function TrialCard({
                 </li>
               ))}
             </ul>
-          )}
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-2 mt-auto pt-5">
@@ -664,6 +671,7 @@ function TrialCard({
         {primaryActions.length > 0 && <div className="flex-1" />}
         {primaryActions.map((action) => {
           const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
           return (
             <Button
               key={action.slug}
@@ -674,6 +682,7 @@ function TrialCard({
                 onAction(action, plan);
               }}
             >
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
               {action.label}
               {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
             </Button>
@@ -699,10 +708,7 @@ function ExpiredCard({
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
-  const trialPool = state.pools?.find((p) => p.slug === "trial-days");
-  const trialTotal = trialPool ? trialPool.limit + (trialPool.purchased ?? 0) : 0;
-  const trialRemaining = 0;
-  const pct = 100;
+  const pools = state.pools ?? [];
   const ghostActions = state.actions.filter((a) => a.variant === "ghost");
   const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
 
@@ -723,24 +729,30 @@ function ExpiredCard({
       </div>
 
       <div className="space-y-5 flex-1">
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{trialPool?.label ?? "Trial days remaining"}</span>
-            </div>
-            <span className="tabular-nums text-muted-foreground">
-              {trialRemaining} / {trialTotal}{" "}
-              {trialPool?.countLabel ?? "days"}
-            </span>
-          </div>
-          <Progress value={pct} className="h-2" />
-        </div>
+        {pools.map((pool) => <PoolBar key={pool.slug} pool={pool} />)}
 
         {state.statusInfo && (
           <p className="text-sm text-amber-600 dark:text-amber-400">
             {state.statusInfo.descText}
           </p>
+        )}
+
+        {plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
+          <>
+            {plan.details.benefits.activeHeader && (
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {plan.details.benefits.activeHeader}
+              </p>
+            )}
+            <ul className="space-y-2 text-sm">
+              {plan.details.benefits.activeItems.map((benefit) => (
+                <li key={benefit} className="flex items-start gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                  {benefit}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
 
@@ -761,6 +773,7 @@ function ExpiredCard({
         {primaryActions.length > 0 && <div className="flex-1" />}
         {primaryActions.map((action) => {
           const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
           return (
             <Button
               key={action.slug}
@@ -771,6 +784,7 @@ function ExpiredCard({
                 onAction(action, plan);
               }}
             >
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
               {action.label}
               {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
             </Button>
@@ -828,6 +842,7 @@ function CancelledCard({
           <div className="flex-1" />
           {state.actions.map((action) => {
             const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+            const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
             return (
               <Button
                 key={action.slug}
@@ -838,6 +853,7 @@ function CancelledCard({
                   onAction(action, plan);
                 }}
               >
+                {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
                 {action.label}
                 {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
               </Button>
@@ -878,6 +894,9 @@ function InactiveCard({
     plan.details.benefits?.inactiveItems ??
     plan.details.benefits?.activeItems ??
     [];
+  const benefitsHeader = plan.details.benefits?.inactiveItems
+    ? plan.details.benefits?.inactiveHeader
+    : plan.details.benefits?.activeHeader;
   const ghostAction = state.actions.find((a) => a.variant === "ghost");
   const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
   return (
@@ -919,14 +938,21 @@ function InactiveCard({
       </div>
 
       {benefits.length > 0 && (
-        <ul className="space-y-1.5 text-sm">
-          {benefits.map((benefit) => (
-            <li key={benefit} className="flex items-start gap-2">
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-              {benefit}
-            </li>
-          ))}
-        </ul>
+        <>
+          {benefitsHeader && (
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {benefitsHeader}
+            </p>
+          )}
+          <ul className="space-y-1.5 text-sm">
+            {benefits.map((benefit) => (
+              <li key={benefit} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                {benefit}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <div className="flex items-center gap-2 mt-auto pt-1">
@@ -945,6 +971,7 @@ function InactiveCard({
         {primaryActions.length > 0 && <div className="flex-1" />}
         {primaryActions.map((action) => {
           const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
           return (
             <Button
               key={action.slug}
@@ -955,6 +982,7 @@ function InactiveCard({
                 onAction(action, plan);
               }}
             >
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
               {action.label}
               {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
             </Button>
