@@ -831,6 +831,11 @@ function CancelledCard({
               Store will be removed on {deprovisionDate}.
             </p>
           )}
+          {"daysRemaining" in state && typeof state.daysRemaining === "number" && state.daysRemaining > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {state.daysRemaining} day{state.daysRemaining !== 1 ? "s" : ""} remaining
+            </p>
+          )}
         </div>
         <Badge variant="outline" className="shrink-0">
           {state.badge}
