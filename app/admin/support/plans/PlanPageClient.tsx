@@ -493,10 +493,43 @@ function ActiveCard({
           <h3 className="text-lg font-semibold">{plan.name}</h3>
           <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
         </div>
-        <Badge variant="secondary" className="gap-1.5 shrink-0">
-          <PlanBadgeIcon name={state.badgeIcon} fallback={CheckCircle2} className="h-3.5 w-3.5" />
-          {state.badge}
-        </Badge>
+        <div className="flex items-center gap-1 shrink-0">
+          <Badge variant="secondary" className="gap-1.5">
+            <PlanBadgeIcon name={state.badgeIcon} fallback={CheckCircle2} className="h-3.5 w-3.5" />
+            {state.badge}
+          </Badge>
+          {poolCtaActions.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">Pool actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {poolCtaActions.map((action) => {
+                  const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+                  const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
+                  return (
+                    <DropdownMenuItem
+                      key={action.slug}
+                      onClick={(e) => { e.stopPropagation(); onAction(action, plan); }}
+                    >
+                      {IconBefore && <IconBefore className="mr-2 h-3.5 w-3.5" />}
+                      {action.label}
+                      {Icon && <Icon className="ml-auto h-3.5 w-3.5 text-muted-foreground" />}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
       <div className="space-y-5 flex-1">
@@ -517,7 +550,7 @@ function ActiveCard({
         )}
       </div>
 
-      {/* Bottom CTA: ghost links + pool CTAs left, 3-dot management menu right */}
+      {/* Bottom CTA: management actions — ghost left, primary/secondary right */}
       <div className="flex items-center gap-2 mt-auto pt-5">
         {ghostActions.map((action) => (
           <button
@@ -532,7 +565,8 @@ function ActiveCard({
             {action.label}
           </button>
         ))}
-        {poolCtaActions.map((action) => {
+        {menuActions.length > 0 && <div className="flex-1" />}
+        {menuActions.map((action) => {
           const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
           const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
           return (
@@ -552,40 +586,6 @@ function ActiveCard({
             </Button>
           );
         })}
-        {menuActions.length > 0 && <div className="flex-1" />}
-        {menuActions.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-4 w-4" />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {menuActions.map((action) => {
-                const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
-                const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
-                return (
-                  <DropdownMenuItem
-                    key={action.slug}
-                    onClick={() => onAction(action, plan)}
-                  >
-                    {IconBefore && <IconBefore className="mr-2 h-3.5 w-3.5" />}
-                    {action.label}
-                    {Icon && (
-                      <Icon className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
       </div>
     </div>
   );
