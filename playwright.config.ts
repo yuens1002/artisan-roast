@@ -55,11 +55,11 @@ export default defineConfig({
         // Prevent .env.local / CI env overrides from leaking into the test server
         NEXT_PUBLIC_BUILD_VARIANT: "",
         MOCK_LICENSE_TIER: "",
-        // Non-empty so fetchResolvedPlans() actually hits the mock's
-        // /api/plans/resolved (it short-circuits to [] when LICENSE_KEY is unset).
-        // validateLicense() still returns FREE via forceFreeTierForTest() — the
-        // license tier is independent of whether the plans resolver is called.
-        LICENSE_KEY: "e2e-test-key",
+        LICENSE_KEY: "",
+        // Tests that need /api/plans/resolved use the dev `?licenseKey=` URL
+        // override on /admin/support/plans (see app/admin/support/plans/page.tsx).
+        // Setting LICENSE_KEY globally would make `getLicenseKey()` truthy and
+        // break tests like activate.spec.ts that expect an unlicensed state.
       },
     },
   ],

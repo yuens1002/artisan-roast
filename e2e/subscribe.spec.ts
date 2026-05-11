@@ -38,7 +38,10 @@ test.beforeEach(async ({ request }) => {
 });
 
 test("Subscribe CTA redirects to Stripe checkout", async ({ page, context }) => {
-  await page.goto("/admin/support/plans");
+  // ?licenseKey= is the dev-only override on page.tsx — drives fetchResolvedPlans()
+  // to hit the mock platform's /api/plans/resolved without making getLicenseKey()
+  // globally truthy (which would break activate.spec.ts).
+  await page.goto("/admin/support/plans?licenseKey=e2e-test-key");
 
   // Wait for plan cards to load
   await expect(page.getByRole("heading", { name: "Pro" })).toBeVisible({ timeout: 10_000 });
