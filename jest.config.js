@@ -33,6 +33,7 @@ const config = {
     "/lib/__tests__/data", // Skip data tests (require live database)
     "/__tests__/fixtures([/\\\\]|\\.ts$)", // Fixture files and directories are not test suites
     "/__tests__/integration/", // Integration tests require a live dev server — run with test:integration
+    "/__tests__/.*/_[^/]+$", // Underscore-prefixed files in __tests__/ subdirs are helpers, not suites
   ],
 };
 

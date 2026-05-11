@@ -1,0 +1,843 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`SDK SCAFFOLD pins SCAFFOLDS shape is pinned 1`] = `
+{
+  "CONVERTED": {
+    "currency": "USD",
+    "description": "Fully managed hosting with custom domain and priority support.",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "Everything in Community Roast",
+          "Managed hosting & backups",
+          "Custom domain configuration",
+          "5 priority support tickets/month, 48-hr SLA",
+        ],
+      },
+      "sla": {
+        "responseTime": "48 hours",
+      },
+    },
+    "features": [
+      "hosting",
+      "custom-domain",
+      "priority-support",
+      "tickets",
+    ],
+    "highlight": true,
+    "interval": "month",
+    "name": "House Blend",
+    "price": 7900,
+    "slug": "house-blend",
+    "state": {
+      "actions": [
+        {
+          "endpoint": "/api/billing/portal",
+          "iconAfter": "external-link",
+          "label": "Manage Billing",
+          "slug": "manage-billing",
+          "variant": "secondary",
+        },
+      ],
+      "badge": "Active",
+      "badgeIcon": "check-circle-2",
+      "pools": [
+        {
+          "countLabel": "used",
+          "icon": "ticket",
+          "label": "Priority Tickets",
+          "limit": 5,
+          "slug": "tickets",
+          "used": 1,
+        },
+      ],
+      "status": "ACTIVE",
+      "statusInfo": {
+        "descIcon": "rotate-cw",
+        "descText": "Renews on 2026-06-10.",
+      },
+    },
+    "visibility": "hosted",
+  },
+  "DIRECT_SUBSCRIBE": {
+    "currency": "USD",
+    "description": "Fully managed hosting with custom domain and priority support.",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "Everything in Community Roast",
+          "Managed hosting & backups",
+          "Custom domain configuration",
+          "5 priority support tickets/month, 48-hr SLA",
+        ],
+      },
+      "sla": {
+        "responseTime": "48 hours",
+      },
+    },
+    "features": [
+      "hosting",
+      "custom-domain",
+      "priority-support",
+      "tickets",
+    ],
+    "highlight": true,
+    "interval": "month",
+    "name": "House Blend",
+    "price": 7900,
+    "slug": "house-blend",
+    "state": {
+      "actions": [
+        {
+          "endpoint": "/api/billing/portal",
+          "iconAfter": "external-link",
+          "label": "Manage Billing",
+          "slug": "manage-billing",
+          "variant": "secondary",
+        },
+      ],
+      "badge": "Active",
+      "badgeIcon": "check-circle-2",
+      "pools": [
+        {
+          "countLabel": "used",
+          "icon": "ticket",
+          "label": "Priority Tickets",
+          "limit": 5,
+          "slug": "tickets",
+          "used": 0,
+        },
+      ],
+      "status": "ACTIVE",
+      "statusInfo": {
+        "descIcon": "rotate-cw",
+        "descText": "Renews on 2026-06-10.",
+      },
+    },
+    "visibility": "hosted",
+  },
+  "INACTIVE": {
+    "currency": "USD",
+    "description": "Fully managed hosting with custom domain and priority support.",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "Everything in Community Roast",
+          "Managed hosting & backups",
+          "Custom domain configuration",
+          "5 priority support tickets/month, 48-hr SLA",
+        ],
+        "inactiveHeader": "Renew to get back:",
+        "inactiveItems": [
+          "Custom domain with SSL",
+          "5 priority support tickets/month",
+          "Managed hosting & backups",
+          "48-hour SLA",
+        ],
+      },
+      "sla": {
+        "responseTime": "48 hours",
+      },
+    },
+    "features": [
+      "hosting",
+      "custom-domain",
+      "priority-support",
+      "tickets",
+    ],
+    "highlight": false,
+    "interval": "month",
+    "name": "House Blend",
+    "price": 7900,
+    "slug": "house-blend",
+    "state": {
+      "actions": [
+        {
+          "iconAfter": "external-link",
+          "label": "Renew",
+          "slug": "renew",
+          "url": "https://buy.stripe.com/test_subscribe",
+          "variant": "primary",
+        },
+      ],
+      "badge": "Inactive",
+      "badgeIcon": "circle-slash",
+      "deactivatedAt": "<ISO_DATE>",
+      "status": "INACTIVE",
+      "statusInfo": {
+        "descText": "Subscription ended. Renew to restore your store.",
+      },
+    },
+    "visibility": "hosted",
+  },
+  "PRIORITY_SUPPORT_ACTIVE": {
+    "actionModals": [
+      {
+        "confirmLabel": "Cancel Subscription",
+        "description": "We'd love to know why before you go.",
+        "heading": "Cancel your subscription?",
+        "keepLabel": "Keep subscription",
+        "reasons": [
+          {
+            "label": "Too expensive",
+            "value": "too-expensive",
+          },
+          {
+            "label": "Missing features",
+            "value": "missing-features",
+          },
+          {
+            "label": "Switching to another platform",
+            "value": "switching",
+          },
+          {
+            "label": "Don't need it anymore",
+            "value": "no-longer-needed",
+          },
+          {
+            "label": "Other",
+            "value": "other",
+          },
+        ],
+        "reasonsLabel": "Reason for cancelling",
+        "slug": "cancel-subscription",
+      },
+    ],
+    "currency": "USD",
+    "description": "Dedicated support with guaranteed response times",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "Priority email support with 48-hr SLA",
+          "5 support tickets per month",
+          "1 one-on-one session per month (30 min)",
+          "Anonymous GitHub issue tracking & transparency",
+        ],
+      },
+      "excludes": [
+        "Custom development",
+        "Feature requests",
+        "Third-party integrations",
+      ],
+      "scope": [
+        "Setup & configuration",
+        "Troubleshooting",
+        "Platform guidance",
+      ],
+      "sla": {
+        "availability": "Business days (Mon–Fri)",
+        "responseTime": "48 hours",
+      },
+      "terms": [
+        "Billed monthly, cancel anytime",
+        "Unused tickets do not roll over",
+      ],
+    },
+    "features": [
+      "priority-support",
+    ],
+    "highlight": true,
+    "interval": "month",
+    "name": "Priority Support",
+    "price": 4900,
+    "saleEndsAt": "2026-06-30T23:59:59Z",
+    "saleLabel": "1st 6mos Launch Special",
+    "salePrice": 3900,
+    "slug": "priority-support",
+    "state": {
+      "actions": [
+        {
+          "endpoint": "/api/billing/portal",
+          "iconAfter": "external-link",
+          "label": "Manage Billing",
+          "slug": "manage-billing",
+          "variant": "secondary",
+        },
+        {
+          "label": "Cancel Subscription",
+          "modalSlug": "cancel-subscription",
+          "slug": "cancel",
+          "variant": "ghost",
+        },
+      ],
+      "badge": "Active",
+      "badgeIcon": "check-circle-2",
+      "pools": [
+        {
+          "countLabel": "used",
+          "cta": {
+            "iconAfter": "external-link",
+            "label": "Submit Ticket",
+            "slug": "submit-ticket",
+            "url": "https://artisanroast.app/support/ticket",
+            "variant": "primary",
+          },
+          "icon": "ticket",
+          "label": "Priority Tickets",
+          "limit": 5,
+          "slug": "tickets",
+          "used": 2,
+        },
+        {
+          "countLabel": "used",
+          "cta": {
+            "iconAfter": "external-link",
+            "label": "Book Session",
+            "slug": "book-session",
+            "url": "https://calendly.com/artisanroast/session",
+            "variant": "secondary",
+          },
+          "icon": "calendar",
+          "label": "1:1 Sessions",
+          "limit": 1,
+          "slug": "one-on-one",
+          "used": 0,
+        },
+      ],
+      "status": "ACTIVE",
+    },
+    "visibility": "self-hosted",
+  },
+  "PRIORITY_SUPPORT_INACTIVE": {
+    "currency": "USD",
+    "description": "Dedicated support with guaranteed response times",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "Priority email support with 48-hr SLA",
+          "5 support tickets per month",
+          "1 one-on-one session per month (30 min)",
+          "Anonymous GitHub issue tracking & transparency",
+        ],
+        "inactiveHeader": "Renew to get back:",
+        "inactiveItems": [
+          "Priority email support with 48-hr SLA",
+          "5 support tickets per month",
+          "1 one-on-one session per month (30 min)",
+          "Anonymous GitHub issue tracking & transparency",
+        ],
+      },
+      "excludes": [
+        "Custom development",
+        "Feature requests",
+        "Third-party integrations",
+      ],
+      "scope": [
+        "Setup & configuration",
+        "Troubleshooting",
+        "Platform guidance",
+      ],
+      "sla": {
+        "availability": "Business days (Mon–Fri)",
+        "responseTime": "48 hours",
+      },
+      "terms": [
+        "Billed monthly, cancel anytime",
+        "Unused tickets do not roll over",
+      ],
+    },
+    "features": [
+      "priority-support",
+    ],
+    "highlight": true,
+    "interval": "month",
+    "name": "Priority Support",
+    "price": 4900,
+    "saleEndsAt": "2026-06-30T23:59:59Z",
+    "saleLabel": "1st 6mos Launch Special",
+    "salePrice": 3900,
+    "slug": "priority-support",
+    "state": {
+      "actions": [
+        {
+          "iconAfter": "external-link",
+          "label": "Renew",
+          "slug": "renew",
+          "url": "https://buy.stripe.com/test_ps",
+          "variant": "primary",
+        },
+      ],
+      "badge": "Inactive",
+      "badgeIcon": "circle-slash",
+      "deactivatedAt": "<ISO_DATE>",
+      "status": "INACTIVE",
+    },
+    "visibility": "self-hosted",
+  },
+  "PRIORITY_SUPPORT_NONE": {
+    "currency": "USD",
+    "description": "Dedicated support with guaranteed response times",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "Priority email support with 48-hr SLA",
+          "5 support tickets per month",
+          "1 one-on-one session per month (30 min)",
+          "Anonymous GitHub issue tracking & transparency",
+        ],
+      },
+      "excludes": [
+        "Custom development",
+        "Feature requests",
+        "Third-party integrations",
+      ],
+      "scope": [
+        "Setup & configuration",
+        "Troubleshooting",
+        "Platform guidance",
+      ],
+      "sla": {
+        "availability": "Business days (Mon–Fri)",
+        "responseTime": "48 hours",
+      },
+      "terms": [
+        "Billed monthly, cancel anytime",
+        "Unused tickets do not roll over",
+      ],
+    },
+    "features": [
+      "priority-support",
+    ],
+    "highlight": true,
+    "interval": "month",
+    "name": "Priority Support",
+    "price": 4900,
+    "saleEndsAt": "2026-06-30T23:59:59Z",
+    "saleLabel": "1st 6mos Launch Special",
+    "salePrice": 3900,
+    "slug": "priority-support",
+    "state": {
+      "actions": [
+        {
+          "iconAfter": "external-link",
+          "label": "Get Priority Support",
+          "slug": "subscribe",
+          "url": "https://buy.stripe.com/test_ps",
+          "variant": "primary",
+        },
+      ],
+      "status": "NONE",
+    },
+    "visibility": "self-hosted",
+  },
+  "SELF_HOSTED_FREE": {
+    "currency": "USD",
+    "description": "Self hosted with community support",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "Full source code access",
+          "Community support",
+          "No usage limits",
+        ],
+      },
+      "terms": [
+        "Self-managed infrastructure required",
+      ],
+    },
+    "features": [
+      "self-hosted",
+    ],
+    "highlight": false,
+    "interval": "month",
+    "name": "Community",
+    "price": 0,
+    "slug": "free",
+    "state": {
+      "actions": [
+        {
+          "label": "View Terms",
+          "slug": "view-terms",
+          "url": "/admin/support/terms",
+          "variant": "ghost",
+        },
+      ],
+      "badge": "Current Plan",
+      "badgeIcon": "check-circle-2",
+      "pools": [],
+      "status": "ACTIVE",
+    },
+    "visibility": "self-hosted",
+  },
+  "SELF_HOSTED_FREE_WITH_ADDONS": {
+    "currency": "USD",
+    "description": "Self-hosted, free forever.",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "Full source code access",
+          "Community support",
+          "No usage limits",
+        ],
+      },
+      "terms": [
+        "Self-managed infrastructure required",
+      ],
+    },
+    "features": [
+      "self-hosted",
+    ],
+    "highlight": false,
+    "interval": "month",
+    "name": "Community",
+    "price": 0,
+    "slug": "free",
+    "state": {
+      "actions": [
+        {
+          "label": "View Terms",
+          "slug": "view-terms",
+          "url": "/admin/support/terms",
+          "variant": "ghost",
+        },
+      ],
+      "badge": "Current Plan",
+      "badgeIcon": "check-circle-2",
+      "pools": [
+        {
+          "countLabel": "used",
+          "cta": {
+            "iconAfter": "external-link",
+            "label": "Submit Ticket",
+            "slug": "submit-ticket",
+            "url": "https://artisanroast.app/support/ticket",
+            "variant": "primary",
+          },
+          "icon": "ticket",
+          "label": "Priority Tickets",
+          "limit": 3,
+          "purchased": 3,
+          "slug": "tickets",
+          "used": 1,
+        },
+        {
+          "countLabel": "used",
+          "cta": {
+            "iconAfter": "external-link",
+            "label": "Book Session",
+            "slug": "book-session",
+            "url": "https://calendly.com/artisanroast/session",
+            "variant": "secondary",
+          },
+          "icon": "calendar",
+          "label": "1:1 Sessions",
+          "limit": 1,
+          "purchased": 1,
+          "slug": "one-on-one",
+          "used": 0,
+        },
+      ],
+      "status": "ACTIVE",
+    },
+    "visibility": "self-hosted",
+  },
+  "TRIAL_ACTIVE_CARD_ADDED": {
+    "actionModals": [
+      {
+        "confirmLabel": "Cancel Trial",
+        "description": "We'd love to know why before you go.",
+        "heading": "Cancel your trial?",
+        "keepLabel": "Keep trial",
+        "other": {
+          "label": "Tell us a bit more",
+          "maxLength": 500,
+          "placeholder": "What are we missing?",
+        },
+        "reasons": [
+          {
+            "label": "Still evaluating — need more time",
+            "value": "too-soon",
+          },
+          {
+            "label": "Missing features I need",
+            "value": "missing-features",
+          },
+          {
+            "label": "Plan too expensive",
+            "value": "too-expensive",
+          },
+          {
+            "label": "Switching to another platform",
+            "value": "switching",
+          },
+          {
+            "label": "Other",
+            "value": "other",
+          },
+        ],
+        "reasonsLabel": "Reason for cancelling",
+        "slug": "cancel-trial",
+      },
+      {
+        "confirmIcon": "external-link",
+        "confirmLabel": "Continue to Stripe",
+        "description": "Your card is on file. Cancel to stop any future charges.",
+        "heading": "Cancel your trial?",
+        "keepLabel": "Keep trial",
+        "other": {
+          "label": "Tell us a bit more",
+          "maxLength": 500,
+          "placeholder": "What are we missing?",
+        },
+        "reasons": [
+          {
+            "label": "Still evaluating — need more time",
+            "value": "too-soon",
+          },
+          {
+            "label": "Missing features I need",
+            "value": "missing-features",
+          },
+          {
+            "label": "Plan too expensive",
+            "value": "too-expensive",
+          },
+          {
+            "label": "Switching to another platform",
+            "value": "switching",
+          },
+          {
+            "label": "Other",
+            "value": "other",
+          },
+        ],
+        "reasonsLabel": "Reason for cancelling",
+        "slug": "cancel-stripe",
+      },
+    ],
+    "currency": "USD",
+    "description": "Risk-free for 14 days — full features, no card, no commitment.",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "No billing needed — add card to extend to 30 days",
+          "Download your data as a ZIP anytime",
+          "100% feature parity from day 1",
+          "Cancel anytime — no contract, no commitment",
+        ],
+      },
+    },
+    "features": [
+      "hosting",
+      "custom-domain",
+      "trial",
+    ],
+    "highlight": false,
+    "interval": "month",
+    "name": "House Blend Trial",
+    "price": 0,
+    "slug": "house-blend-trial",
+    "state": {
+      "actions": [
+        {
+          "label": "Cancel Trial",
+          "modalSlug": "cancel-stripe",
+          "slug": "cancel",
+          "variant": "ghost",
+        },
+      ],
+      "badge": "Extended Trial",
+      "badgeIcon": "clock",
+      "pools": [
+        {
+          "countLabel": "days",
+          "icon": "clock",
+          "label": "Trial days",
+          "limit": 30,
+          "slug": "trial-days",
+          "used": 5,
+        },
+      ],
+      "status": "TRIAL",
+    },
+    "visibility": "hosted",
+  },
+  "TRIAL_ACTIVE_NO_CARD": {
+    "actionModals": [
+      {
+        "confirmLabel": "Cancel Trial",
+        "description": "We'd love to know why before you go.",
+        "heading": "Cancel your trial?",
+        "keepLabel": "Keep trial",
+        "other": {
+          "label": "Tell us a bit more",
+          "maxLength": 500,
+          "placeholder": "What are we missing?",
+        },
+        "reasons": [
+          {
+            "label": "Still evaluating — need more time",
+            "value": "too-soon",
+          },
+          {
+            "label": "Missing features I need",
+            "value": "missing-features",
+          },
+          {
+            "label": "Plan too expensive",
+            "value": "too-expensive",
+          },
+          {
+            "label": "Switching to another platform",
+            "value": "switching",
+          },
+          {
+            "label": "Other",
+            "value": "other",
+          },
+        ],
+        "reasonsLabel": "Reason for cancelling",
+        "slug": "cancel-trial",
+      },
+      {
+        "confirmIcon": "external-link",
+        "confirmLabel": "Continue to Stripe",
+        "description": "Your card is on file. Cancel to stop any future charges.",
+        "heading": "Cancel your trial?",
+        "keepLabel": "Keep trial",
+        "other": {
+          "label": "Tell us a bit more",
+          "maxLength": 500,
+          "placeholder": "What are we missing?",
+        },
+        "reasons": [
+          {
+            "label": "Still evaluating — need more time",
+            "value": "too-soon",
+          },
+          {
+            "label": "Missing features I need",
+            "value": "missing-features",
+          },
+          {
+            "label": "Plan too expensive",
+            "value": "too-expensive",
+          },
+          {
+            "label": "Switching to another platform",
+            "value": "switching",
+          },
+          {
+            "label": "Other",
+            "value": "other",
+          },
+        ],
+        "reasonsLabel": "Reason for cancelling",
+        "slug": "cancel-stripe",
+      },
+    ],
+    "currency": "USD",
+    "description": "Risk-free for 14 days — full features, no card, no commitment.",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "No billing needed — add card to extend to 30 days",
+          "Download your data as a ZIP anytime",
+          "100% feature parity from day 1",
+          "Cancel anytime — no contract, no commitment",
+        ],
+      },
+    },
+    "features": [
+      "hosting",
+      "custom-domain",
+      "trial",
+    ],
+    "highlight": false,
+    "interval": "month",
+    "name": "House Blend Trial",
+    "price": 0,
+    "slug": "house-blend-trial",
+    "state": {
+      "actions": [
+        {
+          "iconAfter": "external-link",
+          "label": "Add Billing",
+          "slug": "add-billing",
+          "url": "https://buy.stripe.com/test_extend",
+          "variant": "primary",
+        },
+        {
+          "label": "Cancel Trial",
+          "modalSlug": "cancel-trial",
+          "slug": "cancel",
+          "variant": "ghost",
+        },
+      ],
+      "badge": "Active Trial",
+      "badgeIcon": "clock",
+      "pools": [
+        {
+          "countLabel": "days",
+          "icon": "clock",
+          "label": "Trial days",
+          "limit": 14,
+          "slug": "trial-days",
+          "used": 4,
+        },
+      ],
+      "status": "TRIAL",
+    },
+    "visibility": "hosted",
+  },
+  "TRIAL_EXPIRED": {
+    "currency": "USD",
+    "description": "Risk-free for 14 days — full features, no card, no commitment.",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "No billing needed — add card to extend to 30 days",
+          "Download your data as a ZIP anytime",
+          "100% feature parity from day 1",
+          "Cancel anytime — no contract, no commitment",
+        ],
+      },
+    },
+    "features": [
+      "hosting",
+      "custom-domain",
+      "trial",
+    ],
+    "highlight": false,
+    "interval": "month",
+    "name": "House Blend Trial",
+    "price": 0,
+    "slug": "house-blend-trial",
+    "state": {
+      "actions": [
+        {
+          "iconAfter": "external-link",
+          "label": "Extend Trial",
+          "slug": "extend-trial",
+          "url": "https://buy.stripe.com/PLACEHOLDER_EXTEND_TRIAL",
+          "variant": "primary",
+        },
+        {
+          "label": "End Trial",
+          "slug": "end-trial",
+          "variant": "ghost",
+        },
+      ],
+      "badge": "Expired",
+      "badgeIcon": "clock",
+      "deprovisionAt": "<ISO_DATE>",
+      "pools": [
+        {
+          "countLabel": "days",
+          "icon": "clock",
+          "label": "Trial days",
+          "limit": 14,
+          "slug": "trial-days",
+          "used": 14,
+        },
+      ],
+      "status": "EXPIRED",
+      "statusInfo": {
+        "descIcon": "alert-circle",
+        "descText": "Trial ended. Store will be removed on <DATE>.",
+      },
+    },
+    "visibility": "hosted",
+  },
+}
+`;

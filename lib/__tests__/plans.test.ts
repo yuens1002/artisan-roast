@@ -1,84 +1,43 @@
 /**
- * Tests for fetchPlans() from lib/plans.ts
- *
- * AC-E2E-9: Platform unreachable → returns self-hosted fallback plans (Community + Priority Support), no crash
+ * Tests for fetchPlans() and filterPlansByVisibility() from lib/plans.ts
  */
-
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
 import type { Plan } from "artisan-roast-sdk/plans";
-import { fetchPlans, filterPlansByVisibility, invalidatePlansCache } from "../plans";
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+import { fetchPlans, filterPlansByVisibility } from "../plans";
 
 describe("fetchPlans", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    invalidatePlansCache();
   });
 
-  // AC-E2E-9: Network error → self-hosted fallback, no crash
-  it("returns self-hosted fallback plans when fetch throws (network error)", async () => {
+  it("returns empty array when fetch throws (network error)", async () => {
     mockFetch.mockRejectedValueOnce(new Error("fetch failed"));
-
     const plans = await fetchPlans();
-
-    expect(plans).toHaveLength(2);
-    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
-    expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
+    expect(plans).toHaveLength(0);
   });
 
-  // AC-E2E-9: Platform returns 500 → self-hosted fallback
-  it("returns self-hosted fallback plans when platform returns 500", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-    });
-
+  it("returns empty array when platform returns 500", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
     const plans = await fetchPlans();
-
-    expect(plans).toHaveLength(2);
-    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
-    expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
+    expect(plans).toHaveLength(0);
   });
 
-  // AC-E2E-9: Platform returns 503 → self-hosted fallback
-  it("returns self-hosted fallback plans when platform returns 503", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 503,
-    });
-
-    const plans = await fetchPlans();
-
-    expect(plans).toHaveLength(2);
-    expect(plans.map((p) => p.slug)).toEqual(["free", "priority-support"]);
-    expect(plans.every((p) => p.visibility === "self-hosted")).toBe(true);
-  });
-
-  // Happy path: platform returns plans (visibility null normalized to "self-hosted")
   it("returns plans when platform responds successfully", async () => {
     const mockPlans = [
       {
-        slug: "pro",
-        name: "Pro",
-        description: "Professional plan",
-        price: 2900,
-        currency: "USD",
+        slug: "free",
+        name: "Community",
+        description: "Open-source self-hosted store",
+        price: 0,
+        currency: "usd",
         interval: "month" as const,
-        features: ["ga", "ai-product-ops"],
+        features: [] as string[],
         highlight: false,
         visibility: null,
-        details: {
-          benefits: { activeItems: ["Google Analytics integration"] },
-        },
+        details: { benefits: { activeItems: ["Full e-commerce platform"] } },
       },
     ];
 
@@ -88,64 +47,30 @@ describe("fetchPlans", () => {
     });
 
     const plans = await fetchPlans();
-
     expect(plans).toHaveLength(1);
-    expect(plans[0].slug).toBe("pro");
-    // null visibility is normalized to "self-hosted" at the fetch boundary
-    expect(plans[0].visibility).toBe("self-hosted");
+    expect(plans[0]!.slug).toBe("free");
+    // null visibility normalized to "self-hosted" at fetch boundary
+    expect(plans[0]!.visibility).toBe("self-hosted");
   });
 
-  // Cache: second call uses cached data
-  it("uses cached data on subsequent calls within TTL", async () => {
-    const mockPlans = [
-      { slug: "pro", name: "Pro", visibility: "self-hosted" as const },
-    ];
-
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ plans: mockPlans }),
-    });
-
-    await fetchPlans();
-    const plans = await fetchPlans();
-
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(plans[0].slug).toBe("pro");
-  });
-
-  // Empty response: platform returns { plans: [] } → full mock fallback (all 4 plans, so hosted instances still see their cards)
-  it("returns full mock plans when platform returns empty plans list", async () => {
+  it("returns empty array when platform returns empty list", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ plans: [] }),
     });
-
     const plans = await fetchPlans();
-    expect(plans).toHaveLength(4);
-    expect(plans.map((p) => p.slug)).toEqual([
-      "free",
-      "priority-support",
-      "house-blend-trial",
-      "house-blend",
-    ]);
+    expect(plans).toHaveLength(0);
   });
 });
 
-// ---------------------------------------------------------------------------
-// AC-TST-5 — filterPlansByVisibility selects correct plans by IS_HOSTED
-// ---------------------------------------------------------------------------
-
 describe("filterPlansByVisibility", () => {
-  function makePlan(
-    slug: string,
-    visibility: "self-hosted" | "hosted"
-  ): Plan {
+  function makePlan(slug: string, visibility: "self-hosted" | "hosted"): Plan {
     return {
       slug,
       name: slug,
       description: "",
       price: 0,
-      currency: "USD",
+      currency: "usd",
       interval: "month",
       features: [],
       highlight: false,
@@ -168,10 +93,7 @@ describe("filterPlansByVisibility", () => {
 
   it("returns only hosted plans when isHosted=true", () => {
     const filtered = filterPlansByVisibility(catalog, true);
-    expect(filtered.map((p) => p.slug)).toEqual([
-      "house-blend-trial",
-      "house-blend",
-    ]);
+    expect(filtered.map((p) => p.slug)).toEqual(["house-blend-trial", "house-blend"]);
   });
 
   it("returns empty array when catalog is empty", () => {

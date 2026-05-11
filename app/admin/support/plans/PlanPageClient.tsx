@@ -9,7 +9,6 @@ import {
   Clock,
   ExternalLink,
   Loader2,
-  MoreVertical,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { resolveIconComponent } from "@/components/shared/icons/DynamicIcon";
@@ -18,16 +17,11 @@ import { Progress } from "@/components/ui/progress";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { refreshLicense } from "../actions";
 import { startCheckout } from "./actions";
 import { ConfirmActionDialog } from "./_components/ConfirmActionDialog";
+import { PoolCtaMenu } from "./_components/PoolCtaMenu";
 
 import type { LicenseInfo } from "@/lib/license-types";
 import type {
@@ -36,6 +30,16 @@ import type {
   UsagePool as SdkUsagePool,
   ConfirmActionConfig,
 } from "artisan-roast-sdk/plans";
+import {
+  computePoolTotal,
+  formatDaysRemaining,
+  formatDeactivatedDate,
+  formatDeprovisionDate,
+  formatIntervalLabel,
+  formatPoolCount,
+  formatPriceDisplay,
+  formatPriceLabel,
+} from "./formatters";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,22 +61,6 @@ function PlanBadgeIcon({
   const Icon = name ? resolveIcon(name, Fallback) : Fallback;
   if (!Icon) return null;
   return React.createElement(Icon, { className });
-}
-
-function formatPriceLabel(plan: HydratedPlan): string | null {
-  if (!plan.saleLabel && !plan.saleEndsAt) return null;
-  if (plan.saleEndsAt && new Date(plan.saleEndsAt) <= new Date()) return null;
-  const parts: string[] = [];
-  if (plan.saleLabel) parts.push(plan.saleLabel);
-  if (plan.saleEndsAt) {
-    const ends = new Date(plan.saleEndsAt).toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
-    parts.push(`offer ends ${ends}`);
-  }
-  return parts.join(", ");
 }
 
 function actionVariant(
@@ -326,7 +314,7 @@ function PlanCard({ plan, isPending, onAction }: PlanCardBaseProps) {
 // ---------------------------------------------------------------------------
 
 function PoolBar({ pool }: { pool: SdkUsagePool }) {
-  const total = pool.limit + (pool.purchased ?? 0);
+  const total = computePoolTotal(pool);
   const pct = total > 0 ? (pool.used / total) * 100 : 0;
 
   return (
@@ -336,9 +324,7 @@ function PoolBar({ pool }: { pool: SdkUsagePool }) {
           <PlanBadgeIcon name={pool.icon} className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{pool.label}</span>
         </div>
-        <span className="tabular-nums">
-          {pool.used} / {total} {pool.countLabel}
-        </span>
+        <span className="tabular-nums">{formatPoolCount(pool)}</span>
       </div>
       <Progress value={pct} className="h-2" />
     </div>
@@ -366,9 +352,9 @@ function NoneCard({
   const ghostAction = state.actions.find((a) => a.variant === "ghost");
   const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
   const hasSale = !isFree && plan.salePrice != null;
-  const priceDisplay = isFree ? "Free" : `$${(plan.price / 100).toFixed(0)}`;
-  const salePriceDisplay = hasSale ? `$${(plan.salePrice! / 100).toFixed(0)}` : null;
-  const intervalLabel = isFree ? "" : plan.interval === "year" ? "/yr" : "/mo";
+  const priceDisplay = isFree ? "Free" : formatPriceDisplay(plan.price);
+  const salePriceDisplay = hasSale ? formatPriceDisplay(plan.salePrice!) : null;
+  const intervalLabel = isFree ? "" : formatIntervalLabel(plan.interval);
   const priceLabel = formatPriceLabel(plan);
 
   return (
@@ -479,7 +465,6 @@ function ActiveCard({
   onCardClick: (e: React.MouseEvent) => void;
 }) {
   const pools = state.pools ?? [];
-  const poolCtaActions = pools.flatMap((p) => (p.cta ? [p.cta] : []));
   const ghostActions = state.actions.filter((a) => a.variant === "ghost");
   const menuActions = state.actions.filter((a) => a.variant !== "ghost");
 
@@ -498,37 +483,7 @@ function ActiveCard({
             <PlanBadgeIcon name={state.badgeIcon} fallback={CheckCircle2} className="h-3.5 w-3.5" />
             {state.badge}
           </Badge>
-          {poolCtaActions.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">Pool actions</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {poolCtaActions.map((action) => {
-                  const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
-                  const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
-                  return (
-                    <DropdownMenuItem
-                      key={action.slug}
-                      onClick={(e) => { e.stopPropagation(); onAction(action, plan); }}
-                    >
-                      {IconBefore && <IconBefore className="mr-2 h-3.5 w-3.5" />}
-                      {action.label}
-                      {Icon && <Icon className="ml-auto h-3.5 w-3.5 text-muted-foreground" />}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <PoolCtaMenu pools={pools} plan={plan} onAction={onAction} />
         </div>
       </div>
 
@@ -620,10 +575,13 @@ function TrialCard({
           <h3 className="text-lg font-semibold">{plan.name}</h3>
           <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
         </div>
-        <Badge variant="secondary" className="shrink-0 gap-1.5">
-          <PlanBadgeIcon name={state.badgeIcon} fallback={Clock} className="h-3.5 w-3.5" />
-          {state.badge}
-        </Badge>
+        <div className="flex items-center gap-1 shrink-0">
+          <Badge variant="secondary" className="gap-1.5">
+            <PlanBadgeIcon name={state.badgeIcon} fallback={Clock} className="h-3.5 w-3.5" />
+            {state.badge}
+          </Badge>
+          <PoolCtaMenu pools={pools} plan={plan} onAction={onAction} />
+        </div>
       </div>
 
       <div className="space-y-5 flex-1">
@@ -722,10 +680,13 @@ function ExpiredCard({
           <h3 className="text-lg font-semibold">{plan.name}</h3>
           <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
         </div>
-        <Badge variant="outline" className="shrink-0 gap-1.5">
-          <PlanBadgeIcon name={state.badgeIcon} fallback={Clock} className="h-3.5 w-3.5" />
-          {state.badge}
-        </Badge>
+        <div className="flex items-center gap-1 shrink-0">
+          <Badge variant="outline" className="gap-1.5">
+            <PlanBadgeIcon name={state.badgeIcon} fallback={Clock} className="h-3.5 w-3.5" />
+            {state.badge}
+          </Badge>
+          <PoolCtaMenu pools={pools} plan={plan} onAction={onAction} />
+        </div>
       </div>
 
       <div className="space-y-5 flex-1">
@@ -811,12 +772,12 @@ function CancelledCard({
   onCardClick: (e: React.MouseEvent) => void;
 }) {
   const deprovisionDate = state.deprovisionAt
-    ? new Date(state.deprovisionAt).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
+    ? formatDeprovisionDate(state.deprovisionAt)
     : null;
+  const daysRemainingText =
+    "daysRemaining" in state && typeof state.daysRemaining === "number"
+      ? formatDaysRemaining(state.daysRemaining)
+      : null;
 
   return (
     <div
@@ -831,10 +792,8 @@ function CancelledCard({
               Store will be removed on {deprovisionDate}.
             </p>
           )}
-          {"daysRemaining" in state && typeof state.daysRemaining === "number" && state.daysRemaining > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {state.daysRemaining} day{state.daysRemaining !== 1 ? "s" : ""} remaining
-            </p>
+          {daysRemainingText && (
+            <p className="text-sm text-muted-foreground">{daysRemainingText}</p>
           )}
         </div>
         <Badge variant="outline" className="shrink-0">
@@ -886,15 +845,11 @@ function InactiveCard({
   onCardClick: (e: React.MouseEvent) => void;
 }) {
   const hasSale = plan.salePrice != null;
-  const priceDisplay = `$${(plan.price / 100).toFixed(0)}`;
-  const salePriceDisplay = hasSale ? `$${(plan.salePrice! / 100).toFixed(0)}` : null;
-  const intervalLabel = plan.interval === "year" ? "/yr" : "/mo";
+  const priceDisplay = formatPriceDisplay(plan.price);
+  const salePriceDisplay = hasSale ? formatPriceDisplay(plan.salePrice!) : null;
+  const intervalLabel = formatIntervalLabel(plan.interval);
   const priceLabel = formatPriceLabel(plan);
-  const deactivatedDate = new Date(state.deactivatedAt).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const deactivatedDate = formatDeactivatedDate(state.deactivatedAt);
   const benefits =
     plan.details.benefits?.inactiveItems ??
     plan.details.benefits?.activeItems ??
