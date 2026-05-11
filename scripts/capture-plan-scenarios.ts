@@ -37,6 +37,84 @@ interface ResolvedResponse {
   resolvedAt: string;
 }
 
+/**
+ * Map of `seed-dev-scenarios.ts` labels (the comment header on each
+ * LICENSE_KEY= line in `.dev-scenario-keys`) to the dev-key ids the store
+ * uses in ALL_KEYS. The platform's seed script writes labels as comments;
+ * the capture flow keys by id.
+ *
+ * If this drifts (platform adds/renames a scenario), the capture script
+ * skips the unknown label with a warning and continues. The cross-repo
+ * fix is to regenerate `.dev-scenario-keys` as id-keyed JSON
+ * (planned: PR-NEW in plan.md deferred tracker).
+ */
+const LABEL_TO_ID: Record<string, string> = {
+  "FREE — community plan, no subscription": "dev-free",
+  "PRO — priority support active, pools live": "dev-pro",
+  "PRO / INACTIVE — priority support subscription lapsed": "dev-pro-inactive",
+  "HOSTED / PENDING_VERIFICATION — plans page shows nothing": "dev-hosted-pending",
+  "HOSTED / PROVISIONING — plans page shows nothing": "dev-hosted-provisioning",
+  "HOSTED / ACTIVE trial — no card on file": "dev-hosted-active-no-card",
+  "HOSTED / ACTIVE trial — card on file": "dev-hosted-active-card",
+  "HOSTED / CONVERTING — subscription in flight": "dev-hosted-converting",
+  "HOSTED / EXPIRED — trial ended, subscribe to restore": "dev-hosted-expired",
+  "HOSTED / CANCELLED — trial cancelled, deprovision countdown": "dev-hosted-cancelled",
+  "HOSTED / CANCELLED (card on file) — deprovision countdown running": "dev-hosted-cancelled-card",
+  "HOSTED / CONVERTED — house-blend active subscription": "dev-hosted-converted",
+  "HOSTED / INACTIVE — house-blend subscription lapsed": "dev-hosted-inactive",
+  "HOSTED / DEPROVISIONED — plans page shows nothing": "dev-hosted-deprovisioned",
+};
+
+/** Parse env-style `.dev-scenario-keys`:
+ *  Each `LICENSE_KEY=<value>` line is preceded by a `# <label>` comment.
+ *  Returns { devKey → licenseKey } using LABEL_TO_ID to look up the id.
+ *  Unknown labels warn in local dev; under STRICT_KEYS they collect and
+ *  throw at end so coverage regressions can't slip through CI drift checks. */
+function parseEnvFile(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const unknownLabels: string[] = [];
+  let lastLabel: string | null = null;
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (line.startsWith("#")) {
+      const label = line.slice(1).trim();
+      // Skip the file header comment ("Dev scenario license keys — …")
+      if (label.toLowerCase().startsWith("dev scenario license keys")) continue;
+      lastLabel = label;
+      continue;
+    }
+    const eq = line.indexOf("=");
+    if (eq === -1) continue;
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (!lastLabel) continue;
+    const id = LABEL_TO_ID[lastLabel];
+    if (!id) {
+      if (process.env.STRICT_KEYS === "1") {
+        unknownLabels.push(lastLabel);
+      } else {
+        console.warn(`  skip (unknown label): "${lastLabel}"`);
+      }
+      lastLabel = null;
+      continue;
+    }
+    out[id] = value;
+    lastLabel = null;
+  }
+  if (process.env.STRICT_KEYS === "1" && unknownLabels.length > 0) {
+    throw new Error(
+      `STRICT_KEYS: ${unknownLabels.length} unknown label(s) in dev-scenario-keys — extend LABEL_TO_ID or remove the source line(s):\n  ${unknownLabels.join("\n  ")}`
+    );
+  }
+  return out;
+}
+
 async function loadKeys(): Promise<Record<string, string>> {
   if (process.env.DEV_KEYS_JSON) {
     return JSON.parse(process.env.DEV_KEYS_JSON);
@@ -46,7 +124,14 @@ async function loadKeys(): Promise<Record<string, string>> {
     throw new Error("Set DEV_KEYS_FILE or DEV_KEYS_JSON");
   }
   const text = await readFile(file, "utf8");
-  return JSON.parse(text);
+  // Auto-detect: JSON object (starts with `{`) vs env-style (KEY=value lines).
+  // The platform repo's `.dev-scenario-keys` is env-style; CI passes JSON via
+  // DEV_KEYS_JSON.
+  const trimmed = text.trimStart();
+  if (trimmed.startsWith("{")) {
+    return JSON.parse(text);
+  }
+  return parseEnvFile(text);
 }
 
 async function captureOne(key: string, licenseKey: string): Promise<void> {
@@ -90,6 +175,12 @@ async function main(): Promise<void> {
 
   console.log(`\nDone — ok ${ok}, missing ${missing}, failed ${failed}`);
   if (failed > 0) process.exit(1);
+  // STRICT_KEYS (set by CI): missing scenarios are a coverage gap, not just
+  // a warning — fail so the drift detector can't silently leave stale JSONs.
+  if (process.env.STRICT_KEYS === "1" && missing > 0) {
+    console.error(`STRICT_KEYS: ${missing} scenario(s) had no license key — coverage gap`);
+    process.exit(1);
+  }
 }
 
 void main();

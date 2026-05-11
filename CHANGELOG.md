@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.107.2 - 2026-05-11
+
+### Added
+
+- **Plans resolver drift nightly** (`.github/workflows/plans-capture-nightly.yml`): daily 8am UTC job captures every dev scenario from prod `/api/plans/resolved`, diffs against the committed baseline at `e2e/plans/captured/*.json`. Drift fails the run, uploads a `plans-resolver-drift` artifact, and auto-opens an issue with refresh instructions. Catches resolver regressions that mock-driven Playwright tests can't (the mock is authored, the capture is observed).
+- **Prod capture baseline** at `e2e/plans/captured/*.json` — 13 dev scenarios. Source of truth for the nightly drift check.
+- **`e2e/plans/captured/README.md`** documenting the baseline + refresh flow.
+
+### Changed
+
+- **`scripts/capture-plan-scenarios.ts`** now handles two key-file formats: id-keyed JSON (CI path via `DEV_KEYS_JSON` secret) and label-headered env-style (local path via `DEV_KEYS_FILE`, matches what platform's `seed-dev-scenarios.ts` writes). Auto-detects which format the file uses.
+- **`STRICT_KEYS=1`** mode in capture script: hard-fails on unknown env labels (in `parseEnvFile`) and missing scenarios (in `main`). Workflow sets it so silent skips can't leave the committed baseline stale while `git diff` reports no drift.
+- **Workflow wipes `e2e/plans/captured/*.json`** before capture so missing scenarios surface as deletions in the diff (defense in depth alongside `STRICT_KEYS`).
+
 ## 0.107.1 - 2026-05-11
 
 ### Fixed
