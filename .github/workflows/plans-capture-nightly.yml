@@ -1,0 +1,105 @@
+name: Plans Resolver Drift
+
+on:
+  schedule:
+    - cron: "0 8 * * *" # 8am UTC daily (offset from e2e-nightly at 7am UTC)
+  workflow_dispatch:
+
+concurrency:
+  group: plans-capture-nightly
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+# Detects drift between prod /api/plans/resolved and the committed baseline at
+# e2e/plans/captured/*.json. A failing run means either (a) the platform shipped
+# a resolver change — refresh the baseline locally and commit, or (b) the
+# resolver regressed — file a bug in artisan-roast-platform.
+#
+# Setup required before the first scheduled run can pass:
+#   1. Repo secret PLANS_CAPTURE_DEV_KEYS_JSON — JSON object mapping each dev
+#      scenario key (see app/admin/support/plans/_fixtures/plan-scenarios.ts
+#      ALL_KEYS) to its license key.
+#   2. Initial baseline committed at e2e/plans/captured/*.json. Generate via:
+#        DEV_KEYS_FILE=../artisan-roast-platform/.dev-scenario-keys \
+#        PLATFORM_URL=https://manage.artisanroast.app \
+#        npm run plans:capture
+#        git add e2e/plans/captured/ && git commit
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    env:
+      PLATFORM_URL: https://manage.artisanroast.app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Capture plan scenarios from prod
+        env:
+          DEV_KEYS_JSON: ${{ secrets.PLANS_CAPTURE_DEV_KEYS_JSON }}
+        run: |
+          if [ -z "$DEV_KEYS_JSON" ]; then
+            echo "::error::Secret PLANS_CAPTURE_DEV_KEYS_JSON is not set. See workflow header for setup."
+            exit 1
+          fi
+          npm run plans:capture
+
+      - name: Detect drift
+        id: drift
+        run: |
+          if git diff --quiet -- e2e/plans/captured/; then
+            echo "No drift — baseline matches prod."
+          else
+            echo "drift_detected=true" >> "$GITHUB_OUTPUT"
+            git diff -- e2e/plans/captured/ > drift.diff
+            echo "::error::Drift detected. See drift.diff artifact."
+            exit 1
+          fi
+
+      - name: Upload drift diff
+        uses: actions/upload-artifact@v4.6.2
+        if: failure() && steps.drift.outputs.drift_detected == 'true'
+        with:
+          name: plans-resolver-drift
+          path: drift.diff
+          retention-days: 14
+
+      - name: Open issue on drift
+        if: failure() && steps.drift.outputs.drift_detected == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "Plans resolver drift — $(date -u '+%Y-%m-%d')" \
+            --label "bug" \
+            --body "## Plans resolver drift
+
+          The prod /api/plans/resolved response no longer matches the committed baseline at \`e2e/plans/captured/\`.
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          Commit: \`${{ github.sha }}\`
+
+          Download the \`plans-resolver-drift\` artifact for the full diff.
+
+          **If intentional** (a resolver change shipped):
+          \`\`\`bash
+          DEV_KEYS_FILE=../artisan-roast-platform/.dev-scenario-keys \\
+            PLATFORM_URL=https://manage.artisanroast.app \\
+            npm run plans:capture
+          git diff e2e/plans/captured/
+          git add e2e/plans/captured/
+          git commit -m 'chore(plans): refresh prod capture baseline'
+          \`\`\`
+
+          **If unintentional** — the resolver regressed. File a bug against artisan-roast-platform with the diff."
