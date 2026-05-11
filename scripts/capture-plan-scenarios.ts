@@ -164,6 +164,12 @@ async function main(): Promise<void> {
 
   console.log(`\nDone — ok ${ok}, missing ${missing}, failed ${failed}`);
   if (failed > 0) process.exit(1);
+  // STRICT_KEYS (set by CI): missing scenarios are a coverage gap, not just
+  // a warning — fail so the drift detector can't silently leave stale JSONs.
+  if (process.env.STRICT_KEYS === "1" && missing > 0) {
+    console.error(`STRICT_KEYS: ${missing} scenario(s) had no license key — coverage gap`);
+    process.exit(1);
+  }
 }
 
 void main();

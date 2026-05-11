@@ -45,9 +45,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Clear committed baseline JSONs
+        # If we don't delete first, a missing/skipped scenario leaves the
+        # existing JSON intact and `git diff` stays clean — drift undetected.
+        # Deleting forces missing scenarios to show up as deletions in the diff.
+        # README.md preserved.
+        run: find e2e/plans/captured/ -name '*.json' -delete
+
       - name: Capture plan scenarios from prod
         env:
           DEV_KEYS_JSON: ${{ secrets.PLANS_CAPTURE_DEV_KEYS_JSON }}
+          # Fail loud on unknown labels or missing scenarios — a coverage gap
+          # in CI is itself a drift signal.
+          STRICT_KEYS: "1"
         run: |
           if [ -z "$DEV_KEYS_JSON" ]; then
             echo "::error::Secret PLANS_CAPTURE_DEV_KEYS_JSON is not set. See workflow header for setup."
@@ -63,7 +73,7 @@ jobs:
           else
             echo "drift_detected=true" >> "$GITHUB_OUTPUT"
             git diff -- e2e/plans/captured/ > drift.diff
-            echo "::error::Drift detected. See drift.diff artifact."
+            echo "::error::Drift detected (includes any deleted scenarios — coverage gap). See drift.diff artifact."
             exit 1
           fi
 
