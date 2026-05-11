@@ -56,6 +56,10 @@ export default defineConfig({
         NEXT_PUBLIC_BUILD_VARIANT: "",
         MOCK_LICENSE_TIER: "",
         LICENSE_KEY: "",
+        // Tests that need /api/plans/resolved use the dev `?licenseKey=` URL
+        // override on /admin/support/plans (see app/admin/support/plans/page.tsx).
+        // Setting LICENSE_KEY globally would make `getLicenseKey()` truthy and
+        // break tests like activate.spec.ts that expect an unlicensed state.
       },
     },
   ],

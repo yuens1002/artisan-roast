@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.107.1 - 2026-05-11
+
+### Fixed
+
+- **E2E nightly: mock `/api/plans/resolved`**. `e2e/mock-platform.mjs` now serves the resolver endpoint so Playwright suites that hit the admin plans page render real cards instead of empty state. `playwright.config.ts` sets `LICENSE_KEY` so `fetchResolvedPlans()` doesn't short-circuit on the no-license-key branch. Unblocks nightly e2e runs that were silently empty after Session 1's renderer refactor.
+
 ## 0.107.0 - 2026-05-11
 
 ### Added
