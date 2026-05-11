@@ -39,6 +39,7 @@ import {
   formatPoolCount,
   formatPriceDisplay,
   formatPriceLabel,
+  isSaleActive,
 } from "./formatters";
 
 // ---------------------------------------------------------------------------
@@ -351,7 +352,7 @@ function NoneCard({
   const isFree = plan.price === 0;
   const ghostAction = state.actions.find((a) => a.variant === "ghost");
   const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
-  const hasSale = !isFree && plan.salePrice != null;
+  const hasSale = !isFree && isSaleActive(plan);
   const priceDisplay = isFree ? "Free" : formatPriceDisplay(plan.price);
   const salePriceDisplay = hasSale ? formatPriceDisplay(plan.salePrice!) : null;
   const intervalLabel = isFree ? "" : formatIntervalLabel(plan.interval);
@@ -844,7 +845,7 @@ function InactiveCard({
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
-  const hasSale = plan.salePrice != null;
+  const hasSale = isSaleActive(plan);
   const priceDisplay = formatPriceDisplay(plan.price);
   const salePriceDisplay = hasSale ? formatPriceDisplay(plan.salePrice!) : null;
   const intervalLabel = formatIntervalLabel(plan.interval);

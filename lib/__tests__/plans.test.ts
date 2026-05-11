@@ -13,16 +13,21 @@ describe("fetchPlans", () => {
     jest.clearAllMocks();
   });
 
-  it("returns empty array when fetch throws (network error)", async () => {
+  it("returns the self-hosted fallback catalog when fetch throws (network error)", async () => {
+    // Plan-detail / terms pages call notFound() on empty catalogs, so a
+    // transient provider outage must not turn into a 404. The fallback is
+    // the SDK's canonical self-hosted shapes (Community + Priority Support).
     mockFetch.mockRejectedValueOnce(new Error("fetch failed"));
     const plans = await fetchPlans();
-    expect(plans).toHaveLength(0);
+    expect(plans.length).toBeGreaterThan(0);
+    expect(plans.map((p) => p.slug).sort()).toEqual(["free", "priority-support"]);
   });
 
-  it("returns empty array when platform returns 500", async () => {
+  it("returns the self-hosted fallback catalog when platform returns 500", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
     const plans = await fetchPlans();
-    expect(plans).toHaveLength(0);
+    expect(plans.length).toBeGreaterThan(0);
+    expect(plans.map((p) => p.slug).sort()).toEqual(["free", "priority-support"]);
   });
 
   it("returns plans when platform responds successfully", async () => {

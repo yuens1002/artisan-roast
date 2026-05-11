@@ -29,6 +29,18 @@ export function formatIntervalLabel(interval: HydratedPlan["interval"]): string 
   return interval === "year" ? "/yr" : "/mo";
 }
 
+/** True when the plan has an active sale right now.
+ *  Drives whether the renderer shows the sale price + crossed-out regular price.
+ *  - `salePrice` must be set, AND
+ *  - if `saleEndsAt` is set, it must be in the future.
+ *  When `saleEndsAt` is absent (label-only sales, no expiry), `salePrice`
+ *  alone is enough. */
+export function isSaleActive(plan: HydratedPlan): boolean {
+  if (plan.salePrice == null) return false;
+  if (plan.saleEndsAt && new Date(plan.saleEndsAt) <= new Date()) return false;
+  return true;
+}
+
 /** Composes saleLabel + saleEndsAt into the small text below the price.
  *  Returns null when the sale is not active (no label set OR sale ended). */
 export function formatPriceLabel(plan: HydratedPlan): string | null {

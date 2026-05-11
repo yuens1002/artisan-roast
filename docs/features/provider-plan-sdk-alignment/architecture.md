@@ -216,27 +216,24 @@ __tests__/contract/
 **Catches:** SDK `SCENARIOS.*` values change between versions — different badge text, benefit copy, action labels.
 **Mechanism:** `__tests__/sdk-scaffold-pins.test.ts` snapshots every imported SCENARIO with date normalisation. SDK upgrades surface as snapshot diff for review.
 
-### Layer 4 — Captured-payload tests (Jest, prod data replay)
+### Layer 4 — Captured-payload tests (Jest, prod data replay) — partially shipped
 
 **Catches:** Resolver returns shapes the SDK type doesn't anticipate — extra fields, wrong types, omitted required fields, statuses outside the union, wrong response wrapping. Cross-field inconsistencies. Plan content drift.
 
-**Mechanism:**
+**Mechanism (current state):**
 
-1. `npm run plans:capture` calls each dev license key's `/api/plans/resolved`, normalises `resolvedAt` and `pool.used`, writes `e2e/plans/captured/<key>.json`.
-2. Jest test (`__tests__/captured-payloads.test.tsx`) loads each JSON, asserts:
-   - Structural type satisfaction against `HydratedPlan`.
-   - Status string ∈ SDK union.
-   - Cross-field: `quotas[].limit === state.pools[].limit` for each matching slug.
-   - `action.modalSlug` references resolve in `plan.actionModals[]`.
-   - Renders through `PlanPageClient` without crashes; shape-driven projections assert every captured action/pool/label appears in DOM.
-3. `npm run plans:validate` (optional, MCP-backed) calls `mcp__artisan-roast-sdk__validate_plan_payload` for an authoritative SDK validation. Developer runs ad hoc before refreshing captures.
+1. **Shipped today**: `npm run plans:capture` (`scripts/capture-plan-scenarios.ts`) calls each dev license key's `/api/plans/resolved`, normalises `resolvedAt` to a placeholder, writes `e2e/plans/captured/<key>.json`.
+2. **Deferred (ST-4 in `plan.md`)**: Jest test that loads each JSON and asserts (a) structural type satisfaction against `HydratedPlan`, (b) `state.status` ∈ SDK union, (c) cross-field `quotas[].limit === state.pools[].limit`, (d) `action.modalSlug` resolves in `plan.actionModals[]`, (e) renders through `PlanPageClient` without crash with shape-driven projections.
+3. **Deferred (additional normalisation)**: capture script could also normalise `pool.used` (currently only `resolvedAt` is normalised) to make refreshes diff-friendly across runs.
+4. **Deferred (optional MCP cross-check)**: `npm run plans:validate` calling `mcp__artisan-roast-sdk__validate_plan_payload` for SDK-authoritative validation.
 
 **Refresh discipline:** Re-run `plans:capture` before cross-repo merges or releases. The JSON diff *is* the drift signal — review and accept or investigate.
 
-### Layer 5 — Playwright plumbing test
+### Layer 5 — Playwright plumbing test — deferred
 
 **Catches:** Next.js integration breakage — `searchParams` not awaited, env-gating regression, RSC → Client serialization, hydration mismatches, fetch timeout silently empties the page, dev override leaking into production.
-**Mechanism:** One spec at `e2e/plans/plumbing.spec.ts` mocks `/api/plans/resolved` with a captured payload, navigates to `/admin/support/plans`, watches `page.on("pageerror")` and `console.error`. Asserts page rendered without errors; does NOT assert content (that's Layer 2/4).
+
+**Status:** Deferred (ST-5 in `plan.md`). Naive Playwright route-mock of `/api/plans/resolved` doesn't intercept the page's server-side RSC fetch — the spec must drive via the dev `?scenario=` override, OR the mock platform server (`e2e/mock-platform.mjs`) must serve `/api/plans/resolved`, OR a store-local route must proxy the resolver. Pick one before authoring the spec.
 
 ### Layer 6 — Visual screenshot harness
 
@@ -298,41 +295,38 @@ docs/features/provider-plan-sdk-alignment/
     └── TEMP-ISSUES.md
 
 app/admin/support/plans/
-├── PlanPageClient.tsx                     # the renderer
-├── formatters.ts                          # extracted pure formatters (Session 1)
+├── PlanPageClient.tsx                     # the renderer (Session 1: consumes formatters + PoolCtaMenu)
+├── formatters.ts                          # extracted pure formatters (Session 1 ✓)
 ├── _components/
-│   ├── ConfirmActionDialog.tsx            # modal — covered by AC-CT-MODAL
-│   └── PoolCtaMenu.tsx                    # shared 3-dot helper (Session 1)
-├── page.tsx                               # RSC entry; ?scenario= dev override
+│   ├── ConfirmActionDialog.tsx            # modal — covered by AC-CT-MODAL (deferred ST-2)
+│   └── PoolCtaMenu.tsx                    # shared 3-dot helper (Session 1 ✓)
+├── page.tsx                               # RSC entry; ?scenario= dev override (Session 1 ✓)
 └── __tests__/
     ├── fixtures/
-    │   └── plan-scenarios.ts              # SDK-derived examples for dev override + screenshots
-    ├── contract/                          # Layer 2
-    │   ├── _helpers.tsx
-    │   ├── common-fields.test.tsx
-    │   ├── none-card.test.tsx
-    │   ├── active-card.test.tsx
-    │   ├── trial-card.test.tsx
-    │   ├── expired-card.test.tsx
-    │   ├── cancelled-card.test.tsx
-    │   ├── inactive-card.test.tsx
-    │   ├── confirm-action-dialog.test.tsx
-    │   └── plan-page-client.test.tsx
-    ├── formatters.test.ts                 # AC-FMT
-    ├── sdk-scaffold-pins.test.ts          # Layer 3
-    └── captured-payloads.test.tsx         # Layer 4
+    │   └── plan-scenarios.ts              # SDK-derived examples for dev override + screenshots (Session 1 ✓)
+    ├── contract/                          # Layer 2 — per-state files shipped today
+    │   ├── _helpers.tsx                   # ✓
+    │   ├── none-card.test.tsx             # ✓
+    │   ├── active-card.test.tsx           # ✓
+    │   ├── trial-card.test.tsx            # ✓
+    │   ├── expired-card.test.tsx          # ✓
+    │   ├── cancelled-card.test.tsx        # ✓
+    │   ├── inactive-card.test.tsx         # ✓
+    │   ├── common-fields.test.tsx         # deferred ST-1 (restructure into shared suite)
+    │   ├── confirm-action-dialog.test.tsx # deferred ST-2
+    │   └── plan-page-client.test.tsx      # deferred ST-3 (page composition)
+    ├── formatters.test.ts                 # AC-FMT ✓
+    ├── sdk-scaffold-pins.test.ts          # Layer 3 ✓
+    └── captured-payloads.test.tsx         # Layer 4 — deferred ST-4
 
 e2e/plans/
-├── plumbing.spec.ts                       # Layer 5
-└── captured/                              # Layer 4 input — committed
-    ├── dev-free.json
-    ├── dev-pro.json
-    └── …
+├── plumbing.spec.ts                       # Layer 5 — deferred ST-5
+└── captured/                              # Layer 4 input — directory exists; JSONs collected via `npm run plans:capture`
 
 scripts/
-├── capture-plan-scenarios.ts              # `npm run plans:capture` — refreshes Layer 4
-├── validate-plan-scenarios.ts             # `npm run plans:validate` — MCP cross-check (opt-in)
-└── screenshot-plan-scenarios.ts           # Layer 6
+├── capture-plan-scenarios.ts              # `npm run plans:capture` — refreshes Layer 4 input ✓
+├── validate-plan-scenarios.ts             # `npm run plans:validate` — MCP cross-check (deferred, optional)
+└── screenshot-plan-scenarios.ts           # Layer 6 ✓ (replaces 8 throwaways)
 ```
 
 ---

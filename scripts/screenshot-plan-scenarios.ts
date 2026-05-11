@@ -8,13 +8,16 @@
  *   npm run dev
  *   tsx scripts/screenshot-plan-scenarios.ts
  *
+ * Required env:
+ *   ADMIN_EMAIL    — admin user email for /auth/admin-signin
+ *   ADMIN_PASSWORD — admin user password
+ *
  * Optional env:
  *   BASE_URL  — defaults to http://localhost:3000
  *   ONLY      — comma-separated subset of dev keys (e.g. "dev-free,dev-pro")
  *   OUT_DIR   — defaults to .screenshots/plan-scenarios
  *
- * Auth: requires the demo admin user. The script signs in via the
- * /auth/admin-signin form before hitting the plans page.
+ * Auth: signs in via the /auth/admin-signin form before hitting the plans page.
  */
 import puppeteer, { type Browser, type Page } from "puppeteer";
 import { mkdir } from "node:fs/promises";
@@ -30,8 +33,15 @@ const ONLY = process.env.ONLY?.split(",")
   .map((s) => s.trim())
   .filter(Boolean) as ScenarioKey[] | undefined;
 
-const ADMIN_EMAIL = "admin@artisanroast.com";
-const ADMIN_PASSWORD = "ivcF8ZV3FnGaBJ&#8j";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "";
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+  console.error(
+    "Missing ADMIN_EMAIL or ADMIN_PASSWORD. Set both in env (e.g. via .env.local) before running the screenshot harness.\n" +
+      "For local dev with seeded admin: export ADMIN_EMAIL=...; export ADMIN_PASSWORD=...; tsx scripts/screenshot-plan-scenarios.ts"
+  );
+  process.exit(1);
+}
 
 async function signIn(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/auth/admin-signin`, { waitUntil: "networkidle0" });
