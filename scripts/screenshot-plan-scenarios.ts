@@ -1,117 +1,93 @@
 /**
- * Screenshot script for provider-plan-sdk-alignment Session 3 ACs.
+ * Plan scenarios screenshot harness — single source of truth.
  *
- * Usage:
- *   MOCK_LICENSE_TIER=pro npx tsx scripts/screenshot-plan-scenarios.ts
+ * Loops every key in SCENARIO_FIXTURES, hits localhost with
+ * `?scenario=<key>` (no platform, no DB), and captures the viewport.
+ * Mirrors the same fixture file the Jest render harness reads.
  *
- * Requires the dev server to be running with MOCK_LICENSE_TIER set:
- *   MOCK_LICENSE_TIER=pro npm run dev
+ *   npm run dev
+ *   tsx scripts/screenshot-plan-scenarios.ts
+ *
+ * Required env:
+ *   ADMIN_EMAIL    — admin user email for /auth/admin-signin
+ *   ADMIN_PASSWORD — admin user password
+ *
+ * Optional env:
+ *   BASE_URL  — defaults to http://localhost:3000
+ *   ONLY      — comma-separated subset of dev keys (e.g. "dev-free,dev-pro")
+ *   OUT_DIR   — defaults to .screenshots/plan-scenarios
+ *
+ * Auth: signs in via the /auth/admin-signin form before hitting the plans page.
  */
-
-import puppeteer from "puppeteer";
-import * as fs from "fs";
-import * as path from "path";
-import { SCENARIOS as SDK_SCENARIOS } from "artisan-roast-sdk/plans/scaffolds";
+import puppeteer, { type Browser, type Page } from "puppeteer";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
+import {
+  ALL_KEYS,
+  type ScenarioKey,
+} from "../app/admin/support/plans/_fixtures/plan-scenarios";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@artisanroast.com";
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "ivcF8ZV3FnGaBJ&#8j";
-const OUT_DIR = path.join(
-  process.cwd(),
-  ".screenshots",
-  process.env.SCREENSHOT_DIR ?? "plan-scenarios-all"
-);
+const OUT_DIR = process.env.OUT_DIR ?? ".screenshots/plan-scenarios";
+const ONLY = process.env.ONLY?.split(",")
+  .map((s) => s.trim())
+  .filter(Boolean) as ScenarioKey[] | undefined;
 
-// All SDK scenarios — covers every plan/state combination
-const SCENARIOS = [
-  // Self-hosted community plans
-  { key: "SELF_HOSTED_FREE",             file: "01-community-none.png" },
-  { key: "SELF_HOSTED_FREE_WITH_ADDONS", file: "02-community-addons.png" },
-  // Priority Support states
-  { key: "PRIORITY_SUPPORT_NONE",        file: "03-ps-none.png" },
-  { key: "PRIORITY_SUPPORT_ACTIVE",      file: "04-ps-active.png" },
-  { key: "PRIORITY_SUPPORT_INACTIVE",    file: "05-ps-inactive.png" },
-  // Trial states
-  { key: "TRIAL_ACTIVE_NO_CARD",         file: "06-trial-active-no-card.png" },
-  { key: "TRIAL_ACTIVE_CARD_ADDED",      file: "07-trial-active-card-added.png" },
-  { key: "TRIAL_EXPIRED",               file: "08-trial-expired.png" },
-  // Post-trial / converted states
-  { key: "CONVERTED",                   file: "09-converted.png" },
-  { key: "DIRECT_SUBSCRIBE",            file: "10-direct-subscribe.png" },
-  { key: "INACTIVE",                    file: "11-inactive.png" },
-];
-
-async function waitForServer(url: string, retries = 20): Promise<void> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const resp = await fetch(url);
-      if (resp.status < 500) return;
-    } catch {
-      // not ready yet
-    }
-    await new Promise((r) => setTimeout(r, 1000));
-  }
-  throw new Error(`Server not ready at ${url}`);
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "";
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+  console.error(
+    "Missing ADMIN_EMAIL or ADMIN_PASSWORD. Set both in env (e.g. via .env.local) before running the screenshot harness.\n" +
+      "For local dev with seeded admin: export ADMIN_EMAIL=...; export ADMIN_PASSWORD=...; tsx scripts/screenshot-plan-scenarios.ts"
+  );
+  process.exit(1);
 }
 
-async function main() {
-  // Fail fast if any scenario key is not in the SDK — prevents silent
-  // wrong-image generation when a scenario is renamed or removed.
-  const unknownKeys = SCENARIOS.filter(({ key }) => !(key in SDK_SCENARIOS));
-  if (unknownKeys.length > 0) {
-    console.error(
-      `Unknown scenario keys (not in SDK SCENARIOS): ${unknownKeys.map((s) => s.key).join(", ")}`
-    );
-    process.exit(1);
-  }
+async function signIn(page: Page): Promise<void> {
+  await page.goto(`${BASE_URL}/auth/admin-signin`, { waitUntil: "networkidle0" });
+  await page.type('input[name="email"]', ADMIN_EMAIL);
+  await page.type('input[name="password"]', ADMIN_PASSWORD);
+  await Promise.all([
+    page.click('button[type="submit"]'),
+    page.waitForFunction(() => !window.location.pathname.startsWith("/auth/"), {
+      timeout: 15_000,
+    }),
+  ]);
+}
 
-  fs.mkdirSync(OUT_DIR, { recursive: true });
+async function captureScenario(page: Page, key: ScenarioKey): Promise<void> {
+  const url = `${BASE_URL}/admin/support/plans?scenario=${encodeURIComponent(key)}`;
+  await page.goto(url, { waitUntil: "networkidle0" });
+  // Give Radix portals + lucide icons a beat to settle.
+  await new Promise((r) => setTimeout(r, 250));
+  const out = join(OUT_DIR, `${key}.png`);
+  await page.screenshot({ path: out, fullPage: false });
+  console.log(`  captured  ${key}  →  ${out}`);
+}
 
-  await waitForServer(BASE_URL);
+async function main(): Promise<void> {
+  await mkdir(OUT_DIR, { recursive: true });
+  const keys: ScenarioKey[] = ONLY ?? ALL_KEYS;
 
-  const browser = await puppeteer.launch({ headless: true });
-
+  const browser: Browser = await puppeteer.launch({
+    headless: true,
+    defaultViewport: { width: 1280, height: 900 },
+  });
   try {
     const page = await browser.newPage();
-    await page.setViewport({ width: 1440, height: 900 });
+    await signIn(page);
 
-    // Log in with admin credentials
-    await page.goto(`${BASE_URL}/auth/admin-signin`, { waitUntil: "networkidle2" });
-    await page.type('input[name="email"]', ADMIN_EMAIL);
-    await page.type('input[name="password"]', ADMIN_PASSWORD);
-    await page.click('button[type="submit"]');
-
-    await page.waitForFunction(
-      () => !location.href.includes("/auth/"),
-      { timeout: 10000 }
-    );
-
-    console.log("Logged in, taking scenario screenshots...");
-
-    for (const { key, file } of SCENARIOS) {
-      const url = `${BASE_URL}/admin/support/plans?scenario=${key}`;
-      await page.goto(url, { waitUntil: "networkidle2" });
-      await new Promise((r) => setTimeout(r, 500));
-
-      // Screenshot the plan cards grid only
-      const grid = await page.$(".grid.gap-4");
-      const outPath = path.join(OUT_DIR, file);
-      if (grid) {
-        await grid.screenshot({ path: outPath });
-      } else {
-        // Fallback: viewport screenshot
-        await page.screenshot({ path: outPath });
+    console.log(`Capturing ${keys.length} scenarios → ${OUT_DIR}/`);
+    for (const key of keys) {
+      try {
+        await captureScenario(page, key);
+      } catch (err) {
+        console.error(`  FAILED   ${key}: ${(err as Error).message}`);
       }
-      console.log(`  ✓ ${key} → ${file}`);
     }
   } finally {
     await browser.close();
   }
-
-  console.log(`\nScreenshots saved to ${OUT_DIR}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+void main();

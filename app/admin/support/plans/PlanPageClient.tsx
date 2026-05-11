@@ -9,25 +9,19 @@ import {
   Clock,
   ExternalLink,
   Loader2,
-  MoreVertical,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { resolveIconComponent } from "@/components/shared/icons/DynamicIcon";
-import Link from "next/link";
+import { IS_DEMO } from "@/lib/demo";
 import { Progress } from "@/components/ui/progress";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { refreshLicense } from "../actions";
 import { startCheckout } from "./actions";
 import { ConfirmActionDialog } from "./_components/ConfirmActionDialog";
+import { PoolCtaMenu } from "./_components/PoolCtaMenu";
 
 import type { LicenseInfo } from "@/lib/license-types";
 import type {
@@ -36,6 +30,17 @@ import type {
   UsagePool as SdkUsagePool,
   ConfirmActionConfig,
 } from "artisan-roast-sdk/plans";
+import {
+  computePoolTotal,
+  formatDaysRemaining,
+  formatDeactivatedDate,
+  formatDeprovisionDate,
+  formatIntervalLabel,
+  formatPoolCount,
+  formatPriceDisplay,
+  formatPriceLabel,
+  isSaleActive,
+} from "./formatters";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,21 +62,6 @@ function PlanBadgeIcon({
   const Icon = name ? resolveIcon(name, Fallback) : Fallback;
   if (!Icon) return null;
   return React.createElement(Icon, { className });
-}
-
-function formatPriceLabel(plan: HydratedPlan): string | null {
-  if (!plan.saleLabel && !plan.saleEndsAt) return null;
-  const parts: string[] = [];
-  if (plan.saleLabel) parts.push(plan.saleLabel);
-  if (plan.saleEndsAt) {
-    const ends = new Date(plan.saleEndsAt).toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
-    parts.push(`offer ends ${ends}`);
-  }
-  return parts.join(", ");
 }
 
 function actionVariant(
@@ -108,6 +98,7 @@ interface PlanPageClientProps {
 
 export function PlanPageClient({ license, plans }: PlanPageClientProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [activeModal, setActiveModal] = useState<{
@@ -155,7 +146,13 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
       return;
     }
     if (action.url) {
-      window.open(action.url, "_blank", "noopener,noreferrer");
+      if (action.url.startsWith("/")) {
+        router.push(action.url);
+      } else if (IS_DEMO) {
+        handleSubscribe(plan.slug);
+      } else {
+        window.open(action.url, "_blank", "noopener,noreferrer");
+      }
       return;
     }
     if (action.endpoint) {
@@ -259,7 +256,6 @@ function PlanCard({ plan, isPending, onAction }: PlanCardBaseProps) {
         <NoneCard
           plan={plan}
           state={state}
-          detailHref={detailHref}
           isPending={isPending}
           onAction={onAction}
           onCardClick={onCardClick}
@@ -307,7 +303,6 @@ function PlanCard({ plan, isPending, onAction }: PlanCardBaseProps) {
         <InactiveCard
           plan={plan}
           state={state}
-          detailHref={detailHref}
           onAction={onAction}
           onCardClick={onCardClick}
         />
@@ -320,17 +315,17 @@ function PlanCard({ plan, isPending, onAction }: PlanCardBaseProps) {
 // ---------------------------------------------------------------------------
 
 function PoolBar({ pool }: { pool: SdkUsagePool }) {
-  const total = pool.limit + (pool.purchased ?? 0);
+  const total = computePoolTotal(pool);
   const pct = total > 0 ? (pool.used / total) * 100 : 0;
-  const remaining = total - pool.used;
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">{pool.label}</span>
-        <span className="tabular-nums text-muted-foreground">
-          {remaining} / {total} remaining
-        </span>
+        <div className="flex items-center gap-1.5">
+          <PlanBadgeIcon name={pool.icon} className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{pool.label}</span>
+        </div>
+        <span className="tabular-nums">{formatPoolCount(pool)}</span>
       </div>
       <Progress value={pct} className="h-2" />
     </div>
@@ -344,23 +339,23 @@ function PoolBar({ pool }: { pool: SdkUsagePool }) {
 function NoneCard({
   plan,
   state,
-  detailHref,
   isPending,
   onAction,
   onCardClick,
 }: {
   plan: HydratedPlan;
   state: NoneState;
-  detailHref: string;
   isPending: boolean;
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
   const isFree = plan.price === 0;
-  const hasSale = !isFree && plan.salePrice != null;
-  const priceDisplay = isFree ? "Free" : `$${(plan.price / 100).toFixed(0)}`;
-  const salePriceDisplay = hasSale ? `$${(plan.salePrice! / 100).toFixed(0)}` : null;
-  const intervalLabel = isFree ? "" : plan.interval === "year" ? "/yr" : "/mo";
+  const ghostAction = state.actions.find((a) => a.variant === "ghost");
+  const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
+  const hasSale = !isFree && isSaleActive(plan);
+  const priceDisplay = isFree ? "Free" : formatPriceDisplay(plan.price);
+  const salePriceDisplay = hasSale ? formatPriceDisplay(plan.salePrice!) : null;
+  const intervalLabel = isFree ? "" : formatIntervalLabel(plan.interval);
   const priceLabel = formatPriceLabel(plan);
 
   return (
@@ -393,8 +388,13 @@ function NoneCard({
         )}
       </div>
 
-      {plan.details.benefits?.activeItems &&
-        plan.details.benefits.activeItems.length > 0 && (
+      {plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
+        <>
+          {plan.details.benefits.activeHeader && (
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {plan.details.benefits.activeHeader}
+            </p>
+          )}
           <ul className="space-y-2 text-sm">
             {plan.details.benefits.activeItems.map((benefit) => (
               <li key={benefit} className="flex items-start gap-2">
@@ -403,43 +403,46 @@ function NoneCard({
               </li>
             ))}
           </ul>
-        )}
+        </>
+      )}
 
       <div className="flex items-center gap-2 mt-auto pt-0">
-        <Link
-          href={detailHref}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {isFree ? "View Terms" : "View Details"}
-        </Link>
-        {state.actions.length > 0 && (
-          <>
-            <div className="flex-1" />
-            <div className="flex items-center gap-2">
-              {state.actions.map((action) => {
-                const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
-                return (
-                  <Button
-                    key={action.slug}
-                    variant={actionVariant(action.variant)}
-                    size="sm"
-                    disabled={isPending}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAction(action, plan);
-                    }}
-                  >
-                    {isPending && action.variant === "primary" && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    {action.label}
-                    {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
-                  </Button>
-                );
-              })}
-            </div>
-          </>
+        {ghostAction && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction(ghostAction, plan);
+            }}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {ghostAction.label}
+          </button>
         )}
+        {primaryActions.length > 0 && <div className="flex-1" />}
+        {primaryActions.map((action) => {
+          const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
+          return (
+            <Button
+              key={action.slug}
+              variant={actionVariant(action.variant)}
+              size="sm"
+              disabled={isPending}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(action, plan);
+              }}
+            >
+              {isPending && action.variant === "primary" && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
+              {action.label}
+              {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
+            </Button>
+          );
+        })}
       </div>
     </div>
   );
@@ -463,7 +466,8 @@ function ActiveCard({
   onCardClick: (e: React.MouseEvent) => void;
 }) {
   const pools = state.pools ?? [];
-  const poolCtaActions = pools.flatMap((p) => (p.cta ? [p.cta] : []));
+  const ghostActions = state.actions.filter((a) => a.variant === "ghost");
+  const menuActions = state.actions.filter((a) => a.variant !== "ghost");
 
   return (
     <div
@@ -475,10 +479,13 @@ function ActiveCard({
           <h3 className="text-lg font-semibold">{plan.name}</h3>
           <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
         </div>
-        <Badge variant="secondary" className="shrink-0 gap-1.5">
-          <PlanBadgeIcon name={state.badgeIcon} fallback={CheckCircle2} className="h-3.5 w-3.5" />
-          {state.badge}
-        </Badge>
+        <div className="flex items-center gap-1 shrink-0">
+          <Badge variant="secondary" className="gap-1.5">
+            <PlanBadgeIcon name={state.badgeIcon} fallback={CheckCircle2} className="h-3.5 w-3.5" />
+            {state.badge}
+          </Badge>
+          <PoolCtaMenu pools={pools} plan={plan} onAction={onAction} />
+        </div>
       </div>
 
       <div className="space-y-5 flex-1">
@@ -499,60 +506,42 @@ function ActiveCard({
         )}
       </div>
 
-      {/* Bottom CTA: pool.cta inline left, state.actions in 3-dot right */}
+      {/* Bottom CTA: management actions — ghost left, primary/secondary right */}
       <div className="flex items-center gap-2 mt-auto pt-5">
-        <div className="flex items-center gap-2">
-          {poolCtaActions.map((action) => {
-            const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
-            return (
-              <Button
-                key={action.slug}
-                variant={actionVariant(action.variant)}
-                size="sm"
-                disabled={isPending}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAction(action, plan);
-                }}
-              >
-                {action.label}
-                {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
-              </Button>
-            );
-          })}
-        </div>
-        <div className="flex-1" />
-        {state.actions.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-4 w-4" />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {state.actions.map((action) => {
-                const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
-                return (
-                  <DropdownMenuItem
-                    key={action.slug}
-                    onClick={() => onAction(action, plan)}
-                  >
-                    {action.label}
-                    {Icon && (
-                      <Icon className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        {ghostActions.map((action) => (
+          <button
+            key={action.slug}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction(action, plan);
+            }}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {action.label}
+          </button>
+        ))}
+        {menuActions.length > 0 && <div className="flex-1" />}
+        {menuActions.map((action) => {
+          const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
+          return (
+            <Button
+              key={action.slug}
+              variant={actionVariant(action.variant)}
+              size="sm"
+              disabled={isPending}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(action, plan);
+              }}
+            >
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
+              {action.label}
+              {Icon && <Icon className="ml-1.5 h-3.5 w-3.5 text-muted-foreground" />}
+            </Button>
+          );
+        })}
       </div>
     </div>
   );
@@ -573,11 +562,7 @@ function TrialCard({
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
-  // progress.value = days remaining; bar shows consumed portion
-  const pct =
-    state.progress.total > 0
-      ? ((state.progress.total - state.progress.value) / state.progress.total) * 100
-      : 0;
+  const pools = state.pools ?? [];
   const ghostActions = state.actions.filter((a) => a.variant === "ghost");
   const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
 
@@ -591,26 +576,17 @@ function TrialCard({
           <h3 className="text-lg font-semibold">{plan.name}</h3>
           <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
         </div>
-        <Badge variant="secondary" className="shrink-0 gap-1.5">
-          <PlanBadgeIcon name={state.badgeIcon} fallback={Clock} className="h-3.5 w-3.5" />
-          {state.badge}
-        </Badge>
+        <div className="flex items-center gap-1 shrink-0">
+          <Badge variant="secondary" className="gap-1.5">
+            <PlanBadgeIcon name={state.badgeIcon} fallback={Clock} className="h-3.5 w-3.5" />
+            {state.badge}
+          </Badge>
+          <PoolCtaMenu pools={pools} plan={plan} onAction={onAction} />
+        </div>
       </div>
 
       <div className="space-y-5 flex-1">
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{state.progress.label}</span>
-            </div>
-            <span className="tabular-nums text-muted-foreground">
-              {state.progress.value} / {state.progress.total}{" "}
-              {state.progress.countLabel}
-            </span>
-          </div>
-          <Progress value={pct} className="h-2" />
-        </div>
+        {pools.map((pool) => <PoolBar key={pool.slug} pool={pool} />)}
 
         {state.statusInfo && (
           <p className="text-sm text-muted-foreground">
@@ -618,8 +594,13 @@ function TrialCard({
           </p>
         )}
 
-        {plan.details.benefits?.activeItems &&
-          plan.details.benefits.activeItems.length > 0 && (
+        {plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
+          <>
+            {plan.details.benefits.activeHeader && (
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {plan.details.benefits.activeHeader}
+              </p>
+            )}
             <ul className="space-y-2 text-sm">
               {plan.details.benefits.activeItems.map((benefit) => (
                 <li key={benefit} className="flex items-start gap-2">
@@ -628,7 +609,8 @@ function TrialCard({
                 </li>
               ))}
             </ul>
-          )}
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-2 mt-auto pt-5">
@@ -648,6 +630,7 @@ function TrialCard({
         {primaryActions.length > 0 && <div className="flex-1" />}
         {primaryActions.map((action) => {
           const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
           return (
             <Button
               key={action.slug}
@@ -658,6 +641,7 @@ function TrialCard({
                 onAction(action, plan);
               }}
             >
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
               {action.label}
               {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
             </Button>
@@ -683,10 +667,7 @@ function ExpiredCard({
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
-  const pct =
-    state.progress.total > 0
-      ? ((state.progress.total - state.progress.value) / state.progress.total) * 100
-      : 100;
+  const pools = state.pools ?? [];
   const ghostActions = state.actions.filter((a) => a.variant === "ghost");
   const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
 
@@ -700,31 +681,40 @@ function ExpiredCard({
           <h3 className="text-lg font-semibold">{plan.name}</h3>
           <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
         </div>
-        <Badge variant="outline" className="shrink-0 gap-1.5">
-          <PlanBadgeIcon name={state.badgeIcon} fallback={Clock} className="h-3.5 w-3.5" />
-          {state.badge}
-        </Badge>
+        <div className="flex items-center gap-1 shrink-0">
+          <Badge variant="outline" className="gap-1.5">
+            <PlanBadgeIcon name={state.badgeIcon} fallback={Clock} className="h-3.5 w-3.5" />
+            {state.badge}
+          </Badge>
+          <PoolCtaMenu pools={pools} plan={plan} onAction={onAction} />
+        </div>
       </div>
 
       <div className="space-y-5 flex-1">
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{state.progress.label}</span>
-            </div>
-            <span className="tabular-nums text-muted-foreground">
-              {state.progress.value} / {state.progress.total}{" "}
-              {state.progress.countLabel}
-            </span>
-          </div>
-          <Progress value={pct} className="h-2" />
-        </div>
+        {pools.map((pool) => <PoolBar key={pool.slug} pool={pool} />)}
 
         {state.statusInfo && (
           <p className="text-sm text-amber-600 dark:text-amber-400">
             {state.statusInfo.descText}
           </p>
+        )}
+
+        {plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
+          <>
+            {plan.details.benefits.activeHeader && (
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {plan.details.benefits.activeHeader}
+              </p>
+            )}
+            <ul className="space-y-2 text-sm">
+              {plan.details.benefits.activeItems.map((benefit) => (
+                <li key={benefit} className="flex items-start gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                  {benefit}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
 
@@ -745,6 +735,7 @@ function ExpiredCard({
         {primaryActions.length > 0 && <div className="flex-1" />}
         {primaryActions.map((action) => {
           const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
           return (
             <Button
               key={action.slug}
@@ -755,6 +746,7 @@ function ExpiredCard({
                 onAction(action, plan);
               }}
             >
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
               {action.label}
               {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
             </Button>
@@ -781,12 +773,12 @@ function CancelledCard({
   onCardClick: (e: React.MouseEvent) => void;
 }) {
   const deprovisionDate = state.deprovisionAt
-    ? new Date(state.deprovisionAt).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
+    ? formatDeprovisionDate(state.deprovisionAt)
     : null;
+  const daysRemainingText =
+    "daysRemaining" in state && typeof state.daysRemaining === "number"
+      ? formatDaysRemaining(state.daysRemaining)
+      : null;
 
   return (
     <div
@@ -801,6 +793,9 @@ function CancelledCard({
               Store will be removed on {deprovisionDate}.
             </p>
           )}
+          {daysRemainingText && (
+            <p className="text-sm text-muted-foreground">{daysRemainingText}</p>
+          )}
         </div>
         <Badge variant="outline" className="shrink-0">
           {state.badge}
@@ -812,6 +807,7 @@ function CancelledCard({
           <div className="flex-1" />
           {state.actions.map((action) => {
             const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+            const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
             return (
               <Button
                 key={action.slug}
@@ -822,6 +818,7 @@ function CancelledCard({
                   onAction(action, plan);
                 }}
               >
+                {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
                 {action.label}
                 {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
               </Button>
@@ -840,30 +837,29 @@ function CancelledCard({
 function InactiveCard({
   plan,
   state,
-  detailHref,
   onAction,
   onCardClick,
 }: {
   plan: HydratedPlan;
   state: InactiveState;
-  detailHref: string;
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
-  const hasSale = plan.salePrice != null;
-  const priceDisplay = `$${(plan.price / 100).toFixed(0)}`;
-  const salePriceDisplay = hasSale ? `$${(plan.salePrice! / 100).toFixed(0)}` : null;
-  const intervalLabel = plan.interval === "year" ? "/yr" : "/mo";
+  const hasSale = isSaleActive(plan);
+  const priceDisplay = formatPriceDisplay(plan.price);
+  const salePriceDisplay = hasSale ? formatPriceDisplay(plan.salePrice!) : null;
+  const intervalLabel = formatIntervalLabel(plan.interval);
   const priceLabel = formatPriceLabel(plan);
-  const deactivatedDate = new Date(state.deactivatedAt).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const deactivatedDate = formatDeactivatedDate(state.deactivatedAt);
   const benefits =
     plan.details.benefits?.inactiveItems ??
     plan.details.benefits?.activeItems ??
     [];
+  const benefitsHeader = plan.details.benefits?.inactiveItems
+    ? plan.details.benefits?.inactiveHeader
+    : plan.details.benefits?.activeHeader;
+  const ghostAction = state.actions.find((a) => a.variant === "ghost");
+  const primaryActions = state.actions.filter((a) => a.variant !== "ghost");
   return (
     <div
       className="flex flex-col rounded-lg border p-6 space-y-4 transition-shadow hover:shadow-lg cursor-pointer"
@@ -903,45 +899,56 @@ function InactiveCard({
       </div>
 
       {benefits.length > 0 && (
-        <ul className="space-y-1.5 text-sm">
-          {benefits.map((benefit) => (
-            <li key={benefit} className="flex items-start gap-2">
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-              {benefit}
-            </li>
-          ))}
-        </ul>
+        <>
+          {benefitsHeader && (
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {benefitsHeader}
+            </p>
+          )}
+          <ul className="space-y-1.5 text-sm">
+            {benefits.map((benefit) => (
+              <li key={benefit} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                {benefit}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <div className="flex items-center gap-2 mt-auto pt-1">
-        <Link
-          href={detailHref}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          View Details
-        </Link>
-        {state.actions.length > 0 && (
-          <>
-            <div className="flex-1" />
-            {state.actions.map((action) => {
-              const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
-              return (
-                <Button
-                  key={action.slug}
-                  variant={actionVariant(action.variant)}
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAction(action, plan);
-                  }}
-                >
-                  {action.label}
-                  {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
-                </Button>
-              );
-            })}
-          </>
+        {ghostAction && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction(ghostAction, plan);
+            }}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {ghostAction.label}
+          </button>
         )}
+        {primaryActions.length > 0 && <div className="flex-1" />}
+        {primaryActions.map((action) => {
+          const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
+          return (
+            <Button
+              key={action.slug}
+              variant={actionVariant(action.variant)}
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(action, plan);
+              }}
+            >
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
+              {action.label}
+              {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
+            </Button>
+          );
+        })}
       </div>
     </div>
   );

@@ -8,7 +8,6 @@
 
 import { NextResponse } from "next/server";
 import { forceFreeTierForTest } from "@/lib/license";
-import { invalidatePlansCache } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 
 export async function POST() {
@@ -16,7 +15,6 @@ export async function POST() {
     return NextResponse.json({ error: "Not available" }, { status: 403 });
   }
   forceFreeTierForTest();
-  invalidatePlansCache();
   // Also remove the license key from DB so getLicenseKey() returns ""
   // and validateLicense() returns FREE without calling the platform API.
   try {

@@ -387,6 +387,22 @@
       "acs_doc": "docs/features/provider-plan-sdk-alignment/session-3/ACs.md",
       "notes": "12/12 ACs verified. All 6 UI screenshots pass (ps-none, ps-active, ps-inactive, community-addons, trial-active-no-card, trial-expired). AC-UI-4 note: 3-dot menu visible on community-addons because SELF_HOSTED_FREE_WITH_ADDONS has a view-terms action — correct component behavior, AC description was written before that action existed. AC-FN-1 note: 3 plan.slug references remain (checkout arg, React key, URL path) — none are card-type discriminators. Precheck 0 errors, 1311 tests pass."
     },
+    "fix/plan-card-ui": {
+      "status": "verified",
+      "acs_passed": 11,
+      "acs_total": 11,
+      "tasks": [],
+      "acs_doc": "docs/features/plan-card-ui/ACs.md",
+      "notes": "11/11 ACs verified. 8 UI (screenshots) + 2 FN (code review) + 3 REG (precheck 0 errors, 1318 tests, typecheck clean). PoolBar: icon from pool.icon via PlanBadgeIcon + metric {used}/{total} {countLabel}. ActiveCard: 3-dot moved to header (pool CTAs), bottom row = ghost left + primary right. TrialCard/ExpiredCard: state.progress replaced with state.pools[trial-days]. NoneCard/InactiveCard: hardcoded Link removed, payload-driven ghost-left + primary-right. page.tsx shim updated to emit pools[] instead of progress for TRIAL/EXPIRED states."
+    },
+    "feat/plan-scenario-corrections": {
+      "status": "verified",
+      "acs_passed": 10,
+      "acs_total": 10,
+      "tasks": [],
+      "acs_doc": "docs/features/provider-plan-sdk-alignment/session-1/ACs.md",
+      "notes": "SHIP-GATING SUBSET (10/10 PASS): AC-FMT (21 unit tests), AC-CT-NONE/ACTIVE/TRIAL/EXPIRED/CANCELLED/INACTIVE (96 contract tests across 6 files), AC-PIN (sdk-scaffold-pin snapshot), AC-DEV (?scenario= override on page.tsx), AC-REG (typecheck 0 errors, test:ci 122 suites/1388 tests/0 failures, precheck 0 errors, observability logs in lib/plans.ts, 7 throwaway scripts deleted). Architecture in docs/features/provider-plan-sdk-alignment/architecture.md. Session 1 ships: formatters.ts (pure), _components/PoolCtaMenu.tsx (closes Trial/Expired pool.cta gap; respects action.disabled+disabledReason), PlanPageClient.tsx (consumes formatters), page.tsx (?scenario= dev override), lib/plans.ts (structured boundary logging). DEFERRED to follow-up: AC-CT-COMMON restructure, AC-CT-MODAL, AC-CT-PAGE, AC-CAP captured-payload, AC-PW Playwright plumbing, AC-DRIFT injection, AC-SDK cross-repo MCP version fix. Old session-5 commits left on branch for squash-at-PR-time."
+    },
     "feat/admin-stripe-payments": {
       "status": "verified",
       "acs_passed": 25,
