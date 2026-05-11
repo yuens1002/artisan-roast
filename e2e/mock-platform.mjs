@@ -93,6 +93,39 @@ const DEFAULT_PLANS = [
   },
 ];
 
+// HydratedPlan-shaped payload for GET /api/plans/resolved.
+// Default state assumes the caller is on FREE — the Pro plan renders in NONE
+// state with a Subscribe action. The action omits `url` and `endpoint` so the
+// client falls through to the startCheckout server action → POST /api/checkout
+// → returns the Stripe URL from DEFAULT_CHECKOUT, which the test asserts on.
+const DEFAULT_HYDRATED_PLANS = [
+  {
+    slug: "pro",
+    name: "Pro",
+    description: "Professional features for growing stores",
+    price: 2900,
+    currency: "USD",
+    interval: "month",
+    features: ["ga", "ai-product-ops", "priority-support"],
+    details: {
+      benefits: {
+        activeItems: [
+          "Google Analytics integration",
+          "AI-powered product operations",
+          "Priority support with SLA",
+        ],
+      },
+    },
+    visibility: "self-hosted",
+    state: {
+      status: "NONE",
+      actions: [
+        { slug: "subscribe", label: "Subscribe", variant: "primary" },
+      ],
+    },
+  },
+];
+
 const DEFAULT_ISSUE = {
   issueNumber: 42,
   issueUrl: "https://github.com/artisan-roast/community/issues/42",
@@ -201,6 +234,13 @@ async function handler(req, res) {
 
   if (path === "/api/plans" && method === "GET") {
     const resp = getResponse("plans", { plans: DEFAULT_PLANS });
+    res.writeHead(resp.status);
+    res.end(JSON.stringify(resp.body));
+    return;
+  }
+
+  if (path === "/api/plans/resolved" && method === "GET") {
+    const resp = getResponse("plansResolved", { plans: DEFAULT_HYDRATED_PLANS });
     res.writeHead(resp.status);
     res.end(JSON.stringify(resp.body));
     return;

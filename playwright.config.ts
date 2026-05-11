@@ -55,7 +55,11 @@ export default defineConfig({
         // Prevent .env.local / CI env overrides from leaking into the test server
         NEXT_PUBLIC_BUILD_VARIANT: "",
         MOCK_LICENSE_TIER: "",
-        LICENSE_KEY: "",
+        // Non-empty so fetchResolvedPlans() actually hits the mock's
+        // /api/plans/resolved (it short-circuits to [] when LICENSE_KEY is unset).
+        // validateLicense() still returns FREE via forceFreeTierForTest() — the
+        // license tier is independent of whether the plans resolver is called.
+        LICENSE_KEY: "e2e-test-key",
       },
     },
   ],
