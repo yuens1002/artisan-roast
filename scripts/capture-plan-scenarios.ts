@@ -23,7 +23,7 @@
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ALL_KEYS } from "../app/admin/support/plans/__tests__/fixtures/plan-scenarios";
+import { ALL_KEYS } from "../app/admin/support/plans/_fixtures/plan-scenarios";
 
 const PLATFORM_URL = (
   process.env.PLATFORM_URL ?? "https://manage.artisanroast.app"

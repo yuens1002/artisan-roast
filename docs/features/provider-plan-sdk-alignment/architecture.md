@@ -300,10 +300,12 @@ app/admin/support/plans/
 ├── _components/
 │   ├── ConfirmActionDialog.tsx            # modal — covered by AC-CT-MODAL (deferred ST-2)
 │   └── PoolCtaMenu.tsx                    # shared 3-dot helper (Session 1 ✓)
+├── _fixtures/
+│   └── plan-scenarios.ts                  # SDK-derived examples for dev override + screenshots (Session 1 ✓)
+│                                          # NOT under __tests__/ because page.tsx + scripts import it
+│                                          # (Vercel excludes __tests__/ from prod build)
 ├── page.tsx                               # RSC entry; ?scenario= dev override (Session 1 ✓)
 └── __tests__/
-    ├── fixtures/
-    │   └── plan-scenarios.ts              # SDK-derived examples for dev override + screenshots (Session 1 ✓)
     ├── contract/                          # Layer 2 — per-state files shipped today
     │   ├── _helpers.tsx                   # ✓
     │   ├── none-card.test.tsx             # ✓

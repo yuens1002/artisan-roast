@@ -10,12 +10,13 @@ export default async function PlanPage({
   const params = await searchParams;
   const isDev = process.env.NODE_ENV !== "production";
 
-  // Dev-only: ?scenario=<key> bypasses the platform entirely and renders from
-  // the local SDK-derived fixture. Lives in __tests__ so it's the same source
-  // of truth as the render harness — see scenario-fixtures.ts.
+  // Dev-only: ?scenario=<key> bypasses the provider entirely and renders from
+  // the local SDK-derived fixture. Fixture lives in _fixtures/ (underscore
+  // prefix marks it as a non-routable feature-private dir) so the Vercel
+  // build doesn't exclude it the way it does __tests__/.
   const scenarioKey = isDev && typeof params.scenario === "string" ? params.scenario : undefined;
   if (scenarioKey) {
-    const { SCENARIO_FIXTURES } = await import("./__tests__/fixtures/plan-scenarios");
+    const { SCENARIO_FIXTURES } = await import("./_fixtures/plan-scenarios");
     const license = await validateLicense();
     const plans = (SCENARIO_FIXTURES as Record<string, typeof SCENARIO_FIXTURES["dev-free"]>)[scenarioKey] ?? [];
     return <PlanPageClient license={license} plans={plans} />;

@@ -25,7 +25,7 @@ import { join } from "node:path";
 import {
   ALL_KEYS,
   type ScenarioKey,
-} from "../app/admin/support/plans/__tests__/fixtures/plan-scenarios";
+} from "../app/admin/support/plans/_fixtures/plan-scenarios";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const OUT_DIR = process.env.OUT_DIR ?? ".screenshots/plan-scenarios";
