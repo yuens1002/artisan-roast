@@ -2,9 +2,48 @@
 
 ## Unreleased
 
+## 0.107.0 - 2026-05-11
+
+### Added
+
+- **Provider Plan SDK Alignment — Session 1 (testing harness + renderer refactor + observability)**:
+  - **Pure formatters** (`app/admin/support/plans/formatters.ts`): price, interval, sale-label, deprovision/deactivated date, pool count, days-remaining pluralisation — extracted from inline JSX transforms. 21 unit tests in `formatters.test.ts`.
+  - **`PoolCtaMenu` shared helper** (`app/admin/support/plans/_components/PoolCtaMenu.tsx`): single 3-dot dropdown used by ActiveCard, TrialCard, and ExpiredCard. Respects `action.disabled` (greys out menuitem) and `action.disabledReason` (tooltip). Closes the gap where TrialCard / ExpiredCard previously ignored `pool.cta` entirely.
+  - **Dev `?scenario=<key>` override** on `/admin/support/plans` — short-circuits `fetchResolvedPlans()` and renders from the local SDK-derived fixture. Gated on `NODE_ENV !== "production"`. Lets developers iterate on the renderer without the provider stack running.
+  - **Component contract test harness**: 6 per-state contract test files (`__tests__/contract/{none,active,trial,expired,cancelled,inactive}-card.test.tsx`) covering renderer's data→DOM contract — 96 tests total, runs hermetically in <2s.
+  - **SDK SCAFFOLD pin** (`__tests__/sdk-scaffold-pins.test.ts`): snapshots every imported `SCENARIOS.*` value with date normalisation; surfaces upstream value drift on `npm i artisan-roast-sdk@new`.
+  - **Scenario fixtures** (`__tests__/fixtures/plan-scenarios.ts`): SDK-derived `HydratedPlan[]` per dev key, consumed by the `?scenario=` override and the screenshot harness. Hand-derived compositions (`FREE_NONE`, `HB_NONE`, `TRIAL_CANCELLED_WITH_CARD`) marked as examples, not specs.
+  - **Capture script** (`scripts/capture-plan-scenarios.ts` + `npm run plans:capture`): fetches per-license-key responses from the provider, normalises `resolvedAt`, writes `e2e/plans/captured/<key>.json` for future Layer 4 captured-payload tests.
+
 ### Changed
 
-- **Cross-repo hook fixes**: `pre-pr-via-release-node.js`, `pre-pr-precheck-node.js`, and `review-before-merge-node.js` now skip their gates when `gh pr create`/`gh pr merge` targets a different repository via `--repo owner/name` — each repo enforces its own gates via its own hooks; ecomm hooks no longer block platform PRs opened from the same Claude session
+- **`PlanPageClient.tsx` refactored** to consume the new pure formatters and the `PoolCtaMenu` helper. No behavior change on existing scenarios; trial/expired cards now correctly surface `pool.cta` actions when present.
+- **`scripts/screenshot-plan-scenarios.ts` rewritten** as the single canonical visual harness — loops `ALL_KEYS` from fixtures, hits `?scenario=<key>` override, captures viewport. Replaces 7 throwaway iteration scripts.
+- **Cross-repo hook fixes** (carried from prior Unreleased): `pre-pr-via-release-node.js`, `pre-pr-precheck-node.js`, and `review-before-merge-node.js` skip their gates when `gh pr create`/`gh pr merge` targets a different repository via `--repo owner/name`.
+
+### Added — Observability
+
+- **Structured boundary logs in `lib/plans.ts`**:
+  - `[plans.fetch.failed]` — emitted on no-license, non-2xx, parse error, missing plans array, or fetch error; structured payload includes `reason`, `status` (where applicable), `errorClass`, `url`.
+  - `[plans.empty.unexpected]` — emitted when a valid license returns `plans: []`; distinguishes "page legitimately empty" from "resolver gave us nothing despite a valid license."
+  - Total: ~30 lines, no new dependencies. The runtime "did something break?" signal — surfaces in Vercel/host logs. See `docs/features/provider-plan-sdk-alignment/architecture.md` §9.3.
+
+### Documentation
+
+- **New architecture, plan, and ACs docs** under `docs/features/provider-plan-sdk-alignment/`:
+  - `architecture.md` — store-side view of the cross-repo contract; roles table (SDK / Provider / Store); 4 drift surfaces; 6 testing layers; per-field data ownership covering `Plan`, `PlanState`, `UsagePool`, `PlanAction`, `ConfirmActionConfig`; §9 today's state + minimum observability; §10 provider-side concerns out of scope; decisions log D1–D13.
+  - `plan.md` — Session 1 deliverables; Session 2 (CONVERTING + ConversionModal) cross-repo deliverables table; comprehensive deferred-work tracker (9 store-side, 7 provider-side, 6 SDK-side RFC items).
+  - `session-1/ACs.md` — 17 store-side acceptance criteria with presence/absence/placement format on every How column. Ship-gating subset: 10 ACs PASS.
+- **Archived** original session-1..session-5 work under `docs/features/provider-plan-sdk-alignment/archive/`.
+
+### Removed
+
+- **Throwaway scripts deleted** (8 total): `screenshot-plan-scenarios-v2.ts`, `screenshot-plan-states.ts`, `screenshot-plans-all-states.ts`, `screenshot-plans-platform.{ts,js}`, `verify-plans-session5{,-v2,-v3}.mjs` — replaced by the single canonical screenshot script + future captured-payload Jest tests.
+
+### Internal
+
+- `@testing-library/user-event` added as dev dependency (for Radix dropdown interaction testing in contract suite).
+- `jest.config.js` — added testPathIgnorePatterns entry for underscore-prefixed helper files in `__tests__/` subdirs.
 
 ## 0.106.2 - 2026-05-07
 
