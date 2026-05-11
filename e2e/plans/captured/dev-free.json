@@ -1,0 +1,157 @@
+{
+  "plans": [
+    {
+      "slug": "free",
+      "name": "Community Roast",
+      "description": "Open-source self-hosted store with community support",
+      "price": 0,
+      "currency": "usd",
+      "interval": "month",
+      "features": [],
+      "details": {
+        "benefits": {
+          "activeItems": [
+            "Full e-commerce platform",
+            "Unlimited products & orders",
+            "Community support via GitHub",
+            "Self-hosted — you own your data"
+          ]
+        },
+        "excludes": [
+          "Priority support tickets",
+          "1:1 sessions",
+          "AI-powered features",
+          "Google Analytics integration"
+        ]
+      },
+      "highlight": false,
+      "visibility": "self-hosted",
+      "state": {
+        "status": "ACTIVE",
+        "badge": "Current Plan",
+        "pools": [],
+        "actions": []
+      }
+    },
+    {
+      "slug": "priority-support",
+      "name": "Priority Support",
+      "description": "Dedicated support with guaranteed response times",
+      "price": 4900,
+      "currency": "usd",
+      "interval": "month",
+      "features": [
+        "priority-support"
+      ],
+      "details": {
+        "sla": {
+          "availability": "Business days (Mon–Fri)",
+          "responseTime": "48 hours",
+          "sessionBooking": "Scheduled via Calendly link provided after subscription",
+          "sessionDuration": "30 minutes"
+        },
+        "scope": [
+          "Setup & configuration",
+          "Troubleshooting",
+          "Platform guidance"
+        ],
+        "terms": [
+          "Billed monthly, cancel anytime from your billing dashboard",
+          "Unused tickets do not roll over to the next billing period",
+          "1:1 session must be booked within the billing period",
+          "Support is provided in English only",
+          "Refunds are not available for partial months",
+          "Plan changes take effect immediately"
+        ],
+        "quotas": [
+          {
+            "icon": "ticket",
+            "slug": "tickets",
+            "label": "Priority Tickets",
+            "limit": 5,
+            "countLabel": "tickets"
+          },
+          {
+            "icon": "calendar",
+            "slug": "one-on-one",
+            "label": "1:1 Sessions",
+            "limit": 1,
+            "countLabel": "sessions"
+          }
+        ],
+        "benefits": {
+          "activeItems": [
+            "5 priority support tickets/mo with 48hr SLA",
+            "1 30min 1:1 session/mo",
+            "Anonymous Github issue tracking & transparency"
+          ],
+          "inactiveItems": [
+            "5 priority support tickets/mo with 48hr SLA",
+            "1 30min 1:1 session/mo",
+            "Anonymous Github issue tracking & transparency"
+          ],
+          "inactiveHeader": "Get back"
+        },
+        "excludes": [
+          "Custom development",
+          "Feature requests",
+          "Third-party integrations"
+        ]
+      },
+      "highlight": true,
+      "visibility": "self-hosted",
+      "actionModals": [
+        {
+          "slug": "cancel-subscription",
+          "heading": "Cancel your subscription?",
+          "reasons": [
+            {
+              "label": "Don't use enough tickets to justify the cost",
+              "value": "low-usage"
+            },
+            {
+              "label": "Response time didn't meet my expectations",
+              "value": "slow-response"
+            },
+            {
+              "label": "My issues weren't fully resolved",
+              "value": "unresolved"
+            },
+            {
+              "label": "I prefer GitHub issues / community support",
+              "value": "prefer-community"
+            },
+            {
+              "label": "Closing or pausing my store",
+              "value": "closing-store"
+            },
+            {
+              "label": "Other",
+              "value": "other"
+            }
+          ],
+          "keepLabel": "Keep subscription",
+          "confirmIcon": "external-link",
+          "description": "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve.",
+          "confirmLabel": "Continue to Stripe",
+          "reasonsLabel": "Reason for cancelling"
+        }
+      ],
+      "salePrice": 3900,
+      "saleEndsAt": "2026-06-30T23:59:59.000Z",
+      "saleLabel": "1st 6mos Launch Special",
+      "state": {
+        "status": "NONE",
+        "actions": [
+          {
+            "slug": "subscribe",
+            "label": "Subscribe",
+            "iconAfter": "external-link",
+            "variant": "primary"
+          }
+        ]
+      }
+    }
+  ],
+  "resolvedAt": "<NORMALISED_AT_CAPTURE>"
+}
