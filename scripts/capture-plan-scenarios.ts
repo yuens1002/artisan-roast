@@ -68,9 +68,11 @@ const LABEL_TO_ID: Record<string, string> = {
 /** Parse env-style `.dev-scenario-keys`:
  *  Each `LICENSE_KEY=<value>` line is preceded by a `# <label>` comment.
  *  Returns { devKey → licenseKey } using LABEL_TO_ID to look up the id.
- *  Lines whose preceding label isn't in the map are skipped with a warning. */
+ *  Unknown labels warn in local dev; under STRICT_KEYS they collect and
+ *  throw at end so coverage regressions can't slip through CI drift checks. */
 function parseEnvFile(text: string): Record<string, string> {
   const out: Record<string, string> = {};
+  const unknownLabels: string[] = [];
   let lastLabel: string | null = null;
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
@@ -94,12 +96,21 @@ function parseEnvFile(text: string): Record<string, string> {
     if (!lastLabel) continue;
     const id = LABEL_TO_ID[lastLabel];
     if (!id) {
-      console.warn(`  skip (unknown label): "${lastLabel}"`);
+      if (process.env.STRICT_KEYS === "1") {
+        unknownLabels.push(lastLabel);
+      } else {
+        console.warn(`  skip (unknown label): "${lastLabel}"`);
+      }
       lastLabel = null;
       continue;
     }
     out[id] = value;
     lastLabel = null;
+  }
+  if (process.env.STRICT_KEYS === "1" && unknownLabels.length > 0) {
+    throw new Error(
+      `STRICT_KEYS: ${unknownLabels.length} unknown label(s) in dev-scenario-keys — extend LABEL_TO_ID or remove the source line(s):\n  ${unknownLabels.join("\n  ")}`
+    );
   }
   return out;
 }
