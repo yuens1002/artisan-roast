@@ -2,7 +2,7 @@
   "plans": [
     {
       "slug": "free",
-      "name": "Community Roast",
+      "name": "Community",
       "description": "Open-source self-hosted store with community support",
       "price": 0,
       "currency": "usd",
@@ -26,11 +26,17 @@
       },
       "highlight": false,
       "visibility": "self-hosted",
+      "saleLabel": "Forever",
       "state": {
-        "status": "ACTIVE",
-        "badge": "Current Plan",
-        "pools": [],
-        "actions": []
+        "status": "NONE",
+        "actions": [
+          {
+            "slug": "view-terms",
+            "label": "View Terms",
+            "url": "/admin/terms/terms-of-service",
+            "variant": "ghost"
+          }
+        ]
       }
     },
     {
@@ -67,30 +73,25 @@
           {
             "icon": "ticket",
             "slug": "tickets",
-            "label": "Priority Tickets",
+            "label": "Priority tickets",
             "limit": 5,
-            "countLabel": "tickets"
+            "countLabel": "used"
           },
           {
             "icon": "calendar",
             "slug": "one-on-one",
-            "label": "1:1 Sessions",
+            "label": "1:1 sessions",
             "limit": 1,
-            "countLabel": "sessions"
+            "countLabel": "used"
           }
         ],
         "benefits": {
           "activeItems": [
-            "5 priority support tickets/mo with 48hr SLA",
-            "1 30min 1:1 session/mo",
-            "Anonymous Github issue tracking & transparency"
-          ],
-          "inactiveItems": [
-            "5 priority support tickets/mo with 48hr SLA",
-            "1 30min 1:1 session/mo",
-            "Anonymous Github issue tracking & transparency"
-          ],
-          "inactiveHeader": "Get back"
+            "Priority ticket support with 48-hr SLA",
+            "5 support tickets per month",
+            "1 1:1 session per month (30 min)",
+            "Anonymous GitHub issue tracking & transparency"
+          ]
         },
         "excludes": [
           "Custom development",
@@ -137,31 +138,54 @@
           "reasonsLabel": "Reason for cancelling"
         }
       ],
+      "saleLabel": "1st 6mos Launch Special",
       "salePrice": 3900,
       "saleEndsAt": "2026-06-30T23:59:59.000Z",
-      "saleLabel": "1st 6mos Launch Special",
       "state": {
         "status": "ACTIVE",
         "badge": "Active",
         "pools": [
           {
             "slug": "tickets",
-            "label": "Priority Tickets",
-            "limit": 0,
+            "label": "Priority tickets",
+            "icon": "ticket",
+            "countLabel": "used",
+            "limit": 5,
             "used": 0,
             "purchased": 0,
-            "icon": "ticket"
+            "cta": {
+              "slug": "submit-ticket",
+              "label": "Submit Ticket",
+              "url": "https://artisanroast.app/support/ticket",
+              "iconAfter": "external-link",
+              "variant": "primary"
+            }
           },
           {
             "slug": "one-on-one",
-            "label": "1:1 Sessions",
-            "limit": 0,
+            "label": "1:1 sessions",
+            "icon": "calendar",
+            "countLabel": "used",
+            "limit": 1,
             "used": 0,
             "purchased": 0,
-            "icon": "calendar"
+            "cta": {
+              "slug": "book-session",
+              "label": "Book Session",
+              "url": "Scheduled via Calendly link provided after subscription",
+              "iconBefore": "calendar",
+              "iconAfter": "external-link",
+              "variant": "secondary"
+            }
           }
         ],
         "actions": [
+          {
+            "slug": "view-details",
+            "label": "View Details",
+            "url": "/admin/support/plans/priority-support",
+            "variant": "ghost"
+          },
           {
             "slug": "manage-billing",
             "label": "Manage Billing",

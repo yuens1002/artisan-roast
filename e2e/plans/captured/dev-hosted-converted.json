@@ -1,39 +1,6 @@
 {
   "plans": [
     {
-      "slug": "free",
-      "name": "Community Roast",
-      "description": "Open-source self-hosted store with community support",
-      "price": 0,
-      "currency": "usd",
-      "interval": "month",
-      "features": [],
-      "details": {
-        "benefits": {
-          "activeItems": [
-            "Full e-commerce platform",
-            "Unlimited products & orders",
-            "Community support via GitHub",
-            "Self-hosted — you own your data"
-          ]
-        },
-        "excludes": [
-          "Priority support tickets",
-          "1:1 sessions",
-          "AI-powered features",
-          "Google Analytics integration"
-        ]
-      },
-      "highlight": false,
-      "visibility": "self-hosted",
-      "state": {
-        "status": "ACTIVE",
-        "badge": "Current Plan",
-        "pools": [],
-        "actions": []
-      }
-    },
-    {
       "slug": "house-blend",
       "name": "House Blend",
       "description": "Fully managed hosting with custom domain and priority support.",
@@ -59,23 +26,18 @@
           {
             "icon": "ticket",
             "slug": "tickets",
-            "label": "Priority Tickets",
+            "label": "Priority tickets",
             "limit": 5,
             "countLabel": "used"
           }
         ],
         "benefits": {
           "activeItems": [
+            "Everything in Community Roast",
             "Managed hosting & backups",
             "Custom domain configuration",
             "5 priority support tickets/month, 48-hr SLA"
-          ],
-          "inactiveItems": [
-            "Managed hosting & backups",
-            "Custom domain configuration",
-            "5 priority support tickets/month, 48-hr SLA"
-          ],
-          "inactiveHeader": "Get back"
+          ]
         }
       },
       "highlight": true,
@@ -117,21 +79,28 @@
           "reasonsLabel": "Reason for cancelling"
         }
       ],
-      "salePrice": 6900,
       "saleLabel": "6mos Launch Special",
+      "salePrice": 6900,
       "state": {
         "status": "ACTIVE",
         "badge": "Active",
         "pools": [
           {
             "slug": "tickets",
-            "label": "Priority Tickets",
+            "label": "Priority tickets",
+            "icon": "ticket",
+            "countLabel": "used",
             "limit": 5,
-            "used": 0,
-            "icon": "ticket"
+            "used": 0
           }
         ],
         "actions": [
+          {
+            "slug": "view-details",
+            "label": "View Details",
+            "url": "/admin/support/plans/house-blend",
+            "variant": "ghost"
+          },
           {
             "slug": "manage-billing",
             "label": "Manage Billing",
