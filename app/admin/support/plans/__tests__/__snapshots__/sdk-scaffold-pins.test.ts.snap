@@ -54,7 +54,7 @@ exports[`SDK SCAFFOLD pins SCAFFOLDS shape is pinned 1`] = `
       "status": "ACTIVE",
       "statusInfo": {
         "descIcon": "rotate-cw",
-        "descText": "Renews on 2026-06-10.",
+        "descText": "Renews on <DATE>.",
       },
     },
     "visibility": "hosted",
@@ -111,7 +111,7 @@ exports[`SDK SCAFFOLD pins SCAFFOLDS shape is pinned 1`] = `
       "status": "ACTIVE",
       "statusInfo": {
         "descIcon": "rotate-cw",
-        "descText": "Renews on 2026-06-10.",
+        "descText": "Renews on <DATE>.",
       },
     },
     "visibility": "hosted",

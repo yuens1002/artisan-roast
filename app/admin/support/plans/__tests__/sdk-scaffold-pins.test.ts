@@ -17,15 +17,21 @@ import { SCENARIOS } from "artisan-roast-sdk/plans";
 import type { HydratedPlan } from "artisan-roast-sdk/plans";
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-const READABLE_DATE_RE = /\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}\b/;
+const READABLE_DATE_RE = /\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}\b/g;
+// Date-only YYYY-MM-DD embedded in a string, e.g. "Renews on 2026-06-11."
+// (the SDK's renewalDateStr() produces these). Anchored on word boundaries
+// so it doesn't clip the date portion of a full ISO timestamp.
+const DATE_ONLY_RE = /\b\d{4}-\d{2}-\d{2}\b/g;
 
 /** Replace runtime-computed dates with stable placeholders so the snapshot
- *  is deterministic across test runs. Anything matching an ISO timestamp or
- *  a "Month D, YYYY" sequence becomes <DATE>. */
+ *  is deterministic across test runs. ISO timestamps → <ISO_DATE>;
+ *  "Month D, YYYY" and bare YYYY-MM-DD → <DATE>. */
 function normaliseDates(value: unknown): unknown {
   if (typeof value === "string") {
     if (ISO_DATE_RE.test(value)) return "<ISO_DATE>";
-    return value.replace(READABLE_DATE_RE, "<DATE>");
+    return value
+      .replace(READABLE_DATE_RE, "<DATE>")
+      .replace(DATE_ONLY_RE, "<DATE>");
   }
   if (Array.isArray(value)) return value.map(normaliseDates);
   if (value && typeof value === "object") {

@@ -1,39 +1,6 @@
 {
   "plans": [
     {
-      "slug": "free",
-      "name": "Community Roast",
-      "description": "Open-source self-hosted store with community support",
-      "price": 0,
-      "currency": "usd",
-      "interval": "month",
-      "features": [],
-      "details": {
-        "benefits": {
-          "activeItems": [
-            "Full e-commerce platform",
-            "Unlimited products & orders",
-            "Community support via GitHub",
-            "Self-hosted — you own your data"
-          ]
-        },
-        "excludes": [
-          "Priority support tickets",
-          "1:1 sessions",
-          "AI-powered features",
-          "Google Analytics integration"
-        ]
-      },
-      "highlight": false,
-      "visibility": "self-hosted",
-      "state": {
-        "status": "ACTIVE",
-        "badge": "Current Plan",
-        "pools": [],
-        "actions": []
-      }
-    },
-    {
       "slug": "house-blend-trial",
       "name": "House Blend Trial",
       "description": "Risk-free for 14 days — full features, no card, no commitment.",
@@ -130,11 +97,20 @@
       ],
       "state": {
         "status": "TRIAL",
-        "badge": "Trial",
+        "badge": "Active",
         "badgeIcon": "clock",
-        "pools": [],
+        "pools": [
+          {
+            "slug": "trial-days",
+            "label": "Trial days",
+            "icon": "calendar",
+            "countLabel": "passed",
+            "limit": 14,
+            "used": 2
+          }
+        ],
         "statusInfo": {
-          "descText": "Trial ends 2026-05-23T12:44:11.643Z"
+          "descText": "Trial ends May 23, 2026"
         },
         "deprovisionAt": "2026-06-08T12:44:11.643Z",
         "actions": [
@@ -174,23 +150,18 @@
           {
             "icon": "ticket",
             "slug": "tickets",
-            "label": "Priority Tickets",
+            "label": "Priority tickets",
             "limit": 5,
             "countLabel": "used"
           }
         ],
         "benefits": {
           "activeItems": [
+            "Everything in Community Roast",
             "Managed hosting & backups",
             "Custom domain configuration",
             "5 priority support tickets/month, 48-hr SLA"
-          ],
-          "inactiveItems": [
-            "Managed hosting & backups",
-            "Custom domain configuration",
-            "5 priority support tickets/month, 48-hr SLA"
-          ],
-          "inactiveHeader": "Get back"
+          ]
         }
       },
       "highlight": true,
@@ -232,11 +203,18 @@
           "reasonsLabel": "Reason for cancelling"
         }
       ],
-      "salePrice": 6900,
       "saleLabel": "6mos Launch Special",
+      "salePrice": 6900,
       "state": {
         "status": "NONE",
-        "actions": []
+        "actions": [
+          {
+            "slug": "view-details",
+            "label": "View Details",
+            "url": "/admin/support/plans/house-blend",
+            "variant": "ghost"
+          }
+        ]
       }
     }
   ],
