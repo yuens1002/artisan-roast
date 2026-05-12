@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.107.3 - 2026-05-12
+
+### Changed
+
+- **Refresh prod capture baseline** (`e2e/plans/captured/*.json`) — cumulative refresh after the platform resolver corrections deployed. Includes: `Community Roast` → `Community` plan name; `free` plan returns NONE state for non-FREE tiers (was ACTIVE) with a view-terms action + `Forever` saleLabel; pools carry icon + cta + real quota limit; FREE filtered out of HOSTED scenarios; early-state scenarios (pending/provisioning/deprovisioned) return empty plan arrays; humanized date strings on trial/expired/cancelled status info. Resolves the nightly drift flagged in issue #375.
+
 ## 0.107.2 - 2026-05-11
 
 ### Added
