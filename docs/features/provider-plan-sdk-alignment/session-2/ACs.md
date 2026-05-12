@@ -54,7 +54,7 @@ Three PRs, must land in order. The drift nightly + `STRICT_KEYS=1` make the orde
 
 1. **SDK PR** (`feat/converting-state-and-mcp-ver`) — CONVERTING in the union + MCP version fix → tag v0.5.0 → push.
 2. **Platform PR** (`feat/converting-resolver`) — resolver emits CONVERTING + seed `dev-hosted-converting` → deploy. Bumps SDK ref to `#v0.5.0`.
-3. **Store PR** (`feat/converting-state`) — bump SDK ref, `ConvertingCard` dispatch (returns null), `ConversionModal`, page freeze, fixture entry, contract tests, ride-along ST-2/ST-3 tests, capture `dev-hosted-converting.json` after the provider deploys.
+3. **Store PR** (`feat/converting-state`) — bump SDK ref, `PlanCard`'s `case "CONVERTING"` returning `null` (no separate ConvertingCard component), `ConversionModal`, page freeze, fixture entry, contract tests, ride-along ST-2/ST-3 tests, capture `dev-hosted-converting.json` after the provider deploys.
 
 The store PR's AC-CAP-CONVERTING can't pass until the provider is live (capture would skip the scenario; `STRICT_KEYS` fails). So the store PR is the last thing to merge, after a provider deploy.
 
@@ -68,6 +68,6 @@ The store PR's AC-CAP-CONVERTING can't pass until the provider is live (capture 
 
 ---
 
-## Total: 15 ACs
+## Total: 15 rows
 
-13 substantive + AC-CT-COMMON-DEFER (traceability note) + AC-DRIFT (ritual) + AC-REG (gate). Two of the 13 (AC-CT-MODAL, AC-CT-PAGE) close deferred items ST-2 and ST-3.
+12 substantive ACs + AC-CT-COMMON-DEFER (traceability note, not an AC) + AC-DRIFT (verification ritual) + AC-REG (gate) = 15 rows. Two of the 12 substantive ACs (AC-CT-MODAL, AC-CT-PAGE) close deferred items ST-2 and ST-3.

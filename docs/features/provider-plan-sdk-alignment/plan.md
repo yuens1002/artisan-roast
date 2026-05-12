@@ -139,7 +139,7 @@ Items split out of Session 1 that need to land before, during, or after Session 
 | ST-5 | AC-PW — Playwright plumbing spec | Smoke test for Next.js wiring. The `fix/e2e-mock-resolved-plans` work (mock serves `/api/plans/resolved`) unblocks this — the mock infra it needs now exists. | Follow-up branch |
 | ST-6 | AC-DRIFT — drift-injection ritual | Per-layer manual verification that each test layer can detect a synthetic regression. | Verification pass per session (Session 2's ACs include AC-DRIFT) |
 | ST-7 | Compatibility-over-time (§9.4 work) | Boundary validation, version handshake headers, admin version banner, graceful renderer FallbackCard for unknown shapes. `architecture.md` D13 — signal-triggered, not timeline-triggered. Note: CONVERTING (Session 2) adds a union member; the renderer's `switch` gains a CONVERTING case — but a *future* unknown state would still fall through. The FallbackCard is the guard for that. | Self-hosted launch / first skew incident |
-| ST-8 | Architecture doc relocation | Move (or copy + adapt) `architecture.md` to a cross-repo location (provider's `appendix/cross-repo/`). Note: platform PR #74 (`docs: pools-architecture scoping; close out provider-sdk-integration`) is in flight on that side — coordinate so the cross-repo doc home is settled there, then point the store excerpt at it. | After platform PR #74 lands |
+| ST-8 | Architecture doc relocation | Move (or copy + adapt) `architecture.md` to a cross-repo location (provider's `appendix/cross-repo/`). Note: `yuens1002/artisan-roast-platform#74` (`docs: pools-architecture scoping; close out provider-sdk-integration`) is in flight on that side — coordinate so the cross-repo doc home is settled there, then point the store excerpt at it. | After `yuens1002/artisan-roast-platform#74` lands |
 | ST-9 | Currency support beyond USD | Renderer hardcodes `$`; SDK type allows any ISO 4217 code. Multi-currency rendering is a future feature. | Future session |
 | ST-10 | Remove `LABEL_TO_ID` from `capture-plan-scenarios.ts` | The store maps platform's `.dev-scenario-keys` labels → dev-key ids via a hardcoded table because the platform's `seed-dev-scenarios.ts` writes labels as comments. Once the platform regenerates that file as id-keyed JSON (filed as PR-SEED-CONVERTING in Session 2), the table goes away. | Session 2 cleanup (after platform regenerates `.dev-scenario-keys`) |
 
@@ -158,7 +158,7 @@ These belong in the provider repo's plan docs. Filed here so cross-repo context 
 | PR-7 | Document the resolver's branch logic as a spec | Today: `route.ts` source is the only spec. A separate `docs/plans/resolver-spec.md` (or similar) would document each branch's preconditions, output shape, and rationale. Pairs with PLAT-1 (spec validation tests). Not blocking ship; helpful for cross-repo onboarding. |
 | PR-8 | P8 — rename "Everything in Community Roast" → "Everything in Community" | House-blend's `details.benefits.activeItems` still references the old FREE-plan name ("Community Roast" → now "Community"). Content-only DB change. **In progress (platform).** The store baseline correctly captures the current copy; when the DB change ships, the nightly drift detector flags the change, the store re-captures, baseline updates. No store-side code change. |
 
-> **Already landed (platform):** PR #72 (`feat(resolver): plan scenario corrections + free→NONE + buildPoolsFromQuotas fix`) — merged 2026-05-11, deployed. PR #73 (`chore: unblock pre-commit + gitignore session state`) — merged 2026-05-11, handled the `.dev-scenario-keys` / `.claude/` gitignore concern. PR #74 (`docs: pools-architecture scoping`) — open, platform-side doc work.
+> **Already landed (platform):** `yuens1002/artisan-roast-platform#72` (`feat(resolver): plan scenario corrections + free→NONE + buildPoolsFromQuotas fix`) — merged 2026-05-11, deployed. `yuens1002/artisan-roast-platform#73` (`chore: unblock pre-commit + gitignore session state`) — merged 2026-05-11, handled the `.dev-scenario-keys` / `.claude/` gitignore concern. `yuens1002/artisan-roast-platform#74` (`docs: pools-architecture scoping`) — open, platform-side doc work.
 
 ### SDK-side (separate repo)
 
@@ -169,7 +169,6 @@ These belong in the provider repo's plan docs. Filed here so cross-repo context 
 | SDK-RFC-2 | `pools?: UsagePool[]` on every state (NoneState / InactiveState / CancelledState) | Future — removes the today-pattern hack of putting FREE in ACTIVE state just to attach addon pools |
 | SDK-RFC-3 | Add CONVERTING state to `PlanState` union | **Session 2 — bundled with SDK-RFC-MCP-VER → tag v0.5.0** (minor: union member breaks consumer `switch` exhaustiveness). See `session-2/ACs.md` SDK-RFC-CONVERTING. |
 | SDK-RFC-4 | SDK semver + deprecation policy + migration docs | Deferred — wait for self-hosted launch when version skew becomes a real customer problem |
-| SDK-RFC-5 | MCP changelog/diff tool (`mcp__artisan-roast-sdk__diff_versions`) | Future — useful during SDK upgrades but not blocking |
 | SDK-RFC-5 | MCP changelog/diff tool (`mcp__artisan-roast-sdk__diff_versions`) | Future — useful during SDK upgrades but not blocking |
 
 ## Review gates
