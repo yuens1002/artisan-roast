@@ -44,24 +44,33 @@ Sessions 1–5 (now in `archive/`) shipped the foundation: SDK-driven types, pro
 - `npm run plans:capture` runs successfully against the provider for at least the self-hosted dev keys; captured JSONs committed.
 - AC-DRIFT sub-rows verified (each layer demonstrably catches a synthetic regression).
 
-### Session 2 — CONVERTING state + ConversionModal
+### Session 2 — CONVERTING state + ConversionModal + ride-alongs
 
-**Scope:** Add CONVERTING plan state to the SDK + provider + renderer chain, plus a non-dismissable `ConversionModal` component that polls the resolver until the customer's plan converts off CONVERTING.
+**Status:** planned. ACs drafted — see [`session-2/ACs.md`](session-2/ACs.md) (15 ACs).
 
-**Pre-reqs:**
+**Scope:** Add the `CONVERTING` plan state across SDK → provider → store, plus a non-dismissable `ConversionModal` that polls the resolver until the plan converts off CONVERTING. Plus two ride-alongs that close deferred items: **ST-2** (`ConfirmActionDialog` field coverage) and **ST-3** (page-level composition tests).
 
-- Session 1 done — the harness exists before new state variants land, so coverage grows with the type.
-- SDK-RFC-MCP-VER landed (or batched in this session).
+**Locked design decisions (from planning):**
+
+- **SDK bump = minor (v0.5.0).** Adding a union member breaks `switch(state.status)` exhaustiveness in consumers — minor is the honest bump.
+- **MCP version fix bundled in.** SDK-RFC-MCP-VER (wire `serverInfo.version` to the package version) ships in the same SDK PR as CONVERTING — both are SDK changes.
+- **Conversion UX is modal-only — no Card.** `PlanCard` returns `null` for CONVERTING; a full-screen `ConversionModal` owns the UX. The page freezes behind it (scroll lock + `pointer-events-none` + dim) so the customer can't navigate or interact mid-transition. (Card-vs-modal amounts to the same backend work; modal-only is the safer UX during a state transition.)
+- **Ride-alongs ST-2 + ST-3 are in.** We're writing `conversion-modal.test.tsx` anyway; the modal/dialog test patterns transfer to `confirm-action-dialog.test.tsx`. And the modal needs page-level integration tests, so `plan-page-client.test.tsx` lands too.
 
 **Cross-repo deliverables:**
 
 | Repo | Deliverable |
 |------|-------------|
-| SDK | Add `ConvertingState` to `PlanState` discriminated union. Fields: `status: "CONVERTING"`, optional progress / message fields. Add `CONVERTING` to the relevant SCENARIOS. Add to `validate_plan_payload` MCP tool. Bump SDK version. |
-| Provider | Resolver branch emits CONVERTING during the conversion window (after Stripe webhook fires, before plan provisions to ACTIVE). Wire trial-conversion endpoint to emit transient CONVERTING state. Captured-payload dev scenario seeded (`dev-hosted-converting`). |
-| Store | Bump SDK dep. Add `ConvertingCard` (or reuse PlanCard with a CONVERTING branch — TBD). Add `ConversionModal` component triggered by `state.status === "CONVERTING"` on any plan; non-dismissable overlay with polling indicator; polls `/api/plans/resolved` every ~5s; closes + `router.refresh()` when no plan returns CONVERTING. New contract test file `converting-card.test.tsx`. New `conversion-modal.test.tsx`. Add CONVERTING scenario to fixtures. Capture new payload after provider deploy. |
+| `artisan-roast-sdk` | Add `ConvertingState` to `PlanState` union (`status: "CONVERTING"`, `statusInfo?: StatusInfo`, optional `startedAt?`). No `actions[]`/`pools[]` — purely transient. Add CONVERTING scaffold to `SCENARIOS`. Update `validate_plan_payload` Zod schema. **Bundle SDK-RFC-MCP-VER.** Tag **v0.5.0**, push. |
+| platform | Resolver branch emits CONVERTING during the conversion window (post-Stripe-webhook, pre-provision-to-ACTIVE). Wire trial-conversion endpoint. Seed `dev-hosted-converting`. Regenerate `.dev-scenario-keys` as id-keyed JSON (removes the store's `LABEL_TO_ID` table). Bump SDK ref to `#v0.5.0`. Deploy. |
+| `artisan-roast` (store) | Bump SDK ref to `#v0.5.0`. `PlanCard` dispatch handles CONVERTING → returns `null`. New `_components/ConversionModal.tsx` — non-dismissable overlay, spinner + `statusInfo.descText`, polls `router.refresh()` every ~5s, closes when no plan is CONVERTING. Page freeze in `PlanPageClient`. Add `dev-hosted-converting` to `_fixtures/plan-scenarios.ts` + `ALL_KEYS`. New `__tests__/contract/conversion-modal.test.tsx`. Ride-alongs: `confirm-action-dialog.test.tsx` (ST-2), `plan-page-client.test.tsx` (ST-3). Capture `dev-hosted-converting.json` after the provider deploys. |
 
-**Acceptance criteria:** TBD — follows the Session 1 template (presence/absence/placement on every How column). Drafted at session start.
+**Sequencing (enforced by `STRICT_KEYS=1` in the drift nightly):** SDK PR + tag → platform PR + deploy → store PR (last — its AC-CAP-CONVERTING capture would skip the scenario and hard-fail until the provider is live).
+
+**New decisions to add to `architecture.md` when this lands:**
+
+- **D14** — CONVERTING is the first `PlanState` variant with no `actions[]` and no `pools[]`. Purely transient. The renderer shows nothing in the card slot; the modal owns it.
+- **D15** — Conversion UX is modal-only (no Card render) to prevent navigation/interaction during the state transition. The page is frozen behind a non-dismissable overlay.
 
 ### Session 3+ — TBD
 
@@ -123,15 +132,16 @@ Items split out of Session 1 that need to land before, during, or after Session 
 
 | ID | Title | Why deferred | Picks up in |
 |----|-------|--------------|-------------|
-| ST-1 | AC-CT-COMMON restructure | Existing 6 per-state contract files cover the ship-gating surface; consolidation into a common-fields suite + slim per-state files is a polish refactor. | Follow-up branch / Session 2 |
-| ST-2 | AC-CT-MODAL — `confirm-action-dialog.test.tsx` | `ConfirmActionConfig` field coverage isn't gating ship; cancel-trial/cancel-stripe modals only fire from hosted/trial gate which isn't open. | Follow-up branch / Session 2 |
-| ST-3 | AC-CT-PAGE — `plan-page-client.test.tsx` | Page composition, ordering, empty state, warnings banner. Helpful but not gating. | Follow-up branch |
-| ST-4 | AC-CAP — Captured-payload Jest test | Needs dev license keys for capture; replaces existing `e2e/plans/scenarios.spec.ts` Playwright spec with a Jest-driven version. Cross-field consistency assertions (`quotas[].limit === pools[].limit`). MCP-backed `npm run plans:validate` optional cross-check. | Follow-up branch (after captures collected) |
-| ST-5 | AC-PW — Playwright plumbing spec | Smoke test for Next.js wiring: `searchParams` await, `?scenario=` dev-gating in prod, hydration mismatch absence, fetch-timeout → empty-state without console errors. | Follow-up branch |
-| ST-6 | AC-DRIFT — drift-injection ritual | Per-layer manual verification that each test layer can detect a synthetic regression (positional swap, snapshot diff, captured payload edit, removed await). | Verification pass before Session 2 ships |
-| ST-7 | Compatibility-over-time (§12 work) | Boundary validation, version handshake headers, admin version banner, graceful renderer FallbackCard for unknown shapes. Filed in `architecture.md` D13 — deferred until self-hosted customers exist or a real skew incident forces it. | Self-hosted launch |
-| ST-8 | Architecture doc relocation | Move (or copy + adapt) `architecture.md` to a cross-repo location (provider's `appendix/cross-repo/`) for the full picture; keep a store-side excerpt for renderer-only concerns. | After Session 1 ships, before Session 2 starts |
+| ST-1 | AC-CT-COMMON restructure | Existing 6 per-state contract files cover the ship-gating surface; consolidation into a common-fields suite + slim per-state files is a polish refactor. Cheaper to bulk-migrate after a 3rd batch of states accrues. | Future — explicitly NOT Session 2 |
+| ST-2 | AC-CT-MODAL — `confirm-action-dialog.test.tsx` | `ConfirmActionConfig` field coverage. Modal/dialog test patterns transfer from Session 2's `conversion-modal.test.tsx`. | **Session 2 (ride-along)** — see `session-2/ACs.md` AC-CT-MODAL |
+| ST-3 | AC-CT-PAGE — `plan-page-client.test.tsx` | Page composition, ordering, empty state, warnings banner — and the CONVERTING-plan → ConversionModal-mounted integration test, which Session 2 needs anyway. | **Session 2 (ride-along)** — see `session-2/ACs.md` AC-CT-PAGE |
+| ST-4 | AC-CAP — Captured-payload Jest test | Replace `e2e/plans/scenarios.spec.ts` (deleted) with a Jest-driven version that loads `e2e/plans/captured/*.json` (now committed — baseline + nightly drift workflow shipped in v0.107.2). Structural + cross-field assertions. MCP-backed `npm run plans:validate` optional cross-check. | Follow-up branch (captures now exist) |
+| ST-5 | AC-PW — Playwright plumbing spec | Smoke test for Next.js wiring. The `fix/e2e-mock-resolved-plans` work (mock serves `/api/plans/resolved`) unblocks this — the mock infra it needs now exists. | Follow-up branch |
+| ST-6 | AC-DRIFT — drift-injection ritual | Per-layer manual verification that each test layer can detect a synthetic regression. | Verification pass per session (Session 2's ACs include AC-DRIFT) |
+| ST-7 | Compatibility-over-time (§9.4 work) | Boundary validation, version handshake headers, admin version banner, graceful renderer FallbackCard for unknown shapes. `architecture.md` D13 — signal-triggered, not timeline-triggered. Note: CONVERTING (Session 2) adds a union member; the renderer's `switch` gains a CONVERTING case — but a *future* unknown state would still fall through. The FallbackCard is the guard for that. | Self-hosted launch / first skew incident |
+| ST-8 | Architecture doc relocation | Move (or copy + adapt) `architecture.md` to a cross-repo location (provider's `appendix/cross-repo/`). Note: platform PR #74 (`docs: pools-architecture scoping; close out provider-sdk-integration`) is in flight on that side — coordinate so the cross-repo doc home is settled there, then point the store excerpt at it. | After platform PR #74 lands |
 | ST-9 | Currency support beyond USD | Renderer hardcodes `$`; SDK type allows any ISO 4217 code. Multi-currency rendering is a future feature. | Future session |
+| ST-10 | Remove `LABEL_TO_ID` from `capture-plan-scenarios.ts` | The store maps platform's `.dev-scenario-keys` labels → dev-key ids via a hardcoded table because the platform's `seed-dev-scenarios.ts` writes labels as comments. Once the platform regenerates that file as id-keyed JSON (filed as PR-SEED-CONVERTING in Session 2), the table goes away. | Session 2 cleanup (after platform regenerates `.dev-scenario-keys`) |
 
 ### Provider-side (separate repo)
 
@@ -139,23 +149,27 @@ These belong in the provider repo's plan docs. Filed here so cross-repo context 
 
 | ID | Title | Notes |
 |----|-------|-------|
-| PR-1 | Session 2 resolver: emit CONVERTING state | New branch in `PlanState` resolver during conversion window. Pairs with store-side ConversionModal. |
-| PR-2 | Seed `dev-hosted-converting` scenario | Dev license key + HostedTrial row with `status: CONVERTING`. |
+| PR-1 | Session 2 resolver: emit CONVERTING state | New branch in `PlanState` resolver during conversion window. Pairs with store-side ConversionModal. **Session 2 — see `session-2/ACs.md` PR-CONVERTING-RESOLVER.** |
+| PR-2 | Seed `dev-hosted-converting` scenario | Dev license key + HostedTrial row with `status: CONVERTING`. **Session 2 — see `session-2/ACs.md` PR-SEED-CONVERTING. Also: regenerate `.dev-scenario-keys` as id-keyed JSON to retire ST-10.** |
 | PR-3 | PLAT-1 — Plan business spec validation tests | Provider-side test suite asserts each shipped plan's resolver output matches its product spec (Priority Support = 5 tickets / 1 session / $49 / $39 sale label, etc.). |
 | PR-4 | PLAT-2 — Cadence enforcement tests | Time-dependent tests verify pool replenishment fires on month boundary. |
 | PR-5 | Stripe link IDs in dev seed | Seed `stripeExtendLinkId`, `stripeSubscribeLinkId` + delete-trial modal entry for hosted dev scenarios. (Resolves session-5 SKIP findings P4-related in dev only; prod already has real links.) |
 | PR-6 | Version handshake response headers | Echo `X-Provider-SDK-Version` for store-side runtime drift detection. Deferred with §9.4 — signal-triggered, not timeline-triggered. |
 | PR-7 | Document the resolver's branch logic as a spec | Today: `route.ts` source is the only spec. A separate `docs/plans/resolver-spec.md` (or similar) would document each branch's preconditions, output shape, and rationale. Pairs with PLAT-1 (spec validation tests). Not blocking ship; helpful for cross-repo onboarding. |
+| PR-8 | P8 — rename "Everything in Community Roast" → "Everything in Community" | House-blend's `details.benefits.activeItems` still references the old FREE-plan name ("Community Roast" → now "Community"). Content-only DB change. **In progress (platform).** The store baseline correctly captures the current copy; when the DB change ships, the nightly drift detector flags the change, the store re-captures, baseline updates. No store-side code change. |
+
+> **Already landed (platform):** PR #72 (`feat(resolver): plan scenario corrections + free→NONE + buildPoolsFromQuotas fix`) — merged 2026-05-11, deployed. PR #73 (`chore: unblock pre-commit + gitignore session state`) — merged 2026-05-11, handled the `.dev-scenario-keys` / `.claude/` gitignore concern. PR #74 (`docs: pools-architecture scoping`) — open, platform-side doc work.
 
 ### SDK-side (separate repo)
 
 | ID | Title | Status |
 |----|-------|--------|
-| SDK-RFC-MCP-VER | Wire MCP `serverInfo.version` to SDK package version | **Bundle with next SDK touch (during Session 2 likely)** — small fix; prerequisite for any meaningful version-aware MCP workflow |
+| SDK-RFC-MCP-VER | Wire MCP `serverInfo.version` to SDK package version | **Session 2 — bundled into the SDK v0.5.0 PR with SDK-RFC-3** (both are SDK changes; ship together) |
 | SDK-RFC-1 | `quotas[].cadence` field (`"month" \| "year" \| "one-time"`) | Future — enables deterministic cadence rendering |
 | SDK-RFC-2 | `pools?: UsagePool[]` on every state (NoneState / InactiveState / CancelledState) | Future — removes the today-pattern hack of putting FREE in ACTIVE state just to attach addon pools |
-| SDK-RFC-3 | Add CONVERTING state to `PlanState` union | **Session 2 prereq** |
+| SDK-RFC-3 | Add CONVERTING state to `PlanState` union | **Session 2 — bundled with SDK-RFC-MCP-VER → tag v0.5.0** (minor: union member breaks consumer `switch` exhaustiveness). See `session-2/ACs.md` SDK-RFC-CONVERTING. |
 | SDK-RFC-4 | SDK semver + deprecation policy + migration docs | Deferred — wait for self-hosted launch when version skew becomes a real customer problem |
+| SDK-RFC-5 | MCP changelog/diff tool (`mcp__artisan-roast-sdk__diff_versions`) | Future — useful during SDK upgrades but not blocking |
 | SDK-RFC-5 | MCP changelog/diff tool (`mcp__artisan-roast-sdk__diff_versions`) | Future — useful during SDK upgrades but not blocking |
 
 ## Review gates
