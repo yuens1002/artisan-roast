@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 import { submitCancellation } from "../actions";
-import type { ConfirmActionConfig } from "artisan-roast-sdk/plans";
+import type { FeedbackFormModal } from "artisan-roast-sdk/plans";
 
 const OTHER_TEXT_MAX = 500;
 
@@ -39,8 +39,12 @@ interface ConfirmActionDialogProps {
   /** When true, the customer has billing on file — flow redirects to
    *  Stripe Portal. When false, a UI-mock cancel is captured client-side. */
   cardAdded: boolean;
-  /** Modal copy + reason list from the plan payload. */
-  config?: ConfirmActionConfig;
+  /**
+   * Modal copy + reason list from the plan payload. Restricted to
+   * `FeedbackFormModal` — the `paymentConfirm` modal kind is a separate
+   * component (deferred to the next provider-plan-sdk-alignment session).
+   */
+  config?: FeedbackFormModal;
 }
 
 // ---------------------------------------------------------------------------

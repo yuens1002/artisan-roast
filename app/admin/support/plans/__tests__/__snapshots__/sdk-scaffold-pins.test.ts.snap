@@ -170,6 +170,63 @@ exports[`SDK SCAFFOLD pins SCAFFOLDS shape is pinned 1`] = `
     },
     "visibility": "hosted",
   },
+  "PENDING": {
+    "actionModals": [
+      {
+        "confirmLabel": "Confirm and pay",
+        "description": "You'll be charged $79.00/month. Cancel anytime.",
+        "heading": "Completing your subscription",
+        "processingMessages": [
+          "Processing payment…",
+          "Almost there…",
+        ],
+        "slug": "convert-payment",
+        "type": "paymentConfirm",
+      },
+    ],
+    "currency": "USD",
+    "description": "Fully managed hosting with custom domain and priority support.",
+    "details": {
+      "benefits": {
+        "activeItems": [
+          "Everything in Community Roast",
+          "Managed hosting & backups",
+          "Custom domain configuration",
+          "5 priority support tickets/month, 48-hr SLA",
+        ],
+      },
+      "sla": {
+        "responseTime": "48 hours",
+      },
+    },
+    "features": [
+      "hosting",
+      "custom-domain",
+      "priority-support",
+      "tickets",
+    ],
+    "highlight": true,
+    "interval": "month",
+    "name": "House Blend",
+    "price": 7900,
+    "slug": "house-blend",
+    "state": {
+      "actions": [
+        {
+          "endpoint": "/api/plans/status",
+          "label": "Check Status",
+          "slug": "check-status",
+          "variant": "primary",
+        },
+      ],
+      "status": "PENDING",
+      "statusInfo": {
+        "descIcon": "loader-2",
+        "descText": "Setting up your store — this can take a few minutes.",
+      },
+    },
+    "visibility": "hosted",
+  },
   "PRIORITY_SUPPORT_ACTIVE": {
     "actionModals": [
       {
@@ -201,6 +258,7 @@ exports[`SDK SCAFFOLD pins SCAFFOLDS shape is pinned 1`] = `
         ],
         "reasonsLabel": "Reason for cancelling",
         "slug": "cancel-subscription",
+        "type": "feedbackForm",
       },
     ],
     "currency": "USD",
@@ -567,6 +625,7 @@ exports[`SDK SCAFFOLD pins SCAFFOLDS shape is pinned 1`] = `
         ],
         "reasonsLabel": "Reason for cancelling",
         "slug": "cancel-trial",
+        "type": "feedbackForm",
       },
       {
         "confirmIcon": "external-link",
@@ -603,6 +662,7 @@ exports[`SDK SCAFFOLD pins SCAFFOLDS shape is pinned 1`] = `
         ],
         "reasonsLabel": "Reason for cancelling",
         "slug": "cancel-stripe",
+        "type": "feedbackForm",
       },
     ],
     "currency": "USD",
@@ -688,6 +748,7 @@ exports[`SDK SCAFFOLD pins SCAFFOLDS shape is pinned 1`] = `
         ],
         "reasonsLabel": "Reason for cancelling",
         "slug": "cancel-trial",
+        "type": "feedbackForm",
       },
       {
         "confirmIcon": "external-link",
@@ -724,6 +785,7 @@ exports[`SDK SCAFFOLD pins SCAFFOLDS shape is pinned 1`] = `
         ],
         "reasonsLabel": "Reason for cancelling",
         "slug": "cancel-stripe",
+        "type": "feedbackForm",
       },
     ],
     "currency": "USD",
