@@ -1,7 +1,9 @@
 # Session 2 — Acceptance Criteria
 
-**Branch:** `feat/converting-state` (proposed)
-**Plan:** [`../plan.md`](../plan.md) (Session 2 section)
+> ⚠️ **SUPERSEDED — this doc predates the CONVERTING→PENDING reframe.** It describes "CONVERTING as a plan state + ConversionModal returning `null` from PlanCard". The corrected design: **CONVERTING is the payment-loop *modal* spec, not a plan state**; the actual plan state during conversion is **`PENDING`** (PlanCard renders a PendingCard — NONE-shaped, status copy, "Check Status" CTA, spinner during poll — *not* `null`); `actionModals[]` becomes a discriminated union `(FeedbackFormModal | PaymentConfirmModal)[]` (breaking rename of `ConfirmActionConfig`). SDK v0.5.0 is the gate (PENDING state + discriminated `actionModals[]` + MCP `serverInfo.version` from package.json). See the project memory `project_session2_reframe_and_sdk_handoff.md` for the full corrected spec + downstream sequence. **Apply the reframe to this doc on the Session 2 feat branch when it starts** — don't trust the AC rows below as-is.
+
+**Branch:** `feat/converting-state` (proposed — will likely be renamed `feat/pending-state` to match the reframe)
+**Plan:** [`../plan.md`](../plan.md) (Session 2 section — also flagged)
 **Architecture:** [`../architecture.md`](../architecture.md)
 
 > **Scope:** Add the `CONVERTING` plan state across SDK → provider → store, plus a non-dismissable `ConversionModal` that polls the resolver until the customer's plan converts off CONVERTING. Plus two ride-along ACs that close deferred items ST-2 (ConfirmActionDialog coverage) and ST-3 (page-level composition).

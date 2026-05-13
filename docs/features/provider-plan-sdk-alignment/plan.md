@@ -44,11 +44,13 @@ Sessions 1–5 (now in `archive/`) shipped the foundation: SDK-driven types, pro
 - `npm run plans:capture` runs successfully against the provider for at least the self-hosted dev keys; captured JSONs committed.
 - AC-DRIFT sub-rows verified (each layer demonstrably catches a synthetic regression).
 
-### Session 2 — CONVERTING state + ConversionModal + ride-alongs
+### Session 2 — PENDING state + payment-loop modal + ride-alongs
 
-**Status:** planned. ACs drafted — see [`session-2/ACs.md`](session-2/ACs.md) (15 ACs).
+> ⚠️ **Reframed since first draft.** Originally scoped as "CONVERTING plan state + ConversionModal". Corrected: **CONVERTING is the payment-loop modal spec, not a plan state**; **`PENDING` is the plan state** during provisioning (PlanCard renders a PendingCard, not `null`); `actionModals[]` → discriminated union `(FeedbackFormModal | PaymentConfirmModal)[]` (breaking rename of `ConfirmActionConfig`). The headings/details below + `session-2/ACs.md` still carry the old framing in places — both get corrected on the Session 2 feat branch. Source of truth for the corrected spec: project memory `project_session2_reframe_and_sdk_handoff.md`.
 
-**Scope:** Add the `CONVERTING` plan state across SDK → provider → store, plus a non-dismissable `ConversionModal` that polls the resolver until the plan converts off CONVERTING. Plus two ride-alongs that close deferred items: **ST-2** (`ConfirmActionDialog` field coverage) and **ST-3** (page-level composition tests).
+**Status:** planned, reframed. ACs drafted (need the reframe applied) — see [`session-2/ACs.md`](session-2/ACs.md).
+
+**Scope (corrected):** Add the `PENDING` plan state across SDK → provider → store (plan card = NONE-shaped with status copy + "Check Status" CTA + spinner during poll, cycles PENDING→PENDING→ACTIVE). Add the `paymentConfirm` modal (confirm → non-dismissable spinner + status, triggered by the subscribe/convert action). Plus two ride-alongs that close deferred items: **ST-2** (`ConfirmActionDialog` field coverage — now covers both `feedbackForm` + `paymentConfirm` variants) and **ST-3** (page-level composition tests).
 
 **Locked design decisions (from planning):**
 
