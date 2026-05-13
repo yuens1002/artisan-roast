@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
@@ -123,6 +123,15 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
     stripeTab: Window | null;
   } | null>(null);
 
+  // Track whether we've observed plan-status === PENDING during this attempt.
+  // Without this gate, the plan-state watcher below would fire `error` the
+  // instant the modal enters polling — because the platform's synchronous
+  // PENDING write may not have propagated to the next router.refresh yet, so
+  // the local `plans` prop is still NONE for a brief window. We only treat
+  // NONE as failure once we've seen PENDING, i.e. PENDING → NONE = real
+  // payment reversion. Resets when a new attempt starts.
+  const seenPendingRef = useRef(false);
+
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
       startTransition(async () => {
@@ -140,7 +149,8 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
 
   // Watch plan state for transitions while the modal is in `polling`.
   // The state machine for PaymentConfirmModal is driven entirely from
-  // polled plan data — no frontend-only triggers.
+  // polled plan data — no frontend-only triggers. See seenPendingRef above
+  // for why we gate the NONE-as-failure branch.
   useEffect(() => {
     if (paymentModal?.state !== "polling") return;
     const currentPlan = plans.find((p) => p.slug === paymentModal.planSlug);
@@ -149,11 +159,22 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
     if (currentPlan.state.status === "ACTIVE") {
       // Auto-close on success
       paymentModal.stripeTab?.close();
+      seenPendingRef.current = false;
       setPaymentModal(null);
-    } else if (currentPlan.state.status === "NONE") {
-      // Failure path: plan reverted to NONE (payment failed / cancelled /
-      // session expired). Modal flips to error.
+      return;
+    }
+
+    if (currentPlan.state.status === "PENDING") {
+      // Latch: subsequent NONE for this slug is now treated as failure.
+      seenPendingRef.current = true;
+      return;
+    }
+
+    if (currentPlan.state.status === "NONE" && seenPendingRef.current) {
+      // Real failure: plan went PENDING then back to NONE (payment failed /
+      // cancelled / session expired).
       paymentModal.stripeTab?.close();
+      seenPendingRef.current = false;
       setPaymentModal((prev) => (prev ? { ...prev, state: "error" } : null));
     }
   }, [paymentModal, plans]);
@@ -208,6 +229,10 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
     plan: HydratedPlan,
     modal: PaymentConfirmModalConfig
   ) {
+    // Reset the "have we seen PENDING for this attempt" latch — a retry
+    // starts a brand-new attempt and shouldn't inherit stale state.
+    seenPendingRef.current = false;
+
     // 1. Synchronously pre-open a blank tab so the eventual navigation to
     //    Stripe survives popup blockers. The tab sits blank until the
     //    endpoint returns a URL.

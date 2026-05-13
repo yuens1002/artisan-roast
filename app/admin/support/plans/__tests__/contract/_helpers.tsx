@@ -18,6 +18,8 @@ import type {
   ExpiredState,
   InactiveState,
   NoneState,
+  PaymentConfirmModal,
+  PendingState,
   PlanState,
   TrialState,
 } from "artisan-roast-sdk/plans";
@@ -105,6 +107,32 @@ export function makeInactive(state: Partial<InactiveState> = {}): InactiveState 
     deactivatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     actions: [],
     ...state,
+  };
+}
+
+export function makePending(state: Partial<PendingState> = {}): PendingState {
+  return {
+    status: "PENDING",
+    statusInfo: { descText: "PROBE_PENDING_DESC" },
+    actions: [],
+    ...state,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Modal factories
+// ---------------------------------------------------------------------------
+
+export function makePaymentConfirmModal(
+  overrides: Partial<PaymentConfirmModal> = {}
+): PaymentConfirmModal {
+  return {
+    type: "paymentConfirm",
+    slug: "probe-payment",
+    heading: "PROBE_MODAL_HEADING",
+    confirmLabel: "PROBE_CONFIRM_LABEL",
+    processingMessages: ["PROBE_MSG_1", "PROBE_MSG_2"],
+    ...overrides,
   };
 }
 
