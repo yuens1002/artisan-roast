@@ -21,6 +21,10 @@ import { useToast } from "@/hooks/use-toast";
 import { refreshLicense } from "../actions";
 import { startCheckout } from "./actions";
 import { ConfirmActionDialog } from "./_components/ConfirmActionDialog";
+import {
+  PaymentConfirmModal,
+  type PaymentModalState,
+} from "./_components/PaymentConfirmModal";
 import { PoolCtaMenu } from "./_components/PoolCtaMenu";
 
 import type { LicenseInfo } from "@/lib/license-types";
@@ -29,6 +33,7 @@ import type {
   PlanAction,
   UsagePool as SdkUsagePool,
   FeedbackFormModal,
+  PaymentConfirmModal as PaymentConfirmModalConfig,
   PendingState,
 } from "artisan-roast-sdk/plans";
 import {
@@ -107,6 +112,17 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
     slug: string;
   } | null>(null);
 
+  // PaymentConfirmModal state — null when modal is closed. Driven by clicks
+  // on actions with a paymentConfirm modalSlug, and by transitions observed
+  // in the useEffects below.
+  const [paymentModal, setPaymentModal] = useState<{
+    state: PaymentModalState;
+    modal: PaymentConfirmModalConfig;
+    action: PlanAction;
+    planSlug: string;
+    stripeTab: Window | null;
+  } | null>(null);
+
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
       startTransition(async () => {
@@ -121,6 +137,49 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Watch plan state for transitions while the modal is in `polling`.
+  // The state machine for PaymentConfirmModal is driven entirely from
+  // polled plan data — no frontend-only triggers.
+  useEffect(() => {
+    if (paymentModal?.state !== "polling") return;
+    const currentPlan = plans.find((p) => p.slug === paymentModal.planSlug);
+    if (!currentPlan) return;
+
+    if (currentPlan.state.status === "ACTIVE") {
+      // Auto-close on success
+      paymentModal.stripeTab?.close();
+      setPaymentModal(null);
+    } else if (currentPlan.state.status === "NONE") {
+      // Failure path: plan reverted to NONE (payment failed / cancelled /
+      // session expired). Modal flips to error.
+      paymentModal.stripeTab?.close();
+      setPaymentModal((prev) => (prev ? { ...prev, state: "error" } : null));
+    }
+  }, [paymentModal, plans]);
+
+  // Polling refresh while modal is in `polling`. router.refresh() triggers a
+  // server-side re-fetch of plans which feeds back into the watcher effect
+  // above.
+  useEffect(() => {
+    if (paymentModal?.state !== "polling") return;
+    const id = setInterval(() => router.refresh(), 5000);
+    return () => clearInterval(id);
+  }, [paymentModal?.state, router]);
+
+  // Tab-closed detection — gives the modal fast feedback when the user closes
+  // the Stripe tab without paying (instead of waiting for the session-expired
+  // webhook). Routes to the same generic error state — no reason variants.
+  useEffect(() => {
+    if (paymentModal?.state !== "polling") return;
+    if (!paymentModal.stripeTab) return;
+    const id = setInterval(() => {
+      if (paymentModal.stripeTab?.closed) {
+        setPaymentModal((prev) => (prev ? { ...prev, state: "error" } : null));
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [paymentModal]);
 
   function handleSubscribe(planSlug: string) {
     const formData = new FormData();
@@ -140,13 +199,69 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
     });
   }
 
+  // Synchronous-blank-tab payment flow. Single code path for both initial
+  // action click and Try Again retry — see AC-MODAL-RETRY. Must be called
+  // synchronously from a click handler (the window.open below relies on the
+  // user-gesture permission that only direct click handlers carry).
+  function startPaymentFlow(
+    action: PlanAction,
+    plan: HydratedPlan,
+    modal: PaymentConfirmModalConfig
+  ) {
+    // 1. Synchronously pre-open a blank tab so the eventual navigation to
+    //    Stripe survives popup blockers. The tab sits blank until the
+    //    endpoint returns a URL.
+    const stripeTab =
+      typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
+
+    // 2. Mount modal in `preparing`.
+    setPaymentModal({
+      state: "preparing",
+      modal,
+      action,
+      planSlug: plan.slug,
+      stripeTab,
+    });
+
+    // 3. Async — call the platform endpoint. On success: navigate the blank
+    //    tab to the returned Stripe URL + transition modal to `polling`. On
+    //    failure/timeout: close the blank tab + transition modal to `error`.
+    if (!action.endpoint) {
+      stripeTab?.close();
+      setPaymentModal((prev) => (prev ? { ...prev, state: "error" } : null));
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000);
+
+    fetch(action.endpoint, { method: "POST", signal: controller.signal })
+      .then(async (resp) => {
+        clearTimeout(timeoutId);
+        if (!resp.ok) throw new Error(`endpoint returned ${resp.status}`);
+        const data = (await resp.json()) as { stripeUrl?: string; url?: string };
+        const url = data.stripeUrl ?? data.url;
+        if (!url) throw new Error("no stripeUrl in response");
+        if (stripeTab) stripeTab.location.href = url;
+        setPaymentModal((prev) => (prev ? { ...prev, state: "polling" } : null));
+      })
+      .catch(() => {
+        clearTimeout(timeoutId);
+        stripeTab?.close();
+        setPaymentModal((prev) => (prev ? { ...prev, state: "error" } : null));
+      });
+  }
+
   function handleAction(action: PlanAction, plan: HydratedPlan) {
     if (action.modalSlug) {
       const config = plan.actionModals?.find((m) => m.slug === action.modalSlug);
-      // Only the feedbackForm kind opens ConfirmActionDialog. The paymentConfirm
-      // modal kind ships with the next provider-plan-sdk-alignment session.
       if (config?.type === "feedbackForm") {
         setActiveModal({ config, slug: action.modalSlug });
+        return;
+      }
+      if (config?.type === "paymentConfirm") {
+        startPaymentFlow(action, plan, config);
+        return;
       }
       return;
     }
@@ -225,6 +340,24 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
         }}
         cardAdded={activeModal?.slug === "cancel-stripe"}
         config={activeModal?.config}
+      />
+
+      <PaymentConfirmModal
+        state={paymentModal?.state ?? null}
+        modal={paymentModal?.modal ?? null}
+        onRetry={() => {
+          if (!paymentModal) return;
+          const plan = plans.find((p) => p.slug === paymentModal.planSlug);
+          if (!plan) return;
+          // The prior Stripe session may have been cancelled server-side, so
+          // we always re-run the flow from scratch — never reuse the URL.
+          paymentModal.stripeTab?.close();
+          startPaymentFlow(paymentModal.action, plan, paymentModal.modal);
+        }}
+        onClose={() => {
+          paymentModal?.stripeTab?.close();
+          setPaymentModal(null);
+        }}
       />
     </div>
   );
@@ -970,14 +1103,18 @@ function InactiveCard({
 }
 
 // ---------------------------------------------------------------------------
-// PendingCard — provisional NONE-shaped card during post-conversion
-// provisioning (SDK PlanState "PENDING", added in v0.5.0).
+// PendingCard — durable representation of a plan in `PENDING` state, i.e. the
+// payment+provisioning window after a successful subscribe/convert action.
 //
-// Minimal renderer: name + description + statusInfo (with a spinning icon)
-// + actions. The polished version with a polling-driven Check-Status flow
-// and the paymentConfirm launchpad ships with the next provider-plan-sdk-
-// alignment session — see docs/features/provider-plan-sdk-alignment/session-2
-// (CONVERTING→PENDING reframe).
+// Renders: name + description + statusInfo (descText + descIcon if present,
+// else a default spinner) + state.actions. Both PENDING substates
+// ("Confirming your payment…" and "Setting up your store…") render through
+// the same component path — the only difference is the resolver-supplied
+// statusInfo.descText. There is no frontend logic differentiating the two.
+//
+// The card auto-polls (router.refresh) every 10s while mounted so it picks
+// up state transitions when the user is on the page but no modal is open.
+// The modal does its own faster polling when active.
 // ---------------------------------------------------------------------------
 
 function PendingCard({
@@ -993,8 +1130,19 @@ function PendingCard({
   onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
+  const router = useRouter();
+
+  // Slow auto-poll: keeps the card alive when the modal isn't mounted (user
+  // refreshed the page mid-flow, or landed here from elsewhere). The modal
+  // does faster polling when active.
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 10_000);
+    return () => clearInterval(id);
+  }, [router]);
+
   return (
     <div
+      data-testid="pending-card"
       className="flex flex-col rounded-lg border p-6 space-y-5 transition-shadow hover:shadow-lg cursor-pointer"
       onClick={onCardClick}
     >
@@ -1004,11 +1152,16 @@ function PendingCard({
       </div>
 
       {state.statusInfo?.descText && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {/* descIcon is ignored for now — PENDING uses Loader2 by convention.
-              A polished version that dispatches on state.statusInfo.descIcon
-              ships with the next provider-plan-sdk-alignment session. */}
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-2 text-sm text-muted-foreground"
+        >
+          <PlanBadgeIcon
+            name={state.statusInfo.descIcon}
+            fallback={Loader2}
+            className="h-4 w-4 shrink-0 animate-spin"
+          />
           <span>{state.statusInfo.descText}</span>
         </div>
       )}
