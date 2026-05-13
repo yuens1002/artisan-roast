@@ -28,7 +28,8 @@ import type {
   HydratedPlan,
   PlanAction,
   UsagePool as SdkUsagePool,
-  ConfirmActionConfig,
+  FeedbackFormModal,
+  PendingState,
 } from "artisan-roast-sdk/plans";
 import {
   computePoolTotal,
@@ -102,7 +103,7 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [activeModal, setActiveModal] = useState<{
-    config: ConfirmActionConfig;
+    config: FeedbackFormModal;
     slug: string;
   } | null>(null);
 
@@ -142,7 +143,11 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
   function handleAction(action: PlanAction, plan: HydratedPlan) {
     if (action.modalSlug) {
       const config = plan.actionModals?.find((m) => m.slug === action.modalSlug);
-      if (config) setActiveModal({ config, slug: action.modalSlug });
+      // Only the feedbackForm kind opens ConfirmActionDialog. The paymentConfirm
+      // modal kind ships with the next provider-plan-sdk-alignment session.
+      if (config?.type === "feedbackForm") {
+        setActiveModal({ config, slug: action.modalSlug });
+      }
       return;
     }
     if (action.url) {
@@ -303,6 +308,16 @@ function PlanCard({ plan, isPending, onAction }: PlanCardBaseProps) {
         <InactiveCard
           plan={plan}
           state={state}
+          onAction={onAction}
+          onCardClick={onCardClick}
+        />
+      );
+    case "PENDING":
+      return (
+        <PendingCard
+          plan={plan}
+          state={state}
+          isPending={isPending}
           onAction={onAction}
           onCardClick={onCardClick}
         />
@@ -943,6 +958,80 @@ function InactiveCard({
                 onAction(action, plan);
               }}
             >
+              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
+              {action.label}
+              {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
+            </Button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PendingCard — provisional NONE-shaped card during post-conversion
+// provisioning (SDK PlanState "PENDING", added in v0.5.0).
+//
+// Minimal renderer: name + description + statusInfo (with a spinning icon)
+// + actions. The polished version with a polling-driven Check-Status flow
+// and the paymentConfirm launchpad ships with the next provider-plan-sdk-
+// alignment session — see docs/features/provider-plan-sdk-alignment/session-2
+// (CONVERTING→PENDING reframe).
+// ---------------------------------------------------------------------------
+
+function PendingCard({
+  plan,
+  state,
+  isPending,
+  onAction,
+  onCardClick,
+}: {
+  plan: HydratedPlan;
+  state: PendingState;
+  isPending: boolean;
+  onAction: (action: PlanAction, plan: HydratedPlan) => void;
+  onCardClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <div
+      className="flex flex-col rounded-lg border p-6 space-y-5 transition-shadow hover:shadow-lg cursor-pointer"
+      onClick={onCardClick}
+    >
+      <div>
+        <h3 className="text-lg font-semibold">{plan.name}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+      </div>
+
+      {state.statusInfo?.descText && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {/* descIcon is ignored for now — PENDING uses Loader2 by convention.
+              A polished version that dispatches on state.statusInfo.descIcon
+              ships with the next provider-plan-sdk-alignment session. */}
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+          <span>{state.statusInfo.descText}</span>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 mt-auto pt-0">
+        <div className="flex-1" />
+        {state.actions.map((action) => {
+          const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
+          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
+          return (
+            <Button
+              key={action.slug}
+              variant={actionVariant(action.variant)}
+              size="sm"
+              disabled={isPending || action.disabled}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(action, plan);
+              }}
+            >
+              {isPending && action.variant === "primary" && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
               {action.label}
               {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}

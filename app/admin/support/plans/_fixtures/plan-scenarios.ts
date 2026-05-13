@@ -85,9 +85,11 @@ export const SCENARIO_FIXTURES = {
   "dev-hosted-cancelled-card": [TRIAL_CANCELLED_WITH_CARD],
   "dev-hosted-inactive":       [SCENARIOS.INACTIVE],
 
+  // ── Hosted: PENDING (post-conversion provisioning, SDK v0.5.0) ─────────
+  "dev-hosted-pending":        [SCENARIOS.PENDING],
+
   // ── Empty (resolver returns no cards) ──────────────────────────────────
   "dev-hosted-cancelled":      [],
-  "dev-hosted-pending":        [],
   "dev-hosted-provisioning":   [],
   "dev-hosted-deprovisioned":  [],
 } satisfies Record<string, HydratedPlan[]>;
