@@ -55,6 +55,7 @@ describe("SDK SCAFFOLD pins", () => {
       "TRIAL_ACTIVE_NO_CARD",
       "TRIAL_ACTIVE_CARD_ADDED",
       "TRIAL_EXPIRED",
+      "PENDING",
       "CONVERTED",
       "DIRECT_SUBSCRIBE",
       "INACTIVE",
