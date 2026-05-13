@@ -1,7 +1,16 @@
 # Session 2 — Acceptance Criteria
 
-**Branch:** `feat/converting-state` (proposed)
-**Plan:** [`../plan.md`](../plan.md) (Session 2 section)
+> ⚠️ **SUPERSEDED — this doc predates the CONVERTING→PENDING reframe. Don't trust the AC rows below as-is; apply the reframe on the Session 2 feat branch when it starts.**
+>
+> The doc below describes "CONVERTING as a plan state + ConversionModal returning `null` from PlanCard". The corrected design:
+>
+> - **CONVERTING is the payment-loop *modal* spec, not a plan state** — the popup during a Stripe charge (confirm → non-dismissable spinner + status copy → closes when the charge resolves).
+> - **`PENDING` is the plan state** during provisioning — PlanCard renders a PendingCard (NONE-shaped: name + status copy + "Check Status" primary CTA + spinner during the poll), cycling PENDING→PENDING→ACTIVE. *Not* `null`.
+> - **`actionModals[]` → discriminated union** `(FeedbackFormModal | PaymentConfirmModal)[]` — breaking rename `ConfirmActionConfig` → `FeedbackFormModal` (`type: "feedbackForm"`), plus the new `PaymentConfirmModal` (`type: "paymentConfirm"` — confirm-then-spinner payment popup, triggered by the subscribe/convert action).
+> - **SDK v0.5.0 is the gate** — `PendingState` in the `PlanState` union (`{ status: "PENDING", statusInfo?, actions: PlanAction[] }` — has actions for "Check Status", no pools) + discriminated `actionModals[]` + MCP `serverInfo.version` read from `package.json`. Downstream order (enforced by `STRICT_KEYS=1` in the drift nightly): SDK PR + tag v0.5.0 → platform PR (resolver emits PENDING + a `paymentConfirm` modal + regenerate `.dev-scenario-keys` as id-keyed JSON + deploy) → store PR (bump SDK ref, `case "PENDING"` → PendingCard, split `ConfirmActionDialog` on `modal.type`, `dev-pending` fixture, contract tests, capture `dev-pending.json`).
+
+**Branch:** `feat/converting-state` (proposed — will likely be renamed `feat/pending-state` to match the reframe)
+**Plan:** [`../plan.md`](../plan.md) (Session 2 section — also flagged)
 **Architecture:** [`../architecture.md`](../architecture.md)
 
 > **Scope:** Add the `CONVERTING` plan state across SDK → provider → store, plus a non-dismissable `ConversionModal` that polls the resolver until the customer's plan converts off CONVERTING. Plus two ride-along ACs that close deferred items ST-2 (ConfirmActionDialog coverage) and ST-3 (page-level composition).
