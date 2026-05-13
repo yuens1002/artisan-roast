@@ -180,14 +180,25 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
     }
   }, [paymentModal, plans]);
 
-  // Polling refresh while modal is in `polling`. router.refresh() triggers a
-  // server-side re-fetch of plans which feeds back into the watcher effect
-  // above.
+  // Single polling orchestrator — picks the right cadence based on what
+  // needs watching:
+  //   - 5s   while a payment modal is in `polling` (active payment window;
+  //          drives modal state-machine transitions to ACTIVE / NONE)
+  //   - 10s  while at least one plan in `plans` is PENDING with no active
+  //          modal for it (safety-net for the durable card so it stays alive
+  //          when the user closed the modal / refreshed / navigated away)
+  //   - off  otherwise
+  //
+  // Replaces what was previously two independent pollers (one in this
+  // component, one in PendingCard). PendingCard is now purely presentational.
+  const modalPolling = paymentModal?.state === "polling";
+  const hasPendingPlan = plans.some((p) => p.state.status === "PENDING");
   useEffect(() => {
-    if (paymentModal?.state !== "polling") return;
-    const id = setInterval(() => router.refresh(), 5000);
+    if (!modalPolling && !hasPendingPlan) return;
+    const cadence = modalPolling ? 5_000 : 10_000;
+    const id = setInterval(() => router.refresh(), cadence);
     return () => clearInterval(id);
-  }, [paymentModal?.state, router]);
+  }, [modalPolling, hasPendingPlan, router]);
 
   // Tab-closed detection — gives the modal fast feedback when the user closes
   // the Stripe tab without paying (instead of waiting for the session-expired
@@ -1151,11 +1162,9 @@ function InactiveCard({
 // hard-coded because it's universal store-side display.
 // See docs/features/provider-plan-sdk-alignment/session-2/ACs.md.
 //
-// Auto-poll: a 10s router.refresh() catches state transitions when the
-// PaymentConfirmModal isn't mounted (user closed it, refreshed, navigated
-// away and came back). Sized for the brief confirming-payment substate
-// (<1 min typical); the longer provisioning wait is better served by a
-// manual Check Status action when the resolver ships it.
+// Polling is handled by the single orchestrator in PlanPageClient (5s while
+// a payment modal is in `polling`, 10s otherwise when any plan is PENDING).
+// PendingCard is purely presentational — it doesn't run its own setInterval.
 // ---------------------------------------------------------------------------
 
 function PendingCard({
@@ -1168,11 +1177,6 @@ function PendingCard({
   onCardClick: (e: React.MouseEvent) => void;
 }) {
   const router = useRouter();
-
-  useEffect(() => {
-    const id = setInterval(() => router.refresh(), 10_000);
-    return () => clearInterval(id);
-  }, [router]);
 
   const isFree = plan.price === 0;
   const hasSale = !isFree && isSaleActive(plan);
