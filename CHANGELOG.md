@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+## 0.108.0 - 2026-05-13
+
+### Added
+
+- **PaymentConfirmModal** (`app/admin/support/plans/_components/PaymentConfirmModal.tsx`) — 3-state machine (`preparing` → `polling` → `error`) driven entirely by polled plan state. Non-dismissable in all states. Single generic error copy across all three failure triggers (endpoint-fail / plan-reverted-to-NONE / `stripeTab.closed`). `data-testid="payment-confirm-modal-{state}"` for test discrimination. Cycles `modal.processingMessages[]` every 2.5s while polling.
+- **Polished `PendingCard`** — `data-testid="pending-card"`, `statusInfo.descIcon` dispatch via `PlanBadgeIcon`, `role="status" aria-live="polite"` on the status copy region, 10s auto-poll via `router.refresh()` so the durable representation stays alive when the modal isn't mounted. Both PENDING substates ("Confirming your payment…" / "Setting up your store…") render identically.
+- **`startPaymentFlow`** in `PlanPageClient` — synchronous-blank-tab pattern: `window.open("about:blank", "_blank")` fires **synchronously** in the click handler to preserve popup-blocker permission; modal mounts in `preparing`; `fetch(action.endpoint)` follows with a 15s AbortController timeout. On success the blank tab navigates to the Stripe URL + modal flips to `polling`. On failure/timeout/abort the blank tab closes + modal flips to `error`.
+- **Discriminator gate** in `handleAction` — `modal.type === "feedbackForm"` opens `ConfirmActionDialog`; `modal.type === "paymentConfirm"` triggers `startPaymentFlow`. Compile-enforced via the SDK discriminated union.
+- **`seenPendingRef` latch** — the plan-state watcher only treats NONE as failure once it has observed PENDING for the current attempt. Without the latch, the local `plans` prop staying NONE for a brief window before the platform's synchronous PENDING write propagates would misfire `error` the moment the modal entered polling.
+- **`stripeTab.closed` detection** (1s interval while polling) → fast-feedback transition to `error` instead of waiting for Stripe's session-expired webhook (minutes to hours).
+- **Test-engineer skill** at `.claude/skills/test-engineer/SKILL.md` codifying the conventions used here (probe strings, `satisfies` types, testid state markers, presence+absence assertion pairs, mock-at-platform-boundary, no DOM snapshots, single parameterized `test.each` for unification claims). Replaces the generic platform skill for this repo.
+- **Session 2 contract tests** (31 new): `pending-card.test.tsx` (8), `payment-confirm-modal.test.tsx` (10), `plan-page-client.test.tsx` (7), `confirm-action-dialog.test.tsx` (6 — ride-along ST-2).
+- **Durable UI evidence** — 13 viewport PNGs at `docs/features/provider-plan-sdk-alignment/session-2/ui-evidence/` covering every `ALL_KEYS` scenario including `dev-hosted-pending` (polished PendingCard render).
+
+### Changed
+
+- **`PaymentConfirmModal` is a sibling of `ConfirmActionDialog`** — the SDK's `actionModals[]` is a discriminated union (`FeedbackFormModal | PaymentConfirmModal`); the renderer is now selected by `modal.type`.
+- **Session 2 docs reframe** — applied the `CONVERTING→PENDING` rename to `plan.md` Session 2 section + `session-2/ACs.md` (replaced the supersession banner with the corrected design as the body). 18 ACs. D14 / D15 rewritten.
+
+### Blocked-on-platform
+
+- **AC-CAP-PENDING** — captured-payload baselines for `dev-hosted-pending` (confirming-payment substate) + `dev-hosted-provisioning` (store-setup substate). Lands when platform ships `PR-PENDING-ENDPOINT` + `PR-PENDING-RESOLVER` + `PR-SEED-PENDING`. PR opens without this AC closed; merge is gated.
+
 ## 0.107.3 - 2026-05-12
 
 ### Changed
