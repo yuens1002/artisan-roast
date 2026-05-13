@@ -1,6 +1,14 @@
 {
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
+    "feat/pending-state": {
+      "status": "in_review",
+      "acs_passed": 17,
+      "acs_total": 18,
+      "tasks": [],
+      "acs_doc": "docs/features/provider-plan-sdk-alignment/session-2/ACs.md",
+      "notes": "Session 2 — PENDING state + paymentConfirm modal (3-state machine). 17/18 PASS. AC-CAP-PENDING BLOCKED-ON-PLATFORM (capture requires PR-PENDING-ENDPOINT + PR-PENDING-RESOLVER + PR-SEED-PENDING to ship on platform first). 31 new contract tests pass (pending-card: 8, payment-confirm-modal: 10, plan-page-client: 7, confirm-action-dialog: 6). Full test:ci: 1399/1399 pass. TypeScript clean. Lint clean (1 pre-existing useReviewsTable warning, unrelated). 13 UI screenshots committed at docs/features/provider-plan-sdk-alignment/session-2/ui-evidence/ — modal sub-state visual capture deferred (no dev fixture with paymentConfirm action until platform PR-SEED-PENDING). PR opens with this AC posture; merge gated on platform side."
+    },
     "feat/hosted-store-s2": {
       "status": "verified",
       "acs_passed": 50,
