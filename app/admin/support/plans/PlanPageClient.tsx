@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  Hourglass,
   Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -475,8 +476,6 @@ function PlanCard({ plan, isPending, onAction }: PlanCardBaseProps) {
         <PendingCard
           plan={plan}
           state={state}
-          isPending={isPending}
-          onAction={onAction}
           onCardClick={onCardClick}
         />
       );
@@ -1131,39 +1130,56 @@ function InactiveCard({
 // PendingCard — durable representation of a plan in `PENDING` state, i.e. the
 // payment+provisioning window after a successful subscribe/convert action.
 //
-// Renders: name + description + statusInfo (descText + descIcon if present,
-// else a default spinner) + state.actions. Both PENDING substates
-// ("Confirming your payment…" and "Setting up your store…") render through
-// the same component path — the only difference is the resolver-supplied
-// statusInfo.descText. There is no frontend logic differentiating the two.
+// Layout mirrors NoneCard (price section + benefits + CTA row) so the customer
+// sees what they paid for. Differences from NoneCard:
 //
-// The card auto-polls (router.refresh) every 10s while mounted so it picks
-// up state transitions when the user is on the page but no modal is open.
-// The modal does its own faster polling when active.
+//   1. Badge in the top-right slot: hard-coded "Pending" + Hourglass icon —
+//      universal store-side display (no plan-level variation; no SDK or
+//      resolver involvement).
+//   2. Description slot is swapped to render `state.statusInfo.descText`
+//      instead of `plan.description`. Both PENDING substates render through
+//      this same path — the only difference is the resolver-supplied descText
+//      ("Confirming your payment…" vs "Setting up your store…"). No frontend
+//      branching on substate (AC-PENDING-SUBSTATES).
+//   3. CTA row is a single "View Details" ghost — hard-coded (universal
+//      store-side display; URL derived from plan.slug).
+//
+// TODO (PR-PENDING-ACTIONS, platform): when the resolver ships substate-
+// aware `state.actions` (Check Status primary in provisioning substate,
+// empty during confirming-payment), iterate state.actions in the CTA row
+// alongside View Details — same pattern as NoneCard. View Details stays
+// hard-coded because it's universal store-side display.
+// See docs/features/provider-plan-sdk-alignment/session-2/ACs.md.
+//
+// Auto-poll: a 10s router.refresh() catches state transitions when the
+// PaymentConfirmModal isn't mounted (user closed it, refreshed, navigated
+// away and came back). Sized for the brief confirming-payment substate
+// (<1 min typical); the longer provisioning wait is better served by a
+// manual Check Status action when the resolver ships it.
 // ---------------------------------------------------------------------------
 
 function PendingCard({
   plan,
   state,
-  isPending,
-  onAction,
   onCardClick,
 }: {
   plan: HydratedPlan;
   state: PendingState;
-  isPending: boolean;
-  onAction: (action: PlanAction, plan: HydratedPlan) => void;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
   const router = useRouter();
 
-  // Slow auto-poll: keeps the card alive when the modal isn't mounted (user
-  // refreshed the page mid-flow, or landed here from elsewhere). The modal
-  // does faster polling when active.
   useEffect(() => {
     const id = setInterval(() => router.refresh(), 10_000);
     return () => clearInterval(id);
   }, [router]);
+
+  const isFree = plan.price === 0;
+  const hasSale = !isFree && isSaleActive(plan);
+  const priceDisplay = isFree ? "Free" : formatPriceDisplay(plan.price);
+  const salePriceDisplay = hasSale ? formatPriceDisplay(plan.salePrice!) : null;
+  const intervalLabel = isFree ? "" : formatIntervalLabel(plan.interval);
+  const priceLabel = formatPriceLabel(plan);
 
   return (
     <div
@@ -1171,51 +1187,83 @@ function PendingCard({
       className="flex flex-col rounded-lg border p-6 space-y-5 transition-shadow hover:shadow-lg cursor-pointer"
       onClick={onCardClick}
     >
-      <div>
-        <h3 className="text-lg font-semibold">{plan.name}</h3>
-        <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+      <div className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold">{plan.name}</h3>
+          {state.statusInfo?.descText && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="text-sm text-muted-foreground mt-1"
+            >
+              {state.statusInfo.descText}
+            </p>
+          )}
+        </div>
+        <Badge
+          variant="outline"
+          className="shrink-0 gap-1.5"
+          data-testid="pending-badge"
+        >
+          <Hourglass className="h-3.5 w-3.5" />
+          Pending
+        </Badge>
       </div>
 
-      {state.statusInfo?.descText && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="flex items-center gap-2 text-sm text-muted-foreground"
-        >
-          <PlanBadgeIcon
-            name={state.statusInfo.descIcon}
-            fallback={Loader2}
-            className="h-4 w-4 shrink-0 animate-spin"
-          />
-          <span>{state.statusInfo.descText}</span>
+      {!isFree && (
+        <div>
+          {hasSale ? (
+            <>
+              <span className="text-3xl font-bold">{salePriceDisplay}</span>
+              <span className="text-muted-foreground">{intervalLabel}</span>
+              <span className="ml-2 text-lg text-muted-foreground line-through">
+                {priceDisplay}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-3xl font-bold">{priceDisplay}</span>
+              <span className="text-muted-foreground">{intervalLabel}</span>
+            </>
+          )}
+          {priceLabel && (
+            <p className="text-xs text-muted-foreground mt-1">{priceLabel}</p>
+          )}
         </div>
       )}
 
+      {plan.details.benefits?.activeItems && plan.details.benefits.activeItems.length > 0 && (
+        <>
+          {plan.details.benefits.activeHeader && (
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {plan.details.benefits.activeHeader}
+            </p>
+          )}
+          <ul className="space-y-2 text-sm">
+            {plan.details.benefits.activeItems.map((benefit) => (
+              <li key={benefit} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                {benefit}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       <div className="flex items-center gap-2 mt-auto pt-0">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push(`/admin/support/plans/${plan.slug}`);
+          }}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          View Details
+        </button>
         <div className="flex-1" />
-        {state.actions.map((action) => {
-          const Icon = action.iconAfter ? resolveIcon(action.iconAfter) : null;
-          const IconBefore = action.iconBefore ? resolveIcon(action.iconBefore) : null;
-          return (
-            <Button
-              key={action.slug}
-              variant={actionVariant(action.variant)}
-              size="sm"
-              disabled={isPending || action.disabled}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAction(action, plan);
-              }}
-            >
-              {isPending && action.variant === "primary" && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {IconBefore && <IconBefore className="mr-1.5 h-3.5 w-3.5" />}
-              {action.label}
-              {Icon && <Icon className="ml-1.5 h-3.5 w-3.5" />}
-            </Button>
-          );
-        })}
+        {/* state.actions iteration lands here when PR-PENDING-ACTIONS ships
+            (Check Status primary in provisioning substate, etc.). */}
       </div>
     </div>
   );
