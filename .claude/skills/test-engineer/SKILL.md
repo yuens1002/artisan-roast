@@ -177,3 +177,33 @@ Before approving a test, ask:
 5. Does this test mock `useState` / `useEffect` / a component-internal? → if yes, it's testing the wrong layer.
 
 If any of these fail, the test isn't ready.
+
+## Implementation gotchas worth flagging during review
+
+These aren't testing principles — they're patterns that have bitten this codebase
+before and that test review is the natural place to catch (because the
+test-writer is reading the implementation closely).
+
+### Polling concentration (single orchestrator > leaf timers)
+
+When a component adds `setInterval(() => router.refresh(), N)` (or any
+server-state poll), check whether a sibling or parent component already polls
+the same data. Two independent leaf-component pollers running concurrently
+fire redundant `router.refresh()` calls during their overlap window.
+
+**Pattern that's bitten us:** modal's 5 s poll + card's 10 s poll both running
+while a payment was in flight; ~6 redundant fetches per minute. Caught only
+when a reviewer asked "is this one polling or two?". Documented in the
+2026-05-13 retro.
+
+**The fix:** lift the polling concern to the parent that orchestrates the
+state machine. Pick the cadence at the parent based on derived booleans
+(e.g. "is the modal in polling state?" → 5 s, "is any plan PENDING?" → 10 s,
+otherwise off). Leaf components stay purely presentational. Stable derived
+booleans in the effect's deps prevent the "every refresh resets the
+interval" trap.
+
+**For test reviewers:** when reviewing tests for a component that introduces
+a new `setInterval`, grep the surrounding files for existing intervals
+polling the same data. If you find one, push back on the implementation
+before approving the tests.
