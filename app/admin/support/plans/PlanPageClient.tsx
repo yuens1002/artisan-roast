@@ -487,6 +487,7 @@ function PlanCard({ plan, isPending, onAction }: PlanCardBaseProps) {
         <PendingCard
           plan={plan}
           state={state}
+          detailHref={detailHref}
           onCardClick={onCardClick}
         />
       );
@@ -1170,10 +1171,12 @@ function InactiveCard({
 function PendingCard({
   plan,
   state,
+  detailHref,
   onCardClick,
 }: {
   plan: HydratedPlan;
   state: PendingState;
+  detailHref: string;
   onCardClick: (e: React.MouseEvent) => void;
 }) {
   const router = useRouter();
@@ -1259,7 +1262,7 @@ function PendingCard({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/admin/support/plans/${plan.slug}`);
+            router.push(detailHref);
           }}
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >

@@ -340,3 +340,81 @@ describe("AC-MODAL-ERROR-STATE: all failure triggers converge on the same error 
   );
 });
 
+// ---------------------------------------------------------------------------
+// Polling orchestrator (single useEffect in PlanPageClient that picks the
+// cadence based on what needs watching). Replaced what used to be two
+// independent pollers (modal-side 5s + card-side 10s).
+//
+// Cases covered:
+//   (a) no PENDING + no modal       → router.refresh never called
+//   (b) PENDING plan, no modal      → refresh every 10s
+//   (c) modal in polling state      → refresh every 5s
+// ---------------------------------------------------------------------------
+
+describe("Polling orchestrator (cadence selection)", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    refreshMock.mockClear();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test("(a) no PENDING + no modal → no router.refresh polling", () => {
+    // NoneCard, no payment modal in flight → orchestrator returns early
+    renderPage([planWithPaymentAction()]);
+    act(() => {
+      jest.advanceTimersByTime(60_000);
+    });
+    expect(refreshMock).not.toHaveBeenCalled();
+  });
+
+  test("(b) PENDING plan, no modal → router.refresh fires every 10s", () => {
+    renderPage([
+      makePlan(makePending({ statusInfo: { descText: "Provisioning…" } }), {
+        slug: "house-blend",
+        name: "House Blend",
+      }),
+    ]);
+    expect(refreshMock).not.toHaveBeenCalled();
+    act(() => {
+      jest.advanceTimersByTime(10_000);
+    });
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+    act(() => {
+      jest.advanceTimersByTime(10_000);
+    });
+    expect(refreshMock).toHaveBeenCalledTimes(2);
+    // 5s past the next 10s tick — should NOT fire (proves it's 10s, not 5s)
+    act(() => {
+      jest.advanceTimersByTime(5_000);
+    });
+    expect(refreshMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("(c) modal in polling state → router.refresh fires every 5s (faster cadence wins over 10s)", async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ stripeUrl: "https://stripe.test/c/x" }),
+    });
+    renderPage([planWithPaymentAction()]);
+    await user.click(screen.getByRole("button", { name: /subscribe/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId("payment-confirm-modal-polling")).toBeInTheDocument()
+    );
+    // refreshMock might have been called once during the initial click flow
+    // (we don't care about that count); reset to zero and measure the
+    // orchestrator's cadence cleanly.
+    refreshMock.mockClear();
+    act(() => {
+      jest.advanceTimersByTime(5_000);
+    });
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+    act(() => {
+      jest.advanceTimersByTime(5_000);
+    });
+    expect(refreshMock).toHaveBeenCalledTimes(2);
+  });
+});
+

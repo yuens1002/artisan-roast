@@ -21,8 +21,12 @@
  *   - data-testid for the card + badge; role queries for buttons.
  *   - Presence + absence assertions paired.
  */
+// Stable router-push mock so View Details navigation can be asserted.
+// (`mock`-prefix exception lets us reference it inside the jest.mock factory
+// despite Jest's hoist semantics.)
+const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+  useRouter: () => ({ push: mockPush, refresh: jest.fn() }),
   useSearchParams: () => new URLSearchParams(""),
 }));
 jest.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: jest.fn() }) }));
@@ -31,7 +35,10 @@ jest.mock("../../../actions", () => ({ refreshLicense: jest.fn().mockResolvedVal
 jest.mock("@/lib/demo", () => ({ IS_DEMO: false }));
 
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { makePending, makePlan, renderPlans } from "./_helpers";
+
+beforeEach(() => mockPush.mockClear());
 
 describe("PendingCard contract", () => {
   test("mounts with pending-card testid and renders plan name as <h3>", () => {
@@ -103,11 +110,24 @@ describe("PendingCard contract", () => {
     expect(within(card).getByText("PROBE_BENEFIT_2")).toBeInTheDocument();
   });
 
-  test("View Details ghost CTA is hard-coded and links to plan detail page", () => {
-    renderPlans([makePlan(makePending(), { slug: "priority-support" })]);
+  test("View Details ghost CTA navigates to PlanCard's detailHref (paid plan → /admin/support/plans/{slug})", async () => {
+    const user = userEvent.setup();
+    renderPlans([makePlan(makePending(), { slug: "priority-support", price: 4900 })]);
     const card = screen.getByTestId("pending-card");
-    // Hard-coded; not coming from state.actions
-    expect(within(card).getByRole("button", { name: /view details/i })).toBeInTheDocument();
+    const button = within(card).getByRole("button", { name: /view details/i });
+    expect(button).toBeInTheDocument();
+    await user.click(button);
+    // Navigation goes through PlanCard's detailHref (computed once, threaded
+    // as a prop), not a hard-coded URL inside PendingCard.
+    expect(mockPush).toHaveBeenCalledWith("/admin/support/plans/priority-support");
+  });
+
+  test("View Details navigates to terms when the plan is free (matches PlanCard's detailHref logic)", async () => {
+    const user = userEvent.setup();
+    renderPlans([makePlan(makePending(), { slug: "community", price: 0 })]);
+    const card = screen.getByTestId("pending-card");
+    await user.click(within(card).getByRole("button", { name: /view details/i }));
+    expect(mockPush).toHaveBeenCalledWith("/admin/terms/terms-of-service");
   });
 
   test("state.actions is intentionally NOT iterated (current renderer behavior; TODO PR-PENDING-ACTIONS)", () => {

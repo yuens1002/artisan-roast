@@ -101,7 +101,12 @@ export function PaymentConfirmModal({
         {(state === "preparing" || state === "polling") && (
           <div className="flex flex-col items-center gap-3 py-6">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            {/* role=status + aria-live='polite' — announces the body copy
+                changes (preparing → polling → cycling messages) to screen
+                readers without interrupting the user's current focus. */}
             <p
+              role="status"
+              aria-live="polite"
               className="text-sm text-muted-foreground text-center"
               data-testid="payment-confirm-modal-body"
             >
