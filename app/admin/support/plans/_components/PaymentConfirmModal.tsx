@@ -91,10 +91,18 @@ export function PaymentConfirmModal({
       >
         <DialogHeader>
           <DialogTitle>{modal.heading}</DialogTitle>
-          {state === "error" && (
-            <DialogDescription>
-              Something went wrong. Please try again or close this dialog.
+          {modal.description ? (
+            <DialogDescription data-testid="payment-confirm-modal-description">
+              {modal.description}
             </DialogDescription>
+          ) : (
+            // Fallback so Radix has an accessible description and the error
+            // state still indicates failure when the SDK payload omits one.
+            state === "error" && (
+              <DialogDescription>
+                Something went wrong. Please try again or close this dialog.
+              </DialogDescription>
+            )
           )}
         </DialogHeader>
 
@@ -125,12 +133,21 @@ export function PaymentConfirmModal({
         )}
 
         {state === "error" && (
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="ghost" onClick={onClose}>
-              Close
-            </Button>
-            <Button onClick={onRetry}>Try Again</Button>
-          </DialogFooter>
+          <>
+            {modal.description && (
+              // Description above slot the SDK-driven copy; the error body
+              // line below is the universal failure indicator for this state.
+              <p className="text-sm text-muted-foreground text-center py-2">
+                Something went wrong. Please try again or close this dialog.
+              </p>
+            )}
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button variant="ghost" onClick={onClose}>
+                Close
+              </Button>
+              <Button onClick={onRetry}>Try Again</Button>
+            </DialogFooter>
+          </>
         )}
       </DialogContent>
     </Dialog>

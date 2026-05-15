@@ -144,6 +144,55 @@ describe("PaymentConfirmModal contract", () => {
     });
   });
 
+  describe("SDK-driven description (modal.description)", () => {
+    test.each(["preparing", "polling", "error"] as const)(
+      "renders modal.description in DialogDescription slot when state=%s",
+      (state) => {
+        render(
+          <PaymentConfirmModal
+            state={state}
+            modal={makePaymentConfirmModal({
+              description: "PROBE_DESC_STANDARD_PLAN_29_USD",
+            })}
+            onRetry={jest.fn()}
+            onClose={jest.fn()}
+          />
+        );
+        expect(
+          screen.getByTestId("payment-confirm-modal-description")
+        ).toHaveTextContent("PROBE_DESC_STANDARD_PLAN_29_USD");
+      }
+    );
+
+    test("absent description: preparing/polling render no DialogDescription; error falls back to generic error copy", () => {
+      const { rerender } = render(
+        <PaymentConfirmModal
+          state="preparing"
+          modal={makePaymentConfirmModal()}
+          onRetry={jest.fn()}
+          onClose={jest.fn()}
+        />
+      );
+      expect(
+        screen.queryByTestId("payment-confirm-modal-description")
+      ).not.toBeInTheDocument();
+
+      rerender(
+        <PaymentConfirmModal
+          state="error"
+          modal={makePaymentConfirmModal()}
+          onRetry={jest.fn()}
+          onClose={jest.fn()}
+        />
+      );
+      // Fallback DialogDescription with the generic error copy
+      expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("payment-confirm-modal-description")
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe("error", () => {
     test("renders error testid, generic copy, Try Again + Close CTAs", () => {
       render(
