@@ -71,7 +71,6 @@ beforeEach(() => {
   mockStripeTab = makeMockStripeTab();
   windowOpenMock = jest.fn(() => mockStripeTab);
   fetchMock = jest.fn();
-  (global as unknown as { window: Window }).window = global.window;
   global.window.open = windowOpenMock as unknown as typeof window.open;
   global.fetch = fetchMock as unknown as typeof fetch;
 });
@@ -248,8 +247,9 @@ describe("AC-FLOW-CLICK: synchronous blank tab + modal mount + endpoint call", (
 // ---------------------------------------------------------------------------
 
 describe("AC-MODAL-ERROR-STATE: all failure triggers converge on the same error state", () => {
+  type SetupResult = { usedFakeTimers?: boolean } | null;
   type Trigger = {
-    setup: () => Promise<unknown>;
+    setup: () => Promise<SetupResult>;
     name: string;
   };
 
@@ -315,7 +315,8 @@ describe("AC-MODAL-ERROR-STATE: all failure triggers converge on the same error 
         act(() => {
           jest.advanceTimersByTime(1000);
         });
-        return null;
+        // Tell the test runner to restore real timers in its finally block.
+        return { usedFakeTimers: true };
       },
     },
   ];
@@ -323,8 +324,10 @@ describe("AC-MODAL-ERROR-STATE: all failure triggers converge on the same error 
   test.each(TRIGGERS.map((t) => [t.name, t.setup] as const))(
     "error state surfaces on %s",
     async (_, setup) => {
+      let usedFakeTimers = false;
       try {
-        await setup();
+        const result = await setup();
+        usedFakeTimers = result?.usedFakeTimers ?? false;
         await waitFor(() =>
           expect(screen.getByTestId("payment-confirm-modal-error")).toBeInTheDocument()
         );
@@ -334,7 +337,11 @@ describe("AC-MODAL-ERROR-STATE: all failure triggers converge on the same error 
         // Same generic copy across all paths
         expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
       } finally {
-        if (jest.isMockFunction(setTimeout)) jest.useRealTimers();
+        // Restore real timers if this trigger opted into fake timers.
+        // (`jest.isMockFunction(setTimeout)` is unreliable here because
+        // `useFakeTimers({ doNotFake: ["setTimeout"] })` leaves setTimeout
+        // un-mocked, so the gate would always fail.)
+        if (usedFakeTimers) jest.useRealTimers();
       }
     }
   );

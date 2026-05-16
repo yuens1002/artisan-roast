@@ -53,26 +53,47 @@ export function PaymentConfirmModal({
   onRetry,
   onClose,
 }: PaymentConfirmModalProps) {
-  // Cycle through processingMessages while in polling state. Reset when the
-  // modal closes or transitions out of polling so the next open starts at 0.
+  if (!state || !modal) return null;
+
+  // The processing-message cycling lives in a child keyed by `state` so the
+  // component remounts (and `messageIdx` resets) cleanly whenever we enter
+  // or leave the polling phase — no effect-internal reset, no eslint-disable.
+  return (
+    <PaymentConfirmModalDialog
+      key={state}
+      state={state}
+      modal={modal}
+      onRetry={onRetry}
+      onClose={onClose}
+    />
+  );
+}
+
+function PaymentConfirmModalDialog({
+  state,
+  modal,
+  onRetry,
+  onClose,
+}: {
+  state: PaymentModalState;
+  modal: PaymentConfirmModalConfig;
+  onRetry: () => void;
+  onClose: () => void;
+}) {
+  // Cycle through processingMessages while in polling state. `messageIdx`
+  // starts at 0 on every mount, and the parent's `key={state}` ensures a
+  // fresh mount each time we re-enter polling.
   const [messageIdx, setMessageIdx] = useState(0);
 
   useEffect(() => {
-    if (state !== "polling" || !modal) {
-      // Reset for next time
-      if (messageIdx !== 0) setMessageIdx(0);
-      return;
-    }
+    if (state !== "polling") return;
     if (modal.processingMessages.length <= 1) return;
 
     const id = setInterval(() => {
       setMessageIdx((i) => (i + 1) % modal.processingMessages.length);
     }, PROCESSING_MESSAGE_INTERVAL_MS);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, modal]);
-
-  if (!state || !modal) return null;
+  }, [state, modal.processingMessages]);
 
   // Non-dismissable in preparing + polling. In error, the user has explicit
   // Close + Try Again CTAs, but Escape/overlay-click are still disabled so

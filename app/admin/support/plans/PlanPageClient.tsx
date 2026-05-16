@@ -251,6 +251,20 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
     const stripeTab =
       typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
 
+    // Popup blocker denied permission (or embedded-browser context). Without
+    // a tab the polling flow has nowhere to redirect — surface the error
+    // immediately so the user can re-trigger from a fresh user gesture.
+    if (typeof window !== "undefined" && stripeTab === null) {
+      setPaymentModal({
+        state: "error",
+        modal,
+        action,
+        planSlug: plan.slug,
+        stripeTab: null,
+      });
+      return;
+    }
+
     // 2. Mount modal in `preparing`.
     setPaymentModal({
       state: "preparing",
