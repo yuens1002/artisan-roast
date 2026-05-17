@@ -4,6 +4,49 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 
 ---
 
+## 2026-05-13 — Screenshot harness preflight friction (env loading, port collisions, gitignore traps)
+
+**Gap:** During the `feat/pending-state` Session 2 PR (#381), capturing UI evidence with `scripts/screenshot-plan-scenarios.ts` cost ~15 min of trial-and-error friction across three independent stumbles:
+
+1. **Port collisions.** Ports 3000, 3001, and 4000 were all held by other dev servers (one in the user's main checkout, one in a sibling worktree, one a stale process from an earlier failed attempt). Discovery required manually grepping `netstat`, then killing a stale Next.js dev server via PID before `next dev -p 4000` could bind.
+2. **Env vars not auto-loaded.** The harness reads `process.env.ADMIN_EMAIL` / `ADMIN_PASSWORD`. Running `npx tsx scripts/...` is a Node child process — it does NOT auto-load `.env.local`. Setup required `set -a && source .env.local && set +a` first. The error message said "Set both in env (e.g. via .env.local)" but didn't say HOW.
+3. **Gitignored output paths.** First captured into the harness's default `.screenshots/` (gitignored per the existing rule). Renamed target to `docs/.../session-2/screenshots/` — also blocked by the catch-all `**/screenshots/` rule. Eventually settled on `ui-evidence/` because the folder name `screenshots` is reserved by gitignore everywhere in the tree, not just under `.screenshots/`.
+
+**Root cause:** Three docstring gaps in `scripts/screenshot-plan-scenarios.ts`:
+
+- The "Required env" section listed `ADMIN_EMAIL` / `ADMIN_PASSWORD` but didn't show how to load them from `.env.local` for a Node child process (the typical user assumption is "Next.js loads it" — but the harness isn't running inside Next.js).
+- The "Quick start" was `npm run dev` + `tsx scripts/...` with no port guidance; collisions in worktree-heavy environments are common.
+- No mention that the default `OUT_DIR` is gitignored, or that the gitignore rule is `**/screenshots/` (so renaming the parent folder doesn't help — the leaf folder name itself is what's blocked).
+
+**Fix applied to:**
+
+- `scripts/screenshot-plan-scenarios.ts` — Top-of-file docstring rewritten with a 4-step "QUICK START (the working incantation)" block: port-collision check via `netstat`, dev server start with explicit `-p $PORT`, `set -a && source .env.local && set +a` followed by `export ADMIN_EMAIL="$QA_ADMIN_EMAIL"` aliasing, harness invocation. New "COMMITTING SCREENSHOTS FOR PR REVIEW" section explains the `**/screenshots/` gitignore trap and recommends `ui-evidence/` as the convention.
+
+**Prevented by:** Anyone running the harness reads the docstring first. The working incantation is now copy-pasteable. The gitignore-trap note tells reviewers WHY the convention is `ui-evidence/` instead of `screenshots/`.
+
+---
+
+## 2026-05-13 — Two independent pollers ran concurrently because no design pass audited the global polling story
+
+**Gap:** During the same Session 2 PR, two `setInterval(() => router.refresh(), N)` pollers were added in separate iterations:
+
+1. First: `PaymentConfirmModal`'s 5 s plan-state poll, gated on `paymentModal?.state === "polling"` (lives in `PlanPageClient`).
+2. Later: `PendingCard`'s 10 s auto-poll, gated on the card being mounted (lives in `PendingCard`).
+
+Each was correct in isolation. The overlap (both running simultaneously when modal was active AND plan was PENDING) wasn't noticed until a reviewer asked "is this one polling or two?" — at which point a refactor to a single orchestrator was needed. ~6 redundant `router.refresh()` calls per minute during the modal-active window.
+
+**Root cause:** No design-pass habit of asking "is there already polling for this concern?" before adding a new `setInterval`. The two pollers were added in different commits days apart; neither author audited the global story.
+
+A secondary cause: the test-writer reviewing each implementation didn't see the overlap because the two pollers live in different files and neither test exercised both layers simultaneously (the state-machine tests use `rerender(plans)` to drive transitions, bypassing the actual setInterval timing).
+
+**Fix applied to:**
+
+- `.claude/skills/test-engineer/SKILL.md` — New section "Implementation gotchas worth flagging during review" with the **Polling concentration** rule. Spells out the pattern that bit us, the fix (single orchestrator at the parent, derived booleans in deps to avoid the "every refresh resets the interval" trap), and the explicit reviewer instruction: when reviewing tests for a component that adds a new `setInterval`, grep the surrounding files for existing intervals polling the same data — if you find one, push back on the implementation before approving the tests.
+
+**Prevented by:** The test-engineer skill is loaded for every test-review pass. New `setInterval` calls in component implementations should now trigger the "is there already polling?" question during review. Future polling additions either consolidate at an existing parent orchestrator or carry an explicit justification for the new timer.
+
+---
+
 ## 2026-05-07 — PR opened autonomously inside /release without explicit user instruction
 
 **Gap:** During the `provider-plan-sdk-alignment` session (Sessions 2+3, branch `feat/sdk-type-alignment`), the `/release minor` skill ran Phase A through to completion — bump, push, and then automatically ran `gh pr create` without pausing for user approval. The user's expectation was that PR creation is a deliberate, user-gated moment, not an automatic step in a release flow.

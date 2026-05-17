@@ -44,35 +44,37 @@ Sessions 1–5 (now in `archive/`) shipped the foundation: SDK-driven types, pro
 - `npm run plans:capture` runs successfully against the provider for at least the self-hosted dev keys; captured JSONs committed.
 - AC-DRIFT sub-rows verified (each layer demonstrably catches a synthetic regression).
 
-### Session 2 — PENDING state + payment-loop modal + ride-alongs
+### Session 2 — PENDING state + paymentConfirm modal + ride-alongs
 
-> ⚠️ **Reframed since first draft.** Originally scoped as "CONVERTING plan state + ConversionModal". Corrected: **CONVERTING is the payment-loop modal spec, not a plan state**; **`PENDING` is the plan state** during provisioning (PlanCard renders a PendingCard — NONE-shaped, status copy, "Check Status" CTA, spinner during poll — not `null`); `actionModals[]` → discriminated union `(FeedbackFormModal | PaymentConfirmModal)[]` (breaking rename `ConfirmActionConfig` → `FeedbackFormModal`, plus new `PaymentConfirmModal`); SDK v0.5.0 is the gate (PENDING in the `PlanState` union + discriminated `actionModals[]` + MCP `serverInfo.version` from `package.json`). The corrected spec is spelled out in the supersession banner at the top of [`session-2/ACs.md`](session-2/ACs.md). The headings/details below still carry old framing in places — corrected on the Session 2 feat branch.
+**Status:** in progress on `feat/pending-state`. SDK side done (v0.5.0 + v0.5.1 tagged); store cleanup done (PR #380 — SDK bump + stub PendingCard); platform side in flight; this session polishes the store renderer + builds the PaymentConfirmModal as a 3-state machine. ACs: [`session-2/ACs.md`](session-2/ACs.md) — 18 rows.
 
-**Status:** planned, reframed. ACs drafted (need the reframe applied) — see [`session-2/ACs.md`](session-2/ACs.md).
-
-**Scope (corrected):** Add the `PENDING` plan state across SDK → provider → store (plan card = NONE-shaped with status copy + "Check Status" CTA + spinner during poll, cycles PENDING→PENDING→ACTIVE). Add the `paymentConfirm` modal (confirm → non-dismissable spinner + status, triggered by the subscribe/convert action). Plus two ride-alongs that close deferred items: **ST-2** (`ConfirmActionDialog` field coverage — now covers both `feedbackForm` + `paymentConfirm` variants) and **ST-3** (page-level composition tests).
+**Scope:** Polish the stub `PendingCard` shipped in PR #380. Build `PaymentConfirmModal` with three states (`preparing` / `polling` / `error`) driven entirely by polled plan state. Split `ConfirmActionDialog` on the `actionModals[]` discriminator (`feedbackForm` opens it; `paymentConfirm` is routed elsewhere). Implement the click handler with the synchronous-blank-tab pattern that survives popup blockers. Close ride-along deferreds **ST-2** (`ConfirmActionDialog` field coverage — both modal variants) and **ST-3** (page composition tests).
 
 **Locked design decisions (from planning):**
 
-- **SDK bump = minor (v0.5.0).** Adding a union member breaks `switch(state.status)` exhaustiveness in consumers — minor is the honest bump.
-- **MCP version fix bundled in.** SDK-RFC-MCP-VER (wire `serverInfo.version` to the package version) ships in the same SDK PR as CONVERTING — both are SDK changes.
-- **Conversion UX is modal-only — no Card.** `PlanCard` returns `null` for CONVERTING; a full-screen `ConversionModal` owns the UX. The page freezes behind it (scroll lock + `pointer-events-none` + dim) so the customer can't navigate or interact mid-transition. (Card-vs-modal amounts to the same backend work; modal-only is the safer UX during a state transition.)
-- **Ride-alongs ST-2 + ST-3 are in.** We're writing `conversion-modal.test.tsx` anyway; the modal/dialog test patterns transfer to `confirm-action-dialog.test.tsx`. And the modal needs page-level integration tests, so `plan-page-client.test.tsx` lands too.
+- **PENDING is the durable plan state.** PlanCard renders a real PendingCard (NONE-shaped: name + `statusInfo.descText` + `state.actions` rendered as buttons + spinner). The card persists across tab close, page refresh, navigation. Cycles PENDING→PENDING→ACTIVE; reverts to NONE on payment failure/cancel.
+- **CONVERTING is not a state — it's the *modal* spec.** The payment popup during a Stripe charge. Implemented as `PaymentConfirmModal` in the `actionModals[]` system, discriminated by `modal.type === "paymentConfirm"`.
+- **Modal is ephemeral, click-bound.** Mounts only on action click or Try Again. Does NOT re-mount on page refresh — PendingCard is the durable representation. Three internal states only: `preparing` (server building Stripe session), `polling` (Stripe tab open, watching plan state), `error` (any failure path). No page freeze; Radix dialog's focus trap is sufficient.
+- **Synchronous blank tab pattern.** Click handler runs `window.open("about:blank", "_blank")` *synchronously* (popup blockers only honor user-initiated `window.open`), then mounts the modal in `preparing`, then calls `action.endpoint`. On response: `stripeTab.location.href = stripeUrl` + modal → `polling`.
+- **Generic single-copy error state.** Endpoint failure, plan-reverts-to-NONE during polling, and Stripe-tab-closed all converge on the same modal state with the same copy ("Something went wrong. Please try again or close this dialog.") + same CTAs (Try Again + Close). No reason-specific copy variants.
+- **PENDING has two substates differentiated only by `statusInfo.descText`.** "Confirming your payment…" (platform set PENDING synchronously when endpoint called; Stripe hasn't fired webhook yet) and "Setting up your store…" (paid, provisioning). PendingCard renders both identically — no frontend branching.
+- **Ride-alongs ST-2 + ST-3 are in.** `confirm-action-dialog.test.tsx` covers both modal variants. `plan-page-client.test.tsx` covers composition + the discriminator gate + PendingCard rendering + modal mount on click.
 
 **Cross-repo deliverables:**
 
-| Repo | Deliverable |
-|------|-------------|
-| `artisan-roast-sdk` | Add `ConvertingState` to `PlanState` union (`status: "CONVERTING"`, `statusInfo?: StatusInfo`, optional `startedAt?`). No `actions[]`/`pools[]` — purely transient. Add CONVERTING scaffold to `SCENARIOS`. Update `validate_plan_payload` Zod schema. **Bundle SDK-RFC-MCP-VER.** Tag **v0.5.0**, push. |
-| platform | Resolver branch emits CONVERTING during the conversion window (post-Stripe-webhook, pre-provision-to-ACTIVE). Wire trial-conversion endpoint. Seed `dev-hosted-converting`. Regenerate `.dev-scenario-keys` as id-keyed JSON (removes the store's `LABEL_TO_ID` table). Bump SDK ref to `#v0.5.0`. Deploy. |
-| `artisan-roast` (store) | Bump SDK ref to `#v0.5.0`. `PlanCard` dispatch handles CONVERTING → returns `null`. New `_components/ConversionModal.tsx` — non-dismissable overlay, spinner + `statusInfo.descText`, polls `router.refresh()` every ~5s, closes when no plan is CONVERTING. Page freeze in `PlanPageClient`. Add `dev-hosted-converting` to `_fixtures/plan-scenarios.ts` + `ALL_KEYS`. New `__tests__/contract/conversion-modal.test.tsx`. Ride-alongs: `confirm-action-dialog.test.tsx` (ST-2), `plan-page-client.test.tsx` (ST-3). Capture `dev-hosted-converting.json` after the provider deploys. |
+| Repo | Deliverable | Status |
+|------|-------------|:------:|
+| `artisan-roast-sdk` | `PendingState` + discriminated `actionModals[]` (`FeedbackFormModal` + `PaymentConfirmModal`) + MCP `serverInfo.version` from `package.json` + PENDING scaffold + Zod schema. v0.5.0 (PR #5) + v0.5.1 follow-up (PR #6). | ✅ done |
+| `ecomm-ai-app` (cleanup) | SDK bump to `#v0.5.1`, `ConfirmActionConfig` → `FeedbackFormModal` rename, stub PendingCard, `dev-hosted-pending` fixture, PENDING added to scaffold-pins smoke list. PR #380. | ✅ done |
+| platform | Resolver endpoint sets PENDING synchronously on subscribe/convert action call + creates Stripe Checkout session + returns `{ stripeUrl }`. Resolver advances PENDING `statusInfo.descText` from confirming-payment → provisioning when Stripe `checkout.session.completed` webhook fires. Stripe webhooks for `session.expired` / `async_payment_failed` / user-cancel revert plan to NONE. Seed `dev-hosted-pending` + `dev-hosted-provisioning`. Regenerate `.dev-scenario-keys` as id-keyed JSON (retires the store's `LABEL_TO_ID` table). Bump SDK to `#v0.5.1`. Deploy. | ⏳ in flight |
+| `ecomm-ai-app` (Session 2) | Polished `PendingCard` (status icon from `statusInfo.descIcon`, poll behavior). New `_components/PaymentConfirmModal.tsx` with 3 states + synchronous-blank-tab click handler + tab-closed detection. Split `ConfirmActionDialog` on `modal.type` discriminator. Add `makePending` + `makePaymentConfirmModal` fixtures to `_helpers.ts`. Tests: `pending-card.test.tsx`, `payment-confirm-modal.test.tsx`, `confirm-action-dialog.test.tsx` (ST-2), `plan-page-client.test.tsx` (ST-3). Capture `dev-hosted-pending.json` + `dev-hosted-provisioning.json` after the platform deploys. Screenshots for every state including the three modal sub-states. | ⏳ this PR |
 
-**Sequencing (enforced by `STRICT_KEYS=1` in the drift nightly):** SDK PR + tag → platform PR + deploy → store PR (last — its AC-CAP-CONVERTING capture would skip the scenario and hard-fail until the provider is live).
+**Sequencing (enforced by `STRICT_KEYS=1` in the drift nightly):** SDK ✅ → platform deploy → store PR merges. The store PR can **open** without the platform live; AC-CAP-PENDING is the only AC that blocks merge.
 
 **New decisions to add to `architecture.md` when this lands:**
 
-- **D14** — CONVERTING is the first `PlanState` variant with no `actions[]` and no `pools[]`. Purely transient. The renderer shows nothing in the card slot; the modal owns it.
-- **D15** — Conversion UX is modal-only (no Card render) to prevent navigation/interaction during the state transition. The page is frozen behind a non-dismissable overlay.
+- **D14** — `PENDING` is the plan state during a payment+provisioning conversion attempt. Has `actions[]` (e.g. "Check Status"), no `pools[]`. Single state covers two substates differentiated by resolver-supplied `statusInfo.descText`. Reverts to NONE on payment failure/cancel; advances to ACTIVE on provisioning complete.
+- **D15** — Payment confirmation UX is a `PaymentConfirmModal` (Radix dialog, no page freeze) with a 3-state machine — `preparing` (server building Stripe session) → `polling` (non-dismissable spinner watching plan state) → `error` (Try Again + Close). Driven entirely by polled plan state, not by frontend-only events. Click handler uses a synchronous `window.open("about:blank")` pre-open to survive popup blockers. Modal is click-bound and ephemeral; the PendingCard is the durable representation.
 
 ### Session 3+ — TBD
 
@@ -140,10 +142,10 @@ Items split out of Session 1 that need to land before, during, or after Session 
 | ST-4 | AC-CAP — Captured-payload Jest test | Replace `e2e/plans/scenarios.spec.ts` (deleted) with a Jest-driven version that loads `e2e/plans/captured/*.json` (now committed — baseline + nightly drift workflow shipped in v0.107.2). Structural + cross-field assertions. MCP-backed `npm run plans:validate` optional cross-check. | Follow-up branch (captures now exist) |
 | ST-5 | AC-PW — Playwright plumbing spec | Smoke test for Next.js wiring. The `fix/e2e-mock-resolved-plans` work (mock serves `/api/plans/resolved`) unblocks this — the mock infra it needs now exists. | Follow-up branch |
 | ST-6 | AC-DRIFT — drift-injection ritual | Per-layer manual verification that each test layer can detect a synthetic regression. | Verification pass per session (Session 2's ACs include AC-DRIFT) |
-| ST-7 | Compatibility-over-time (§9.4 work) | Boundary validation, version handshake headers, admin version banner, graceful renderer FallbackCard for unknown shapes. `architecture.md` D13 — signal-triggered, not timeline-triggered. Note: CONVERTING (Session 2) adds a union member; the renderer's `switch` gains a CONVERTING case — but a *future* unknown state would still fall through. The FallbackCard is the guard for that. | Self-hosted launch / first skew incident |
+| ST-7 | Compatibility-over-time (§9.4 work) | Boundary validation, version handshake headers, admin version banner, graceful renderer FallbackCard for unknown shapes. `architecture.md` D13 — signal-triggered, not timeline-triggered. Note: PENDING (Session 2) adds a union member; the renderer's `switch` gains a PENDING case — but a *future* unknown state would still fall through. The FallbackCard is the guard for that. | Self-hosted launch / first skew incident |
 | ST-8 | Architecture doc relocation | Move (or copy + adapt) `architecture.md` to a cross-repo location (provider's `appendix/cross-repo/`). Note: `yuens1002/artisan-roast-platform#74` (`docs: pools-architecture scoping; close out provider-sdk-integration`) is in flight on that side — coordinate so the cross-repo doc home is settled there, then point the store excerpt at it. | After `yuens1002/artisan-roast-platform#74` lands |
 | ST-9 | Currency support beyond USD | Renderer hardcodes `$`; SDK type allows any ISO 4217 code. Multi-currency rendering is a future feature. | Future session |
-| ST-10 | Remove `LABEL_TO_ID` from `capture-plan-scenarios.ts` | The store maps platform's `.dev-scenario-keys` labels → dev-key ids via a hardcoded table because the platform's `seed-dev-scenarios.ts` writes labels as comments. Once the platform regenerates that file as id-keyed JSON (filed as PR-SEED-CONVERTING in Session 2), the table goes away. | Session 2 cleanup (after platform regenerates `.dev-scenario-keys`) |
+| ST-10 | Remove `LABEL_TO_ID` from `capture-plan-scenarios.ts` | The store maps platform's `.dev-scenario-keys` labels → dev-key ids via a hardcoded table because the platform's `seed-dev-scenarios.ts` writes labels as comments. Once the platform regenerates that file as id-keyed JSON (filed as PR-SEED-PENDING in Session 2), the table goes away. | Session 2 cleanup (after platform regenerates `.dev-scenario-keys`) |
 
 ### Provider-side (separate repo)
 
@@ -151,8 +153,8 @@ These belong in the provider repo's plan docs. Filed here so cross-repo context 
 
 | ID | Title | Notes |
 |----|-------|-------|
-| PR-1 | Session 2 resolver: emit CONVERTING state | New branch in `PlanState` resolver during conversion window. Pairs with store-side ConversionModal. **Session 2 — see `session-2/ACs.md` PR-CONVERTING-RESOLVER.** |
-| PR-2 | Seed `dev-hosted-converting` scenario | Dev license key + HostedTrial row with `status: CONVERTING`. **Session 2 — see `session-2/ACs.md` PR-SEED-CONVERTING. Also: regenerate `.dev-scenario-keys` as id-keyed JSON to retire ST-10.** |
+| PR-1 | Session 2 resolver: emit PENDING state + paymentConfirm modal | The action endpoint creates a Stripe session AND sets plan to PENDING synchronously before responding (PR-PENDING-ENDPOINT). The resolver advances PENDING's `statusInfo.descText` from confirming-payment → provisioning when Stripe webhook fires (PR-PENDING-RESOLVER). Stripe webhook failure handlers revert plan to NONE (PR-PAYMENT-FAILURE). **Session 2 — see `session-2/ACs.md`.** |
+| PR-2 | Seed `dev-hosted-pending` + `dev-hosted-provisioning` scenarios | Dev license keys + HostedTrial rows for both PENDING substates so the store can capture them. **Session 2 — see `session-2/ACs.md` PR-SEED-PENDING. Also: regenerate `.dev-scenario-keys` as id-keyed JSON to retire ST-10.** |
 | PR-3 | PLAT-1 — Plan business spec validation tests | Provider-side test suite asserts each shipped plan's resolver output matches its product spec (Priority Support = 5 tickets / 1 session / $49 / $39 sale label, etc.). |
 | PR-4 | PLAT-2 — Cadence enforcement tests | Time-dependent tests verify pool replenishment fires on month boundary. |
 | PR-5 | Stripe link IDs in dev seed | Seed `stripeExtendLinkId`, `stripeSubscribeLinkId` + delete-trial modal entry for hosted dev scenarios. (Resolves session-5 SKIP findings P4-related in dev only; prod already has real links.) |
@@ -166,10 +168,10 @@ These belong in the provider repo's plan docs. Filed here so cross-repo context 
 
 | ID | Title | Status |
 |----|-------|--------|
-| SDK-RFC-MCP-VER | Wire MCP `serverInfo.version` to SDK package version | **Session 2 — bundled into the SDK v0.5.0 PR with SDK-RFC-3** (both are SDK changes; ship together) |
+| SDK-RFC-MCP-VER | Wire MCP `serverInfo.version` to SDK package version | ✅ done — shipped in SDK v0.5.0 (PR #5) |
 | SDK-RFC-1 | `quotas[].cadence` field (`"month" \| "year" \| "one-time"`) | Future — enables deterministic cadence rendering |
 | SDK-RFC-2 | `pools?: UsagePool[]` on every state (NoneState / InactiveState / CancelledState) | Future — removes the today-pattern hack of putting FREE in ACTIVE state just to attach addon pools |
-| SDK-RFC-3 | Add CONVERTING state to `PlanState` union | **Session 2 — bundled with SDK-RFC-MCP-VER → tag v0.5.0** (minor: union member breaks consumer `switch` exhaustiveness). See `session-2/ACs.md` SDK-RFC-CONVERTING. |
+| SDK-RFC-3 | Add PENDING state to `PlanState` union + discriminated `actionModals[]` | ✅ done — shipped in SDK v0.5.0 (PR #5) + v0.5.1 follow-up (PR #6). Minor bump (adding a union member breaks consumer `switch` exhaustiveness). |
 | SDK-RFC-4 | SDK semver + deprecation policy + migration docs | Deferred — wait for self-hosted launch when version skew becomes a real customer problem |
 | SDK-RFC-5 | MCP changelog/diff tool (`mcp__artisan-roast-sdk__diff_versions`) | Future — useful during SDK upgrades but not blocking |
 

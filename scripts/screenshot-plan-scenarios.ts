@@ -5,8 +5,28 @@
  * `?scenario=<key>` (no platform, no DB), and captures the viewport.
  * Mirrors the same fixture file the Jest render harness reads.
  *
- *   npm run dev
- *   tsx scripts/screenshot-plan-scenarios.ts
+ * QUICK START (the working incantation — saves the discovery friction
+ * documented in 2026-05-13 retro):
+ *
+ *   # 1. Pick a free port. Ports 3000/3001/4000 are commonly held by
+ *   #    dev servers in other worktrees — check first:
+ *   #      netstat -ano | grep -E ":(3000|3001|4000|4100)"
+ *   PORT=4100
+ *
+ *   # 2. Start the dev server in this worktree on that port:
+ *   npx next dev -p $PORT &
+ *
+ *   # 3. Source .env.local AND alias the QA_* vars to the names this
+ *   #    harness reads. `npx tsx` is a Node child process and does NOT
+ *   #    auto-load .env.local — you must source it in the shell. The
+ *   #    QA_* names are what's already in .env.local; the harness reads
+ *   #    ADMIN_EMAIL / ADMIN_PASSWORD.
+ *   set -a && source .env.local && set +a
+ *   export ADMIN_EMAIL="$QA_ADMIN_EMAIL"
+ *   export ADMIN_PASSWORD="$QA_ADMIN_PASSWORD"
+ *
+ *   # 4. Run the harness:
+ *   BASE_URL=http://localhost:$PORT npx tsx scripts/screenshot-plan-scenarios.ts
  *
  * Required env:
  *   ADMIN_EMAIL    — admin user email for /auth/admin-signin
@@ -16,6 +36,18 @@
  *   BASE_URL  — defaults to http://localhost:3000
  *   ONLY      — comma-separated subset of dev keys (e.g. "dev-free,dev-pro")
  *   OUT_DIR   — defaults to .screenshots/plan-scenarios
+ *
+ * COMMITTING SCREENSHOTS FOR PR REVIEW:
+ *
+ * The default OUT_DIR (`.screenshots/`) is gitignored. So is any folder
+ * named `screenshots/` anywhere in the tree (`.gitignore` has the rule
+ * `**` + `/screenshots/`). To produce PR-reviewable artifacts, point
+ * OUT_DIR at a non-gitignored folder named something other than
+ * `screenshots/` — e.g. `ui-evidence/`:
+ *
+ *   OUT_DIR=docs/features/<feature>/<session>/ui-evidence \
+ *     BASE_URL=http://localhost:$PORT \
+ *     npx tsx scripts/screenshot-plan-scenarios.ts
  *
  * Auth: signs in via the /auth/admin-signin form before hitting the plans page.
  */
