@@ -1,4 +1,117 @@
 {
-  "plans": [],
+  "plans": [
+    {
+      "slug": "house-blend-trial",
+      "name": "House Blend Trial",
+      "description": "Risk-free for 14 days — full features, no card, no commitment.",
+      "price": 0,
+      "currency": "usd",
+      "interval": "month",
+      "features": [
+        "hosting"
+      ],
+      "details": {
+        "benefits": {
+          "activeItems": [
+            "No billing needed — add card to extend to 30 days",
+            "Download your data as a ZIP anytime",
+            "100% feature parity from day 1",
+            "Cancel anytime — no contract, no commitment"
+          ]
+        }
+      },
+      "highlight": false,
+      "visibility": "hosted",
+      "actionModals": [
+        {
+          "type": "feedbackForm",
+          "slug": "cancel-trial",
+          "other": {
+            "label": "Tell us a bit more",
+            "maxLength": 500,
+            "placeholder": "What are we missing?"
+          },
+          "heading": "Cancel your trial?",
+          "reasons": [
+            {
+              "label": "Still evaluating — need more time",
+              "value": "too-soon"
+            },
+            {
+              "label": "Missing features I need",
+              "value": "missing-features"
+            },
+            {
+              "label": "Plan too expensive",
+              "value": "too-expensive"
+            },
+            {
+              "label": "Switching to another platform",
+              "value": "switching"
+            },
+            {
+              "label": "Other",
+              "value": "other"
+            }
+          ],
+          "keepLabel": "Keep trial",
+          "description": "We'd love to know why before you go.",
+          "confirmLabel": "Cancel Trial",
+          "reasonsLabel": "Reason for cancelling"
+        },
+        {
+          "type": "feedbackForm",
+          "slug": "cancel-stripe",
+          "other": {
+            "label": "Tell us a bit more",
+            "maxLength": 500,
+            "placeholder": "What are we missing?"
+          },
+          "heading": "Cancel your trial?",
+          "reasons": [
+            {
+              "label": "Still evaluating — need more time",
+              "value": "too-soon"
+            },
+            {
+              "label": "Missing features I need",
+              "value": "missing-features"
+            },
+            {
+              "label": "Plan too expensive",
+              "value": "too-expensive"
+            },
+            {
+              "label": "Switching to another platform",
+              "value": "switching"
+            },
+            {
+              "label": "Other",
+              "value": "other"
+            }
+          ],
+          "keepLabel": "Keep trial",
+          "confirmIcon": "external-link",
+          "description": "Your card is on file. Cancel to stop any future charges.",
+          "confirmLabel": "Continue to Stripe",
+          "reasonsLabel": "Reason for cancelling"
+        }
+      ],
+      "state": {
+        "status": "PENDING",
+        "statusInfo": {
+          "descText": "Setting up your store…"
+        },
+        "actions": [
+          {
+            "slug": "check-status",
+            "label": "Check Status",
+            "variant": "primary",
+            "endpoint": "/api/plans/status"
+          }
+        ]
+      }
+    }
+  ],
   "resolvedAt": "<NORMALISED_AT_CAPTURE>"
 }

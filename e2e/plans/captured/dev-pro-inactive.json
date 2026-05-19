@@ -106,6 +106,7 @@
       "visibility": "self-hosted",
       "actionModals": [
         {
+          "type": "feedbackForm",
           "slug": "cancel-subscription",
           "heading": "Cancel your subscription?",
           "reasons": [
@@ -148,7 +149,7 @@
         "status": "INACTIVE",
         "badge": "Inactive",
         "badgeIcon": "circle-slash",
-        "deactivatedAt": "2026-04-09T12:44:11.643Z",
+        "deactivatedAt": "2026-04-19T01:22:45.615Z",
         "actions": [
           {
             "slug": "view-details",

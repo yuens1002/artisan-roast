@@ -44,6 +44,7 @@
       "visibility": "hosted",
       "actionModals": [
         {
+          "type": "feedbackForm",
           "slug": "cancel-subscription",
           "heading": "Cancel your subscription?",
           "reasons": [
