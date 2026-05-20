@@ -24,6 +24,7 @@
       "visibility": "hosted",
       "actionModals": [
         {
+          "type": "feedbackForm",
           "slug": "cancel-trial",
           "other": {
             "label": "Tell us a bit more",
@@ -59,6 +60,7 @@
           "reasonsLabel": "Reason for cancelling"
         },
         {
+          "type": "feedbackForm",
           "slug": "cancel-stripe",
           "other": {
             "label": "Tell us a bit more",
@@ -109,7 +111,7 @@
             "used": 14
           }
         ],
-        "deprovisionAt": "2026-06-08T12:44:11.643Z",
+        "deprovisionAt": "2026-06-18T01:22:45.615Z",
         "statusInfo": {
           "descText": "Your 14 day trial ended. Add billing to extend up to 30 days."
         },
@@ -160,6 +162,7 @@
       "visibility": "hosted",
       "actionModals": [
         {
+          "type": "feedbackForm",
           "slug": "cancel-subscription",
           "heading": "Cancel your subscription?",
           "reasons": [

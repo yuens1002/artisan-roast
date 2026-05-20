@@ -2,12 +2,12 @@
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
     "feat/pending-state": {
-      "status": "in_review",
-      "acs_passed": 18,
+      "status": "verified",
+      "acs_passed": 19,
       "acs_total": 19,
       "tasks": [],
       "acs_doc": "docs/features/provider-plan-sdk-alignment/session-2/ACs.md",
-      "notes": "Session 2 — PENDING state + paymentConfirm modal (3-state machine). 18/19 PASS. AC-CAP-PENDING BLOCKED-ON-PLATFORM (capture requires PR-PENDING-ENDPOINT + PR-PENDING-RESOLVER + PR-SEED-PENDING to ship on platform first). AC-MODAL-SDK-DESC added when platform shipped PENDING resolver — wires `modal.description` from SDK payload as persistent DialogDescription across preparing/polling/error states (was previously hardcoded fallbacks only). New contract tests in payment-confirm-modal.test.tsx 'SDK-driven description' suite. Full test:ci: 1399/1399 pass before; will rerun after the description patch. TypeScript clean. Lint clean (1 pre-existing useReviewsTable warning, unrelated). 13 UI screenshots committed at docs/features/provider-plan-sdk-alignment/session-2/ui-evidence/ — modal sub-state visual capture deferred (no dev fixture with paymentConfirm action until platform PR-SEED-PENDING). PR opens with this AC posture; merge gated on platform side."
+      "notes": "Session 2 — PENDING state + paymentConfirm modal (3-state machine). 19/19 PASS. Merged via PR #381 (`b03c99af`) on 2026-05-17. AC-CAP-PENDING closed on 2026-05-18 via chore PR (`chore/capture-pending-baselines`) after platform v0.23.1 deploy (`afd9d41` #86 platform-side) seeded `dev-hosted-pending` + `dev-hosted-provisioning` license records into PENDING substates. Captured baselines: `dev-hosted-pending.json` (status=PENDING, descText=\"Confirming your payment…\") + `dev-hosted-provisioning.json` (status=PENDING, descText=\"Setting up your store…\"). AC-MODAL-SDK-DESC also added during this branch — wires `modal.description` from SDK payload as persistent DialogDescription across preparing/polling/error states."
     },
     "feat/hosted-store-s2": {
       "status": "verified",

@@ -24,6 +24,7 @@
       "visibility": "hosted",
       "actionModals": [
         {
+          "type": "feedbackForm",
           "slug": "cancel-trial",
           "other": {
             "label": "Tell us a bit more",
@@ -59,6 +60,7 @@
           "reasonsLabel": "Reason for cancelling"
         },
         {
+          "type": "feedbackForm",
           "slug": "cancel-stripe",
           "other": {
             "label": "Tell us a bit more",
@@ -106,13 +108,13 @@
             "icon": "calendar",
             "countLabel": "passed",
             "limit": 14,
-            "used": 2
+            "used": 0
           }
         ],
         "statusInfo": {
-          "descText": "Trial ends May 23, 2026"
+          "descText": "Trial ends June 2, 2026"
         },
-        "deprovisionAt": "2026-06-08T12:44:11.643Z",
+        "deprovisionAt": "2026-06-18T01:22:45.615Z",
         "actions": [
           {
             "slug": "cancel-trial",
@@ -168,6 +170,7 @@
       "visibility": "hosted",
       "actionModals": [
         {
+          "type": "feedbackForm",
           "slug": "cancel-subscription",
           "heading": "Cancel your subscription?",
           "reasons": [
