@@ -32,6 +32,8 @@ const eslintConfig = defineConfig([
       ".scratchpad/**",
       ".screenshots/**",
       "scratchpad/**",
+      // Claude Code worktrees (git worktrees used for parallel development)
+      ".claude/**",
     ],
   },
   ...nextVitals,
