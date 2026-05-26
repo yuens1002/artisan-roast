@@ -2,7 +2,7 @@
   "plans": [
     {
       "slug": "free",
-      "name": "Community",
+      "name": "Community Roast",
       "description": "Open-source self-hosted store with community support",
       "price": 0,
       "currency": "usd",
@@ -33,8 +33,8 @@
           {
             "slug": "view-terms",
             "label": "View Terms",
-            "url": "/admin/terms/terms-of-service",
-            "variant": "ghost"
+            "variant": "ghost",
+            "url": "/admin/terms/terms-of-service"
           }
         ]
       }
@@ -103,8 +103,8 @@
       "visibility": "self-hosted",
       "actionModals": [
         {
-          "type": "feedbackForm",
           "slug": "cancel-subscription",
+          "type": "feedbackForm",
           "heading": "Cancel your subscription?",
           "reasons": [
             {
@@ -145,55 +145,54 @@
       "state": {
         "status": "ACTIVE",
         "badge": "Active",
+        "badgeIcon": "CircleCheckBig",
         "pools": [
           {
             "slug": "tickets",
             "label": "Priority tickets",
-            "icon": "ticket",
-            "countLabel": "used",
             "limit": 5,
             "used": 0,
+            "icon": "ticket",
+            "countLabel": "used",
             "purchased": 0,
             "cta": {
+              "link": "https://artisanroast.app/support/ticket",
               "slug": "submit-ticket",
               "label": "Submit Ticket",
-              "url": "https://artisanroast.app/support/ticket",
-              "iconAfter": "external-link",
-              "variant": "primary"
+              "iconAfter": "external-link"
             }
           },
           {
             "slug": "one-on-one",
             "label": "1:1 sessions",
-            "icon": "calendar",
-            "countLabel": "used",
             "limit": 1,
             "used": 0,
+            "icon": "calendar",
+            "countLabel": "used",
             "purchased": 0,
             "cta": {
+              "link": "https://calendly.com/syuen-sbgrp/get_to_know_you",
               "slug": "book-session",
               "label": "Book Session",
-              "url": "Scheduled via Calendly link provided after subscription",
-              "iconBefore": "calendar",
               "iconAfter": "external-link",
-              "variant": "secondary"
+              "iconBefore": "calendar"
             }
           }
         ],
         "actions": [
           {
-            "slug": "view-details",
-            "label": "View Details",
-            "url": "/admin/support/plans/priority-support",
-            "variant": "ghost"
-          },
-          {
             "slug": "manage-billing",
             "label": "Manage Billing",
-            "endpoint": "/api/billing/portal",
             "iconAfter": "external-link",
             "variant": "secondary",
+            "endpoint": "/api/billing/portal",
             "modalSlug": "cancel-subscription"
+          },
+          {
+            "slug": "view-details",
+            "label": "View Details",
+            "variant": "ghost",
+            "url": "/admin/support/plans/priority-support"
           }
         ]
       }

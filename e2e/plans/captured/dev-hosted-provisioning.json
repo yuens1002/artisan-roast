@@ -24,8 +24,8 @@
       "visibility": "hosted",
       "actionModals": [
         {
-          "type": "feedbackForm",
           "slug": "cancel-trial",
+          "type": "feedbackForm",
           "other": {
             "label": "Tell us a bit more",
             "maxLength": 500,
@@ -60,8 +60,8 @@
           "reasonsLabel": "Reason for cancelling"
         },
         {
-          "type": "feedbackForm",
           "slug": "cancel-stripe",
+          "type": "feedbackForm",
           "other": {
             "label": "Tell us a bit more",
             "maxLength": 500,
@@ -95,6 +95,18 @@
           "description": "Your card is on file. Cancel to stop any future charges.",
           "confirmLabel": "Continue to Stripe",
           "reasonsLabel": "Reason for cancelling"
+        },
+        {
+          "slug": "paymentConfirm",
+          "type": "paymentConfirm",
+          "heading": "Completing your subscription",
+          "description": "We'll redirect you to Stripe to confirm payment.",
+          "confirmLabel": "Continue to Stripe",
+          "processingMessages": [
+            "Talking to Stripe…",
+            "Confirming your payment…",
+            "Almost there — setting up your store…"
+          ]
         }
       ],
       "state": {

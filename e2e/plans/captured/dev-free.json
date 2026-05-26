@@ -2,7 +2,7 @@
   "plans": [
     {
       "slug": "free",
-      "name": "Community",
+      "name": "Community Roast",
       "description": "Open-source self-hosted store with community support",
       "price": 0,
       "currency": "usd",
@@ -36,8 +36,8 @@
           {
             "slug": "view-terms",
             "label": "View Terms",
-            "url": "/admin/terms/terms-of-service",
-            "variant": "ghost"
+            "variant": "ghost",
+            "url": "/admin/terms/terms-of-service"
           }
         ]
       }
@@ -106,8 +106,8 @@
       "visibility": "self-hosted",
       "actionModals": [
         {
-          "type": "feedbackForm",
           "slug": "cancel-subscription",
+          "type": "feedbackForm",
           "heading": "Cancel your subscription?",
           "reasons": [
             {
@@ -149,16 +149,17 @@
         "status": "NONE",
         "actions": [
           {
-            "slug": "view-details",
-            "label": "View Details",
-            "url": "/admin/support/plans/priority-support",
-            "variant": "ghost"
-          },
-          {
             "slug": "subscribe",
             "label": "Subscribe",
             "iconAfter": "external-link",
-            "variant": "primary"
+            "variant": "primary",
+            "endpoint": "/api/checkout?planSlug=priority-support"
+          },
+          {
+            "slug": "view-details",
+            "label": "View Details",
+            "variant": "ghost",
+            "url": "/admin/support/plans/priority-support"
           }
         ]
       }

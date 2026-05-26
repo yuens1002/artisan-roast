@@ -129,7 +129,10 @@ async function loadKeys(): Promise<Record<string, string>> {
   // DEV_KEYS_JSON.
   const trimmed = text.trimStart();
   if (trimmed.startsWith("{")) {
-    return JSON.parse(text);
+    const parsed = JSON.parse(text) as Record<string, string | { licenseKey: string }>;
+    return Object.fromEntries(
+      Object.entries(parsed).map(([k, v]) => [k, typeof v === "string" ? v : v.licenseKey])
+    );
   }
   return parseEnvFile(text);
 }
