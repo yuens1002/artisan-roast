@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.108.2 - 2026-05-26
+
+### Changed
+
+- Refreshed `e2e/plans/captured/*.json` baselines against platform v0.26.0 (S2b resolver rewrite). All 9 changed scenarios map to documented AC-EXP-1..10 or additional expected changes.
+
+### Fixed
+
+- `scripts/capture-plan-scenarios.ts` `loadKeys()` now correctly extracts `.licenseKey` from the nested `{ licenseKey, label, tier }` format in `dev-scenario-keys.public.json`.
+
 ## 0.108.0 - 2026-05-13
 
 ### Added
