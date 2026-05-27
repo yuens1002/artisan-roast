@@ -6,7 +6,7 @@
 
 ### Changed
 
-- Refreshed `e2e/plans/captured/*.json` baselines against platform v0.26.0 (S2b resolver rewrite). All 9 changed scenarios map to documented AC-EXP-1..10 or additional expected changes.
+- Refreshed `e2e/plans/captured/*.json` baselines against platform v0.26.0 (S2b resolver rewrite). All changed scenarios map to documented AC-EXP-1..10 or additional expected changes.
 
 ### Fixed
 

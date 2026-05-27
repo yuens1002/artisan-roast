@@ -115,9 +115,19 @@ function parseEnvFile(text: string): Record<string, string> {
   return out;
 }
 
+function normalizeKeyMap(raw: Record<string, string | { licenseKey: string }>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(raw).map(([k, v]) => {
+      if (typeof v === "string") return [k, v];
+      if (v && typeof v === "object" && typeof v.licenseKey === "string") return [k, v.licenseKey];
+      throw new Error(`loadKeys: value for key "${k}" is neither a string nor { licenseKey: string }`);
+    })
+  );
+}
+
 async function loadKeys(): Promise<Record<string, string>> {
   if (process.env.DEV_KEYS_JSON) {
-    return JSON.parse(process.env.DEV_KEYS_JSON);
+    return normalizeKeyMap(JSON.parse(process.env.DEV_KEYS_JSON));
   }
   const file = process.env.DEV_KEYS_FILE;
   if (!file) {
@@ -129,10 +139,7 @@ async function loadKeys(): Promise<Record<string, string>> {
   // DEV_KEYS_JSON.
   const trimmed = text.trimStart();
   if (trimmed.startsWith("{")) {
-    const parsed = JSON.parse(text) as Record<string, string | { licenseKey: string }>;
-    return Object.fromEntries(
-      Object.entries(parsed).map(([k, v]) => [k, typeof v === "string" ? v : v.licenseKey])
-    );
+    return normalizeKeyMap(JSON.parse(text));
   }
   return parseEnvFile(text);
 }
