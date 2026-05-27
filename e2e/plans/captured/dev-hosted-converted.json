@@ -44,8 +44,8 @@
       "visibility": "hosted",
       "actionModals": [
         {
-          "type": "feedbackForm",
           "slug": "cancel-subscription",
+          "type": "feedbackForm",
           "heading": "Cancel your subscription?",
           "reasons": [
             {
@@ -85,30 +85,38 @@
       "state": {
         "status": "ACTIVE",
         "badge": "Active",
+        "badgeIcon": "CircleCheckBig",
         "pools": [
           {
             "slug": "tickets",
             "label": "Priority tickets",
+            "limit": 5,
+            "used": 0,
             "icon": "ticket",
             "countLabel": "used",
-            "limit": 5,
-            "used": 0
+            "purchased": 0,
+            "cta": {
+              "link": "https://artisanroast.app/support/ticket",
+              "slug": "submit-ticket",
+              "label": "Submit Ticket",
+              "iconAfter": "external-link"
+            }
           }
         ],
         "actions": [
           {
-            "slug": "view-details",
-            "label": "View Details",
-            "url": "/admin/support/plans/house-blend",
-            "variant": "ghost"
-          },
-          {
             "slug": "manage-billing",
             "label": "Manage Billing",
-            "endpoint": "/api/billing/portal",
             "iconAfter": "external-link",
             "variant": "secondary",
+            "endpoint": "/api/billing/portal",
             "modalSlug": "cancel-subscription"
+          },
+          {
+            "slug": "view-details",
+            "label": "View Details",
+            "variant": "ghost",
+            "url": "/admin/support/plans/house-blend"
           }
         ]
       }

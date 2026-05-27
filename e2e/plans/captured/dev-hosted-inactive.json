@@ -44,8 +44,8 @@
       "visibility": "hosted",
       "actionModals": [
         {
-          "type": "feedbackForm",
           "slug": "cancel-subscription",
+          "type": "feedbackForm",
           "heading": "Cancel your subscription?",
           "reasons": [
             {
@@ -85,14 +85,13 @@
       "state": {
         "status": "INACTIVE",
         "badge": "Inactive",
-        "badgeIcon": "circle-slash",
         "deactivatedAt": "2026-05-12T01:22:45.615Z",
         "actions": [
           {
             "slug": "view-details",
             "label": "View Details",
-            "url": "/admin/support/plans/house-blend",
-            "variant": "ghost"
+            "variant": "ghost",
+            "url": "/admin/support/plans/house-blend"
           }
         ]
       }

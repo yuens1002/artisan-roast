@@ -24,8 +24,8 @@
       "visibility": "hosted",
       "actionModals": [
         {
-          "type": "feedbackForm",
           "slug": "cancel-trial",
+          "type": "feedbackForm",
           "other": {
             "label": "Tell us a bit more",
             "maxLength": 500,
@@ -60,8 +60,8 @@
           "reasonsLabel": "Reason for cancelling"
         },
         {
-          "type": "feedbackForm",
           "slug": "cancel-stripe",
+          "type": "feedbackForm",
           "other": {
             "label": "Tell us a bit more",
             "maxLength": 500,
@@ -95,32 +95,51 @@
           "description": "Your card is on file. Cancel to stop any future charges.",
           "confirmLabel": "Continue to Stripe",
           "reasonsLabel": "Reason for cancelling"
+        },
+        {
+          "slug": "paymentConfirm",
+          "type": "paymentConfirm",
+          "heading": "Completing your subscription",
+          "description": "We'll redirect you to Stripe to confirm payment.",
+          "confirmLabel": "Continue to Stripe",
+          "processingMessages": [
+            "Talking to Stripe…",
+            "Confirming your payment…",
+            "Almost there — setting up your store…"
+          ]
         }
       ],
       "state": {
         "status": "TRIAL",
         "badge": "Extended",
-        "badgeIcon": "clock",
+        "badgeIcon": "CircleCheckBig",
         "pools": [
           {
             "slug": "trial-days",
             "label": "Trial days",
-            "icon": "calendar",
-            "countLabel": "passed",
             "limit": 30,
-            "used": 0
+            "used": 7,
+            "icon": "clock",
+            "countLabel": "passed"
           }
         ],
+        "deprovisionAt": "2026-06-18T01:22:45.615Z",
         "statusInfo": {
           "descText": "Trial ends June 18, 2026"
         },
-        "deprovisionAt": "2026-06-18T01:22:45.615Z",
         "actions": [
+          {
+            "slug": "convert-now",
+            "label": "Subscribe Now",
+            "iconAfter": "external-link",
+            "variant": "primary",
+            "endpoint": "/api/trial/hosted/cmox7sxd4000jl4obt4qry06v/convert-now"
+          },
           {
             "slug": "cancel-trial",
             "label": "Cancel Trial",
-            "endpoint": "/api/trial/cancel",
             "variant": "ghost",
+            "endpoint": "/api/trial/cancel",
             "modalSlug": "cancel-stripe"
           }
         ]
@@ -170,8 +189,8 @@
       "visibility": "hosted",
       "actionModals": [
         {
-          "type": "feedbackForm",
           "slug": "cancel-subscription",
+          "type": "feedbackForm",
           "heading": "Cancel your subscription?",
           "reasons": [
             {
@@ -214,8 +233,8 @@
           {
             "slug": "view-details",
             "label": "View Details",
-            "url": "/admin/support/plans/house-blend",
-            "variant": "ghost"
+            "variant": "ghost",
+            "url": "/admin/support/plans/house-blend"
           }
         ]
       }
