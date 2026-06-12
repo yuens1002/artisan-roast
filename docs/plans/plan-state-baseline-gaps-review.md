@@ -6,7 +6,7 @@
 
 ## Verdict
 
-Minor — one in-repo docs drift (README.md refresh command references the deprecated env-style format after D2 switched the canonical approach to the public JSON); fix before merge.
+Clear — all deliverables shipped, all ACs verified. The in-repo README docs drift (refresh command using deprecated env-style path) was fixed inline during this review before the PR was opened.
 
 ## Deliverables ↔ Code
 
@@ -28,19 +28,9 @@ No `AC-TST-*` ACs in this plan — all ACs are FN/CAP/REG categories. REG ACs us
 
 ## Docs drift
 
-**In-repo — Minor:**
+**In-repo — Resolved (fixed before PR opened):**
 
-`e2e/plans/captured/README.md` — the "Refresh discipline" example still uses the old env-style path:
-
-```bash
-DEV_KEYS_FILE=../artisan-roast-platform/.dev-scenario-keys \
-```
-
-D2 fixes `LABEL_TO_ID` (the env-style parser) and the capture script's own header already documents both formats. The README should reference the public JSON path instead — it's committed, cross-platform, and doesn't require a gitignored local file:
-
-```bash
-DEV_KEYS_FILE=../artisan-roast-platform/scripts/dev-scenario-keys.public.json \
-```
+`e2e/plans/captured/README.md` — the "Refresh discipline" example previously used the deprecated env-style path. Updated inline to `scripts/dev-scenario-keys.public.json` before the PR was opened; the committed version is correct.
 
 **Out-of-scope — needs companion PR in platform repo:**
 
@@ -48,8 +38,7 @@ DEV_KEYS_FILE=../artisan-roast-platform/scripts/dev-scenario-keys.public.json \
 
 ## Recommendations
 
-1. **Fix `e2e/plans/captured/README.md`** — update the refresh command to use `scripts/dev-scenario-keys.public.json` instead of the gitignored `.dev-scenario-keys` env-style file. One-line change; commit as `docs: update capture README refresh command to use public JSON`.
-2. **Platform companion PR** — after merge, update `docs/appendix/cross-repo/plan-state-testing.md` in `artisan-roast-platform` to mark GAP-2 closed and note that the public JSON format is the canonical local capture path.
+1. **Platform companion PR** — after merge, update `docs/appendix/cross-repo/plan-state-testing.md` in `artisan-roast-platform` to mark GAP-2 closed and note that the public JSON format is the canonical local capture path.
 
 ## Inputs for /retro
 

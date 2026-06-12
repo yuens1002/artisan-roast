@@ -113,7 +113,7 @@ correct for both.
 Run locally using the platform's public JSON (no secret needed):
 
 ```bash
-DEV_KEYS_FILE=c:/Users/yuens/dev/artisan-roast-platform/scripts/dev-scenario-keys.public.json \
+DEV_KEYS_FILE=../artisan-roast-platform/scripts/dev-scenario-keys.public.json \
 npm run plans:capture
 ```
 
