@@ -290,12 +290,19 @@ Templates: `docs/templates/plan-template.md`, `docs/templates/acs-template.md`
 
 On approval, the main thread runs the standard release workflow:
 
-1. Commit (pre-commit hook passes because verification-status is "verified")
+**Phase A (on the feature branch):**
+
+1. Commit implementation (pre-commit hook passes because verification-status is "verified")
 2. Run `/review` → produces `docs/plans/{feature}-review.md` (pre-PR hook requires this)
-3. Push + create PR (hook verifies: release fingerprint commit AND review doc present)
-4. Wait for CI + Copilot review; address all comments
-5. Merge PR
-6. Tag release (`/release patch` or `/release minor`)
+3. Run `/release <patch|minor|major>` — bumps `package.json`, updates `CHANGELOG.md`, commits `bump version to X.Y.Z` (the fingerprint the pre-PR hook checks)
+4. Push + create PR (hook verifies: fingerprint commit AND review doc present)
+5. Wait for CI + Copilot review; address all comments; resolve all threads
+6. Merge PR
+
+**Phase B (on main after merge):**
+
+1. `git checkout main && git pull`
+2. Run `/release <patch|minor|major>` again — creates the annotated git tag, pushes it, and (for minor/major) creates the GitHub Release that triggers the in-app upgrade notice
 
 ## Sub-Agent Architecture
 

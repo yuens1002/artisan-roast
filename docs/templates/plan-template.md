@@ -44,6 +44,7 @@
 ### Test Coverage
 
 > **Fixture-intent rule:** Every TST AC must test the full path from input to output — not just that mocked outputs are handled correctly.
+>
 > - If the feature has a routing gate or conditional path, include a test that fires a real representative input string and asserts it reaches (or bypasses) the gate correctly
 > - For AI-path features: include at least 3 representative input fixtures (open-ended, vague, merch, etc.) — not only happy-path filter cases
 > - If a TST AC only asserts on mocked extraction output without verifying the routing path that reaches extraction, note it as a **coverage gap** and add a complementary routing-gate test
@@ -100,7 +101,7 @@
 
 After plan approval:
 
-1. **Commit plan to branch** (`git commit --no-verify -m "docs: add plan for {feature}"`) — the plan file must be committed before implementation begins. The ACs header references `docs/plans/{feature}-plan.md`; a dead link here is a docs drift finding at /review time.
+1. **Commit plan to branch** (`git commit --no-verify -m "docs: add plan for {feature}"`) — the plan file must be committed before implementation begins. When creating the ACs doc from `docs/templates/acs-template.md`, **add a `**Plan:** docs/plans/{feature}-plan.md` line** to the ACs header (the template does not include it by default). A missing or dead plan link is a docs drift finding at /review time.
 2. Register `verification-status.json`: `{ status: "planned", acs_total: {n} }`
 3. Extract ACs into `docs/plans/{feature}-ACs.md` using the ACs template
 4. Transition to `"implementing"` when coding begins

@@ -126,9 +126,15 @@ function main(input) {
       try {
         branch = exec("git rev-parse --abbrev-ref HEAD", projectDir);
       } catch {
-        // Can't read branch — skip review gate rather than blocking with
-        // a misleading message. The release fingerprint check already passed.
-        process.exit(0);
+        deny(
+          "BLOCKED: /review gate could not determine the current branch name.\n\n" +
+            "This usually means git is in a detached HEAD state or the branch\n" +
+            "cannot be read from this directory.\n\n" +
+            "To resolve:\n" +
+            "1. Make sure you are on a named branch (not detached HEAD):\n" +
+            "   git checkout <branch-name>\n" +
+            "2. Re-run /release to produce the fingerprint commit, then retry.\n"
+        );
       }
       // Derive slug: strip leading type prefix (feat/, fix/, chore/, etc.)
       const slug = branch.replace(/^[^/]+\//, "");
