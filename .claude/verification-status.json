@@ -420,11 +420,12 @@
       "notes": "SHIP-GATING SUBSET (10/10 PASS): AC-FMT (21 unit tests), AC-CT-NONE/ACTIVE/TRIAL/EXPIRED/CANCELLED/INACTIVE (96 contract tests across 6 files), AC-PIN (sdk-scaffold-pin snapshot), AC-DEV (?scenario= override on page.tsx), AC-REG (typecheck 0 errors, test:ci 122 suites/1388 tests/0 failures, precheck 0 errors, observability logs in lib/plans.ts, 7 throwaway scripts deleted). Architecture in docs/features/provider-plan-sdk-alignment/architecture.md. Session 1 ships: formatters.ts (pure), _components/PoolCtaMenu.tsx (closes Trial/Expired pool.cta gap; respects action.disabled+disabledReason), PlanPageClient.tsx (consumes formatters), page.tsx (?scenario= dev override), lib/plans.ts (structured boundary logging). DEFERRED to follow-up: AC-CT-COMMON restructure, AC-CT-MODAL, AC-CT-PAGE, AC-CAP captured-payload, AC-PW Playwright plumbing, AC-DRIFT injection, AC-SDK cross-repo MCP version fix. Old session-5 commits left on branch for squash-at-PR-time."
     },
     "fix/plan-state-baseline-gaps": {
-      "status": "planning",
-      "acs_passed": 0,
-      "acs_total": 0,
+      "status": "verified",
+      "acs_passed": 10,
+      "acs_total": 10,
+      "acs_doc": "docs/plans/plan-state-baseline-gaps-plan.md",
       "tasks": [],
-      "notes": "Closing GAP-1 (partial) and GAP-2 from docs/appendix/cross-repo/plan-state-testing.md. Adding 2 missing scenario keys to plan-scenarios.ts, fixing LABEL_TO_ID mappings in capture script, capturing 3 missing baseline JSONs."
+      "notes": "Closing GAP-2 from docs/appendix/cross-repo/plan-state-testing.md. 4 FN + 4 CAP + 2 REG ACs."
     },
     "feat/admin-stripe-payments": {
       "status": "verified",

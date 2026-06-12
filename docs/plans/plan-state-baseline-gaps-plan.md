@@ -52,28 +52,28 @@ correct for both.
 
 ### Functional (verified by code review)
 
-| AC | What | How | Pass |
-|----|------|-----|------|
-| AC-FN-1 | All 16 scenario keys present in `SCENARIO_FIXTURES` and `ALL_KEYS` | Code review: compare keys vs `dev-scenario-keys.public.json` | All 16 keys match; none missing |
-| AC-FN-2 | `dev-hosted-converting` maps to `[SCENARIOS.PENDING]` | Code review: `plan-scenarios.ts` entry | `"dev-hosted-converting": [SCENARIOS.PENDING]` |
-| AC-FN-3 | `dev-hosted-pending-verification` maps to `[]` | Code review: `plan-scenarios.ts` entry | `"dev-hosted-pending-verification": []` |
-| AC-FN-4 | All LABEL_TO_ID entries map to correct dev keys, no missing platform labels | Code review: cross-ref with `dev-scenario-keys.public.json` label fields | No wrong target keys; all 16 platform labels have a correct mapping |
+| AC | What | How | Agent | Pass |
+|----|------|-----|-------|------|
+| AC-FN-1 | All 16 scenario keys present in `SCENARIO_FIXTURES` and `ALL_KEYS` | Code review: compare keys vs `dev-scenario-keys.public.json` | PASS — `plan-scenarios.ts` lines 74–101 has all 16 keys; `ALL_KEYS` = `SELF_HOSTED_KEYS` (3) + `HOSTED_KEYS` (13) = 16; all match `dev-scenario-keys.public.json` exactly | All 16 keys match; none missing |
+| AC-FN-2 | `dev-hosted-converting` maps to `[SCENARIOS.PENDING]` | Code review: `plan-scenarios.ts` entry | PASS — `plan-scenarios.ts` line 93: `"dev-hosted-converting": [SCENARIOS.PENDING]` | `"dev-hosted-converting": [SCENARIOS.PENDING]` |
+| AC-FN-3 | `dev-hosted-pending-verification` maps to `[]` | Code review: `plan-scenarios.ts` entry | PASS — `plan-scenarios.ts` line 97: `"dev-hosted-pending-verification": []` | `"dev-hosted-pending-verification": []` |
+| AC-FN-4 | All LABEL_TO_ID entries map to correct dev keys, no missing platform labels | Code review: cross-ref with `dev-scenario-keys.public.json` label fields | PASS — `capture-plan-scenarios.ts` lines 51–72: all 16 platform labels present; each maps to the correct dev-key id; no wrong targets found | No wrong target keys; all 16 platform labels have a correct mapping |
 
 ### Capture / data (verified by code review)
 
-| AC | What | How | Pass |
-|----|------|-----|------|
-| AC-CAP-1 | `e2e/plans/captured/` contains 16 JSON files | Code review: `ls e2e/plans/captured/*.json \| wc -l` | 16 |
-| AC-CAP-2 | `dev-hosted-initial-provisioning.json` matches expected shape | Code review: read file | `{ plans: [] }` |
-| AC-CAP-3 | `dev-hosted-converting.json` matches expected shape | Code review: read file | `{ plans: [{ state: { status: "PENDING" } }] }` |
-| AC-CAP-4 | `dev-hosted-pending-verification.json` matches expected shape | Code review: read file | `{ plans: [] }` |
+| AC | What | How | Agent | Pass |
+|----|------|-----|-------|------|
+| AC-CAP-1 | `e2e/plans/captured/` contains 16 JSON files | Code review: `ls e2e/plans/captured/*.json \| wc -l` | PASS — Glob returned 16 files: `dev-free`, `dev-pro`, `dev-pro-inactive`, `dev-hosted-active-no-card`, `dev-hosted-active-card`, `dev-hosted-expired`, `dev-hosted-converted`, `dev-hosted-cancelled-card`, `dev-hosted-inactive`, `dev-hosted-cancelled`, `dev-hosted-pending`, `dev-hosted-converting`, `dev-hosted-initial-provisioning`, `dev-hosted-pending-verification`, `dev-hosted-provisioning`, `dev-hosted-deprovisioned` | 16 |
+| AC-CAP-2 | `dev-hosted-initial-provisioning.json` matches expected shape | Code review: read file | PASS — file contains `{ "plans": [], "resolvedAt": "<NORMALISED_AT_CAPTURE>" }` | `{ plans: [] }` |
+| AC-CAP-3 | `dev-hosted-converting.json` matches expected shape | Code review: read file | PASS — file contains `plans[0].state.status === "PENDING"` with `statusInfo.descText: "Confirming your payment…"` and `actions: []` | `{ plans: [{ state: { status: "PENDING" } }] }` |
+| AC-CAP-4 | `dev-hosted-pending-verification.json` matches expected shape | Code review: read file | PASS — file contains `{ "plans": [], "resolvedAt": "<NORMALISED_AT_CAPTURE>" }` | `{ plans: [] }` |
 
 ### Regression (verified by test suite)
 
-| AC | What | How | Pass |
-|----|------|-----|------|
-| AC-REG-1 | Test suite unaffected | Test run: `npm run test:ci` | All tests pass |
-| AC-REG-2 | TypeScript + ESLint clean | Test run: `npm run precheck` | 0 errors |
+| AC | What | How | Agent | Pass |
+|----|------|-----|-------|------|
+| AC-REG-1 | Test suite unaffected | Test run: `npm run test:ci` | PASS — recorded from main thread: 127 suites / 1435 tests pass | All tests pass |
+| AC-REG-2 | TypeScript + ESLint clean | Test run: `npm run precheck` | PASS — recorded from main thread: 0 errors, 2 pre-existing warnings | 0 errors |
 
 ---
 
