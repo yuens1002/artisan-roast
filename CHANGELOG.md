@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.108.3 - 2026-06-12
+
+### Fixed
+
+- `scripts/capture-plan-scenarios.ts` usage comment updated to reference `.dev-scenario-keys.json` — platform no longer generates the legacy shell-format file
+- Added `dev-hosted-initial-provisioning` to `SCENARIO_FIXTURES` and `HOSTED_KEYS` so `plans:capture` iterates all 14 store-tracked dev scenarios (resolves recurring daily drift alerts)
+
 ## 0.108.2 - 2026-05-26
 
 ### Changed

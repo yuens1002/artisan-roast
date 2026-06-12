@@ -7,7 +7,7 @@
  *
  * Usage:
  *   PLATFORM_URL=https://manage.artisanroast.app \
- *   DEV_KEYS_FILE=../artisan-roast-platform/.dev-scenario-keys \
+ *   DEV_KEYS_FILE=../artisan-roast-platform/.dev-scenario-keys.json \
  *   tsx scripts/capture-plan-scenarios.ts
  *
  * Or with inline keys:
