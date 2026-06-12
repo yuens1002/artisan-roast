@@ -506,6 +506,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
               "Add 5 priority support tickets to your account. Never expire.",
             price: "$39",
             checkoutUrl: `${PLATFORM_URL}/api/checkout`,
+            pools: [{ slug: "ticket", label: "Priority Tickets", quantity: 5 }],
           },
           {
             id: "alacarte-sessions-2",
@@ -513,6 +514,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             description: "Add 2 scheduled 1:1 sessions. Never expire.",
             price: "$99",
             checkoutUrl: `${PLATFORM_URL}/api/checkout`,
+            pools: [{ slug: "one_on_one", label: "1:1 Sessions", quantity: 2 }],
           },
         ],
         legal: {
@@ -579,6 +581,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
               "Add 5 priority support tickets to your account. Never expire.",
             price: "$39",
             checkoutUrl: `${PLATFORM_URL}/api/checkout`,
+            pools: [{ slug: "ticket", label: "Priority Tickets", quantity: 5 }],
           },
           {
             id: "alacarte-sessions-2",
@@ -586,6 +589,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             description: "Add 2 scheduled 1:1 sessions. Never expire.",
             price: "$99",
             checkoutUrl: `${PLATFORM_URL}/api/checkout`,
+            pools: [{ slug: "one_on_one", label: "1:1 Sessions", quantity: 2 }],
           },
         ],
         legal: {
@@ -646,6 +650,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
               "Add 5 priority support tickets to your account. Never expire.",
             price: "$39",
             checkoutUrl: `${PLATFORM_URL}/api/checkout`,
+            pools: [{ slug: "ticket", label: "Priority Tickets", quantity: 5 }],
           },
         ],
         legal: {

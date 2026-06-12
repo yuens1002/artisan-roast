@@ -74,7 +74,7 @@ export async function startAlaCarteCheckout(
       return { success: false, error: body || "Checkout failed" };
     }
 
-    const data = (await response.json()) as { url: string };
+    const data = (await response.json()) as import("artisan-roast-sdk/alacarte").CheckoutResponse;
     return { success: true, url: data.url };
   } catch {
     return { success: false, error: "Failed to start checkout" };

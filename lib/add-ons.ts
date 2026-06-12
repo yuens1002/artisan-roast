@@ -5,7 +5,8 @@
  * Returns empty array on error (graceful fallback).
  */
 
-import type { AlaCartePackage } from "./license-types";
+import { AddOnsResponseSchema } from "artisan-roast-sdk/alacarte";
+import type { AlaCartePackage } from "artisan-roast-sdk/alacarte";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -43,8 +44,8 @@ export async function fetchAddOns(): Promise<AlaCartePackage[]> {
       return [];
     }
 
-    const data = (await response.json()) as { packages?: AlaCartePackage[] };
-    const packages = data.packages || [];
+    const data = AddOnsResponseSchema.parse(await response.json());
+    const packages = data.packages;
     cached = { data: packages, expiresAt: Date.now() + CACHE_TTL };
     return packages;
   } catch (error) {
