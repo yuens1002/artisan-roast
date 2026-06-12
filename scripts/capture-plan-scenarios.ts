@@ -52,11 +52,17 @@ const LABEL_TO_ID: Record<string, string> = {
   "FREE — community plan, no subscription": "dev-free",
   "PRO — priority support active, pools live": "dev-pro",
   "PRO / INACTIVE — priority support subscription lapsed": "dev-pro-inactive",
-  "HOSTED / PENDING_VERIFICATION — plans page shows nothing": "dev-hosted-pending",
-  "HOSTED / PROVISIONING — plans page shows nothing": "dev-hosted-provisioning",
+  // PENDING_VERIFICATION → dev-hosted-pending-verification (empty plans page)
+  "HOSTED / PENDING_VERIFICATION — plans page shows nothing": "dev-hosted-pending-verification",
+  // initial-signup PROVISIONING → dev-hosted-initial-provisioning (empty plans page)
+  "HOSTED / initial-signup PROVISIONING — plans page shows nothing": "dev-hosted-initial-provisioning",
+  // CONVERTING substates: both map to PENDING at the store level
+  "HOSTED / CONVERTING — PENDING 'Confirming your payment…'": "dev-hosted-pending",
+  "HOSTED / CONVERTING — subscription in flight": "dev-hosted-converting",
+  // post-payment PROVISIONING (stripeSubscriptionId set, convertedAt null)
+  "HOSTED / post-payment PROVISIONING — PENDING 'Setting up your store…'": "dev-hosted-provisioning",
   "HOSTED / ACTIVE trial — no card on file": "dev-hosted-active-no-card",
   "HOSTED / ACTIVE trial — card on file": "dev-hosted-active-card",
-  "HOSTED / CONVERTING — subscription in flight": "dev-hosted-converting",
   "HOSTED / EXPIRED — trial ended, subscribe to restore": "dev-hosted-expired",
   "HOSTED / CANCELLED — trial cancelled, deprovision countdown": "dev-hosted-cancelled",
   "HOSTED / CANCELLED (card on file) — deprovision countdown running": "dev-hosted-cancelled-card",
