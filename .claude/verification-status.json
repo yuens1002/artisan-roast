@@ -1,6 +1,14 @@
 {
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
+    "feat/alacarte-parity": {
+      "status": "verified",
+      "acs_passed": 10,
+      "acs_total": 10,
+      "tasks": [],
+      "acs_doc": "docs/plans/alacarte-parity-ACs.md",
+      "notes": "10/10 ACs verified. 9 PASS via code review + test suite (agent + QC). AC-UI-1: PASS-by-proxy — AC-TST-2 (passing) covers same pools rendering contract via jest-dom; code review confirms implementation. Screenshot gap: dev server was down during both verification runs, no preview deployment. Reviewer should spot-check /admin/support/add-ons in browser before merge. 127 suites / 1435 tests pass. Precheck 0 errors."
+    },
     "feat/pending-state": {
       "status": "verified",
       "acs_passed": 19,

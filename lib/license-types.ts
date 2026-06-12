@@ -94,13 +94,8 @@ export interface SupportQuotas {
 // Phase 3 — A la carte packages
 // ---------------------------------------------------------------------------
 
-export interface AlaCartePackage {
-  id: string;
-  label: string;
-  description: string;
-  price: string;
-  checkoutUrl: string;
-}
+import type { AlaCartePackage } from "artisan-roast-sdk/alacarte";
+export type { AlaCartePackage };
 
 // ---------------------------------------------------------------------------
 // Phase 3 — Legal

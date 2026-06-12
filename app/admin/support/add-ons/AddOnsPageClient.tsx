@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { startAlaCarteCheckout } from "./actions";
 import type { LicenseInfo } from "@/lib/license-types";
+import type { AlaCartePool } from "artisan-roast-sdk/alacarte";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -75,6 +76,15 @@ export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
                     {pkg.description}
                   </p>
                 </div>
+                {pkg.pools.length > 0 && (
+                  <ul className="space-y-1">
+                    {pkg.pools.map((pool: AlaCartePool) => (
+                      <li key={pool.slug} className="text-sm text-muted-foreground">
+                        {pool.quantity} {pool.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="flex items-center justify-between mt-auto">
                   <Button
                     size="sm"

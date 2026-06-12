@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.109.0 - 2026-06-12
+
+### Added
+
+- **Pools grant list on add-on cards** — each add-on card in `/admin/support/add-ons` now renders a compact list of grant items (e.g. "5 Priority Tickets", "2 1:1 Sessions") between the description and the purchase row, sourced from `AlaCartePackage.pools[]` (SDK v0.6.2).
+- **`addons:capture` script** (`scripts/capture-addon-scenarios.ts`) — fetches the live `/api/add-ons` response from the platform and writes it to `e2e/add-ons/captured/packages.json` for snapshot testing.
+
+### Changed
+
+- **`AlaCartePackage` type** now imported and re-exported from `artisan-roast-sdk/alacarte` (SDK v0.6.2); local `interface AlaCartePackage` in `lib/license-types.ts` removed. Includes new required `pools: AlaCartePool[]` field.
+- **Add-ons API response validated with `AddOnsResponseSchema.parse()`** (`lib/add-ons.ts`) — replaces the unsafe `as` cast on the raw fetch response.
+- **`CheckoutResponse` typed from SDK** in `app/admin/support/add-ons/actions.ts` — replaces the inline import assertion with a top-level named import.
+- **`checkout.test.ts`** migrated from literal slug strings to `ALACARTE_SCENARIOS.TICKETS_5.id` SDK scaffold reference.
+
 ## 0.108.3 - 2026-06-12
 
 ### Fixed

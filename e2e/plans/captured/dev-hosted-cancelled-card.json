@@ -1,124 +1,99 @@
 {
   "plans": [
     {
-      "slug": "house-blend-trial",
-      "name": "House Blend Trial",
-      "description": "Risk-free for 14 days — full features, no card, no commitment.",
-      "price": 0,
+      "slug": "house-blend",
+      "name": "House Blend",
+      "description": "Fully managed hosting with custom domain and priority support.",
+      "price": 7900,
       "currency": "usd",
       "interval": "month",
       "features": [
-        "hosting"
+        "hosting",
+        "priority-support"
       ],
       "details": {
+        "sla": {
+          "availability": "Business days (Mon–Fri)",
+          "responseTime": "48 hours"
+        },
+        "terms": [
+          "Billed monthly, cancel anytime from your billing dashboard",
+          "Unused tickets do not roll over to the next billing period",
+          "Refunds are not available for partial months",
+          "Plan changes take effect immediately"
+        ],
+        "quotas": [
+          {
+            "icon": "ticket",
+            "slug": "tickets",
+            "label": "Priority tickets",
+            "limit": 5,
+            "countLabel": "used"
+          }
+        ],
         "benefits": {
           "activeItems": [
-            "No billing needed — add card to extend to 30 days",
-            "Download your data as a ZIP anytime",
-            "100% feature parity from day 1",
-            "Cancel anytime — no contract, no commitment"
+            "Everything in Community Roast",
+            "Managed hosting & backups",
+            "Custom domain configuration",
+            "5 priority support tickets/month, 48-hr SLA"
           ]
         }
       },
-      "highlight": false,
+      "highlight": true,
       "visibility": "hosted",
       "actionModals": [
         {
-          "slug": "cancel-trial",
+          "slug": "cancel-subscription",
           "type": "feedbackForm",
-          "other": {
-            "label": "Tell us a bit more",
-            "maxLength": 500,
-            "placeholder": "What are we missing?"
-          },
-          "heading": "Cancel your trial?",
+          "heading": "Cancel your subscription?",
           "reasons": [
             {
-              "label": "Still evaluating — need more time",
-              "value": "too-soon"
+              "label": "Too expensive for my revenue",
+              "value": "too-expensive"
             },
             {
               "label": "Missing features I need",
               "value": "missing-features"
             },
             {
-              "label": "Plan too expensive",
-              "value": "too-expensive"
+              "label": "Performance or reliability issues",
+              "value": "performance"
             },
             {
-              "label": "Switching to another platform",
-              "value": "switching"
+              "label": "Moving to a self-hosted setup",
+              "value": "self-hosted"
             },
             {
-              "label": "Other",
-              "value": "other"
-            }
-          ],
-          "keepLabel": "Keep trial",
-          "description": "We'd love to know why before you go.",
-          "confirmLabel": "Cancel Trial",
-          "reasonsLabel": "Reason for cancelling"
-        },
-        {
-          "slug": "cancel-stripe",
-          "type": "feedbackForm",
-          "other": {
-            "label": "Tell us a bit more",
-            "maxLength": 500,
-            "placeholder": "What are we missing?"
-          },
-          "heading": "Cancel your trial?",
-          "reasons": [
-            {
-              "label": "Still evaluating — need more time",
-              "value": "too-soon"
-            },
-            {
-              "label": "Missing features I need",
-              "value": "missing-features"
-            },
-            {
-              "label": "Plan too expensive",
-              "value": "too-expensive"
-            },
-            {
-              "label": "Switching to another platform",
-              "value": "switching"
+              "label": "Closing my store",
+              "value": "closing-store"
             },
             {
               "label": "Other",
               "value": "other"
             }
           ],
-          "keepLabel": "Keep trial",
+          "keepLabel": "Keep subscription",
           "confirmIcon": "external-link",
-          "description": "Your card is on file. Cancel to stop any future charges.",
+          "description": "We'll redirect you to Stripe to complete cancellation. Tell us why first — your feedback helps us improve.",
           "confirmLabel": "Continue to Stripe",
           "reasonsLabel": "Reason for cancelling"
-        },
-        {
-          "slug": "paymentConfirm",
-          "type": "paymentConfirm",
-          "heading": "Completing your subscription",
-          "description": "We'll redirect you to Stripe to confirm payment.",
-          "confirmLabel": "Continue to Stripe",
-          "processingMessages": [
-            "Talking to Stripe…",
-            "Confirming your payment…",
-            "Almost there — setting up your store…"
-          ]
         }
       ],
+      "saleLabel": "6mos Launch Special",
+      "salePrice": 6900,
       "state": {
-        "status": "CANCELLED",
-        "badge": "Cancelled",
-        "daysRemaining": 7,
-        "daysLimit": 30,
-        "deprovisionAt": "2026-06-02T01:22:45.615Z",
-        "statusInfo": {
-          "descText": "Trial cancelled. Instance will be deprovisioned."
-        },
-        "actions": []
+        "status": "INACTIVE",
+        "badge": "Inactive",
+        "deactivatedAt": "2026-06-02T01:22:45.615Z",
+        "actions": [
+          {
+            "slug": "view-details",
+            "label": "View Details",
+            "variant": "ghost",
+            "url": "/admin/support/plans/house-blend"
+          }
+        ]
       }
     }
   ],

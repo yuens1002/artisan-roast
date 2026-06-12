@@ -35,6 +35,7 @@ jest.mock("@/lib/prisma", () => ({
 global.fetch = mockFetch;
 
 import { startAlaCarteCheckout } from "../actions";
+import { ALACARTE_SCENARIOS } from "artisan-roast-sdk/alacarte";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -62,7 +63,7 @@ describe("startAlaCarteCheckout", () => {
       text: () => Promise.resolve("Internal Server Error"),
     });
 
-    const result = await startAlaCarteCheckout(makeFormData("alacarte-tickets-5"));
+    const result = await startAlaCarteCheckout(makeFormData(ALACARTE_SCENARIOS.TICKETS_5.id));
 
     expect(result.success).toBe(false);
     expect(result.error).toBeTruthy();
@@ -76,7 +77,7 @@ describe("startAlaCarteCheckout", () => {
       text: () => Promise.resolve(""),
     });
 
-    const result = await startAlaCarteCheckout(makeFormData("alacarte-tickets-5"));
+    const result = await startAlaCarteCheckout(makeFormData(ALACARTE_SCENARIOS.TICKETS_5.id));
 
     expect(result.success).toBe(false);
     expect(result.error).toBe("Checkout failed");
@@ -85,7 +86,7 @@ describe("startAlaCarteCheckout", () => {
   it("returns error when fetch throws (network failure)", async () => {
     mockFetch.mockRejectedValueOnce(new Error("fetch failed"));
 
-    const result = await startAlaCarteCheckout(makeFormData("alacarte-tickets-5"));
+    const result = await startAlaCarteCheckout(makeFormData(ALACARTE_SCENARIOS.TICKETS_5.id));
 
     expect(result.success).toBe(false);
     expect(result.error).toBe("Failed to start checkout");
@@ -97,7 +98,7 @@ describe("startAlaCarteCheckout", () => {
       json: () => Promise.resolve({ url: "https://checkout.stripe.com/test" }),
     });
 
-    const result = await startAlaCarteCheckout(makeFormData("alacarte-tickets-5"));
+    const result = await startAlaCarteCheckout(makeFormData(ALACARTE_SCENARIOS.TICKETS_5.id));
 
     expect(result.success).toBe(true);
     expect(result.url).toBe("https://checkout.stripe.com/test");

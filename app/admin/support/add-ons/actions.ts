@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import type { CheckoutResponse } from "artisan-roast-sdk/alacarte";
 import { requireAdmin } from "@/lib/admin";
 import { getInstanceId } from "@/lib/telemetry";
 import { prisma } from "@/lib/prisma";
@@ -74,7 +75,7 @@ export async function startAlaCarteCheckout(
       return { success: false, error: body || "Checkout failed" };
     }
 
-    const data = (await response.json()) as { url: string };
+    const data = (await response.json()) as CheckoutResponse;
     return { success: true, url: data.url };
   } catch {
     return { success: false, error: "Failed to start checkout" };
