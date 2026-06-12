@@ -33,7 +33,7 @@ import type { LicenseInfo } from "@/lib/license-types";
 const mockStartAlaCarteCheckout = startAlaCarteCheckout as jest.Mock;
 
 function makeLicense(overrides: Partial<LicenseInfo> = {}): LicenseInfo {
-  return {
+  const base: LicenseInfo = {
     valid: true,
     tier: "HOSTED",
     features: [],
@@ -49,8 +49,8 @@ function makeLicense(overrides: Partial<LicenseInfo> = {}): LicenseInfo {
     support: { pools: [] },
     alaCarte: [ALACARTE_SCENARIOS.TICKETS_5, ALACARTE_SCENARIOS.SESSIONS_2],
     legal: null,
-    ...overrides,
-  } as LicenseInfo;
+  };
+  return { ...base, ...overrides };
 }
 
 // ---------------------------------------------------------------------------
