@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.109.1 - 2026-06-12
+
+### Fixed
+
+- **Plan scenario fixture coverage** — added `dev-hosted-converting` and `dev-hosted-pending-verification` to `SCENARIO_FIXTURES` and `ALL_KEYS` in `plan-scenarios.ts`, closing the gap to all 16 platform dev scenarios.
+- **`LABEL_TO_ID` label-to-key mappings** in `scripts/capture-plan-scenarios.ts` — corrected wrong mapping for `PENDING_VERIFICATION`, added three missing entries (`dev-hosted-pending`, `dev-hosted-initial-provisioning`, `dev-hosted-provisioning`).
+- **Capture README refresh command** updated to reference the committed `scripts/dev-scenario-keys.public.json` instead of the gitignored env-style file.
+
+### Added
+
+- **Three missing prod baseline snapshots** — `dev-hosted-converting.json`, `dev-hosted-initial-provisioning.json`, `dev-hosted-pending-verification.json` captured from prod and committed to `e2e/plans/captured/`. All 16 scenario keys now have baselines.
+- **`PLANS_CAPTURE_DEV_KEYS_JSON`** GitHub Actions secret set — enables the nightly `Plans Resolver Drift` workflow to run without manual intervention.
+
 ## 0.109.0 - 2026-06-12
 
 ### Added
