@@ -12,7 +12,7 @@ in here, the workflow fails and opens an issue.
 Re-capture, review the diff, commit if the change is intentional.
 
 ```bash
-DEV_KEYS_FILE=../artisan-roast-platform/.dev-scenario-keys \
+DEV_KEYS_FILE=../artisan-roast-platform/scripts/dev-scenario-keys.public.json \
   PLATFORM_URL=https://manage.artisanroast.app \
   npm run plans:capture
 
