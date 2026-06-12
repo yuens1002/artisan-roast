@@ -89,6 +89,7 @@ export const SCENARIO_FIXTURES = {
   "dev-hosted-pending":        [SCENARIOS.PENDING],
 
   // ── Empty (resolver returns no cards) ──────────────────────────────────
+  "dev-hosted-initial-provisioning": [],
   "dev-hosted-cancelled":      [],
   "dev-hosted-provisioning":   [],
   "dev-hosted-deprovisioned":  [],
@@ -111,6 +112,7 @@ export const HOSTED_KEYS: ScenarioKey[] = [
   "dev-hosted-inactive",
   "dev-hosted-cancelled",
   "dev-hosted-pending",
+  "dev-hosted-initial-provisioning",
   "dev-hosted-provisioning",
   "dev-hosted-deprovisioned",
 ];
