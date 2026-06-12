@@ -117,7 +117,42 @@ function main(input) {
   }
 
   if (RELEASE_FINGERPRINT_RE.test(lastSubject)) {
-    // `/release` produced this commit; PR creation is authorized.
+    // `/release` produced this commit. Now enforce the /review gate:
+    // docs/plans/{branch-slug}-review.md must exist before PR creation.
+    // Skip for --docs-only PRs (marker commit = "docs-only release").
+    const isDocsOnly = /^docs-only release\b/i.test(lastSubject);
+    if (!isDocsOnly) {
+      let branch = "";
+      try {
+        branch = exec("git rev-parse --abbrev-ref HEAD", projectDir);
+      } catch {
+        deny(
+          "BLOCKED: /review gate could not determine the current branch name.\n\n" +
+            "This usually means git is in a detached HEAD state or the branch\n" +
+            "cannot be read from this directory.\n\n" +
+            "To resolve:\n" +
+            "1. Make sure you are on a named branch (not detached HEAD):\n" +
+            "   git checkout <branch-name>\n" +
+            "2. Re-run /release to produce the fingerprint commit, then retry.\n"
+        );
+      }
+      // Derive slug: strip leading type prefix (feat/, fix/, chore/, etc.)
+      const slug = branch.replace(/^[^/]+\//, "");
+      const reviewPath = path.join(projectDir, "docs", "plans", `${slug}-review.md`);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fs = require("fs");
+      if (!fs.existsSync(reviewPath)) {
+        deny(
+          "BLOCKED: /review report not found.\n\n" +
+            `Expected: docs/plans/${slug}-review.md\n\n` +
+            "Run /review before opening a PR. The /review report is required\n" +
+            "to complete Phase 4.5 of the agentic workflow.\n\n" +
+            "If this branch has no plan doc (e.g. a patch with no ACs), create\n" +
+            `the review report manually at docs/plans/${slug}-review.md, or use\n` +
+            "/release --docs-only if no code changes are included.\n"
+        );
+      }
+    }
     process.exit(0);
   }
 
