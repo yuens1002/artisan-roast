@@ -4,6 +4,57 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 
 ---
 
+## 2026-06-12 — feat/alacarte-parity: /review gate, inline imports, orphaned mock updates, dead plan link
+
+### Gap 1: `/review` was soft convention — no structural enforcement before `gh pr create`
+
+**Gap:** `/review` only ran on `feat/alacarte-parity` because the user explicitly asked. The verify-before-commit and version-bump fingerprint hooks are durable structural gates; `/review` was not.
+**Root cause:** Phase 4.5 was documented as a convention in the workflow doc but not enforced by any hook. Skills and memory entries describing "always run /review" get bypassed mid-flow once a release sequence is in motion.
+**Role:** cross-cutting
+**Fix applied to:**
+- `.claude/hooks/pre-pr-via-release-node.js` — added Gate 2: checks `docs/plans/{branch-slug}-review.md` exists after the release-fingerprint check passes; blocks with clear stderr message if absent; skips for `--docs-only` PRs
+- `docs/AGENTIC-WORKFLOW.md` — added Phase 4.5 as a required step with a note that the pre-PR hook enforces it; updated Phase 6 release steps to include the /review → report → PR sequence explicitly
+**Prevented by:** pre-PR hook now hard-blocks `gh pr create` unless the review doc exists (or it's a docs-only PR)
+**Source:** `docs/plans/alacarte-parity-review.md` + user direction (session 2026-06-12)
+
+---
+
+### Gap 2: Inline import type assertion not caught until QC
+
+**Gap:** `actions.ts` used `(await response.json()) as import("artisan-roast-sdk/alacarte").CheckoutResponse` — an inline import assertion that survived sub-agent verification and required a post-verification fix in the working tree.
+**Root cause:** No principle in `/backend-architect` flagged inline import assertions as a violation; they resolve correctly at the TypeScript level so verification passed.
+**Role:** `/backend-architect`
+**Fix applied to:**
+- `~/.claude/commands/backend-architect.md` — added "Inline import type assertions are a style violation — promote immediately" principle with correct/violation pattern example and the AC-FN-3 incident as the trigger.
+**Prevented by:** The principle is now in the role's checklist, making it a pre-commit check, not a QC catch.
+**Source:** `docs/plans/alacarte-parity-review.md` — Inputs for /retro, `/backend-architect` route
+
+---
+
+### Gap 3: SDK-required-field fixture update not listed as a deliverable
+
+**Gap:** `lib/license.ts` mock data needed `pools[]` added to conform to the updated `AlaCartePackage` type (SDK v0.6.2 made `pools` required). This change was not listed as a deliverable — it appeared as orphaned scope creep in the diff.
+**Root cause:** The plan template had no guidance about listing fixture/mock updates when an SDK type adds required fields.
+**Role:** cross-cutting → plan template
+**Fix applied to:**
+- `docs/templates/plan-template.md` — added "SDK type bump checklist" note in the Verification & Workflow Loop section: when a dependency adds required fields, the fixture update must be a named deliverable.
+**Prevented by:** Guidance is now in the plan template and will appear during plan authoring.
+**Source:** `docs/plans/alacarte-parity-review.md` — Inputs for /retro, cross-cutting route
+
+---
+
+### Gap 4: Plan file never committed — dead link in ACs header
+
+**Gap:** `docs/plans/alacarte-parity-plan.md` was referenced in the ACs header but was never committed. The plan lived only in conversation context. This was caught as a docs drift finding at /review time.
+**Root cause:** The plan template's Verification section said "Commit plan to branch" but did not call out the consequence (dead ACs header link) or enforce the step.
+**Role:** cross-cutting → plan template
+**Fix applied to:**
+- `docs/templates/plan-template.md` — the "Commit plan to branch" step now has a bold label and explicit note that the ACs header references this file; a dead link here is a /review docs-drift finding.
+**Prevented by:** The plan template now makes the consequence of skipping this step visible at planning time.
+**Source:** `docs/plans/alacarte-parity-review.md` — Inputs for /retro, cross-cutting route
+
+---
+
 ## 2026-05-13 — Screenshot harness preflight friction (env loading, port collisions, gitignore traps)
 
 **Gap:** During the `feat/pending-state` Session 2 PR (#381), capturing UI evidence with `scripts/screenshot-plan-scenarios.ts` cost ~15 min of trial-and-error friction across three independent stumbles:

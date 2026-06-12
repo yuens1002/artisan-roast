@@ -231,9 +231,24 @@ The main thread MUST independently verify every AC:
 
 The pre-commit hook reads this file and blocks commits unless `status === "verified"`.
 
+## Phase 4.5: /review (REQUIRED before PR)
+
+**This step is mandatory.** The pre-PR hook (`pre-pr-via-release-node.js`) enforces it — `gh pr create` is blocked unless `docs/plans/{feature}-review.md` exists.
+
+Run `/review` after all ACs are QC-passed (`verified` status). It produces a consolidated report covering:
+
+1. **Deliverables ↔ code** — every plan deliverable has a code reference; no orphaned changes
+2. **AC ↔ test spot-check** — named test asserts the invariant, not a vacuous literal
+3. **Docs drift** — code changes don't leave stale claims in CLAUDE.md, READMEs, or architecture docs
+4. **Recommendations** — pre-routed lessons for `/retro`
+
+The report is written to `docs/plans/{feature}-review.md`. Once that file exists, the PR-creation gate lifts automatically.
+
+**Exception:** `--docs-only` PRs skip the review gate (no code to review).
+
 ## Phase 5: Human Review
 
-The main thread presents the ACs tracking doc to the human. The **Agent** and **QC** columns are already filled. The human fills in the **Reviewer** column.
+The main thread presents the ACs tracking doc and the `/review` report to the human. The **Agent** and **QC** columns are already filled. The human fills in the **Reviewer** column.
 
 ```text
 ## Ready for Review
@@ -276,10 +291,11 @@ Templates: `docs/templates/plan-template.md`, `docs/templates/acs-template.md`
 On approval, the main thread runs the standard release workflow:
 
 1. Commit (pre-commit hook passes because verification-status is "verified")
-2. Push + create PR
-3. Wait for CI
-4. Merge PR
-5. Tag release (`/release patch` or `/release minor`)
+2. Run `/review` → produces `docs/plans/{feature}-review.md` (pre-PR hook requires this)
+3. Push + create PR (hook verifies: release fingerprint commit AND review doc present)
+4. Wait for CI + Copilot review; address all comments
+5. Merge PR
+6. Tag release (`/release patch` or `/release minor`)
 
 ## Sub-Agent Architecture
 

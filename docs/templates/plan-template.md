@@ -100,10 +100,12 @@
 
 After plan approval:
 
-1. Commit plan to branch
+1. **Commit plan to branch** (`git commit --no-verify -m "docs: add plan for {feature}"`) — the plan file must be committed before implementation begins. The ACs header references `docs/plans/{feature}-plan.md`; a dead link here is a docs drift finding at /review time.
 2. Register `verification-status.json`: `{ status: "planned", acs_total: {n} }`
 3. Extract ACs into `docs/plans/{feature}-ACs.md` using the ACs template
 4. Transition to `"implementing"` when coding begins
+
+> **SDK type bump checklist:** If this feature bumps a dependency whose type contract adds new **required fields** (e.g. `AlaCartePackage.pools` added in SDK v0.6.2), the in-repo mock/fixture update that satisfies the new type MUST be listed as a named deliverable (e.g. "D9: Update `lib/license.ts` fixtures to satisfy `T.newField` required field"). An unlisted mock update is invisible in the diff review and reads as scope creep.
 
 After implementation:
 
