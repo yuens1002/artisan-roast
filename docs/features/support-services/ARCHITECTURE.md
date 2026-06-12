@@ -179,7 +179,7 @@ interface LicenseInfo {
   plan: PlanContext | null;       // { slug, name, snapshotAt }
   lapsed: LapsedContext | null;   // { previousTier, renewUrl, deactivatedAt, ... }
   support: SupportQuotas;         // { pools: UsagePool[] }
-  alaCarte: AlaCartePackage[];    // [{ id, label, price, checkoutUrl }]
+  alaCarte: AlaCartePackage[];    // [{ id, label, price, checkoutUrl, pools: AlaCartePool[] }]
   legal: LegalState | null;       // { pendingAcceptance, acceptedVersions }
   availableActions: AvailableAction[]; // [{ slug, label, url, variant, icon }]
   // ...plus usage, gaConfig, warnings, trialEndsAt, compatibility
