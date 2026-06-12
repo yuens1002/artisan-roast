@@ -110,30 +110,28 @@
         }
       ],
       "state": {
-        "status": "TRIAL",
-        "badge": "Active",
-        "badgeIcon": "CircleCheckBig",
+        "status": "EXPIRED",
+        "badge": "Expired",
         "pools": [
           {
             "slug": "trial-days",
             "label": "Trial days",
             "limit": 14,
-            "used": 7,
+            "used": 14,
             "icon": "clock",
             "countLabel": "passed"
           }
         ],
         "deprovisionAt": "2026-06-18T01:22:45.615Z",
         "statusInfo": {
-          "descText": "Trial ends June 2, 2026"
+          "descText": "Your 14 day trial ended. Add billing to extend up to 30 days."
         },
         "actions": [
           {
-            "slug": "cancel-trial",
-            "label": "Cancel Trial",
+            "slug": "delete-trial",
+            "label": "Delete Trial",
             "variant": "ghost",
-            "endpoint": "/api/trial/cancel",
-            "modalSlug": "cancel-trial"
+            "endpoint": "/api/trial/delete"
           }
         ]
       }
