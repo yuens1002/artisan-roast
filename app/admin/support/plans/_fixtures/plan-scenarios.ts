@@ -86,13 +86,18 @@ export const SCENARIO_FIXTURES = {
   "dev-hosted-inactive":       [SCENARIOS.INACTIVE],
 
   // ── Hosted: PENDING (post-conversion provisioning, SDK v0.5.0) ─────────
+  // Both CONVERTING substates (cardAdded false/true) map to the same lifecycle
+  // key "CONVERTING" → SDK PENDING. The DB distinction exists for the platform's
+  // Layer 1 e2e suite; the store sees identical output from both.
   "dev-hosted-pending":        [SCENARIOS.PENDING],
+  "dev-hosted-converting":     [SCENARIOS.PENDING],
 
   // ── Empty (resolver returns no cards) ──────────────────────────────────
-  "dev-hosted-initial-provisioning": [],
-  "dev-hosted-cancelled":      [],
-  "dev-hosted-provisioning":   [],
-  "dev-hosted-deprovisioned":  [],
+  "dev-hosted-initial-provisioning":   [],
+  "dev-hosted-pending-verification":   [],
+  "dev-hosted-cancelled":              [],
+  "dev-hosted-provisioning":           [],
+  "dev-hosted-deprovisioned":          [],
 } satisfies Record<string, HydratedPlan[]>;
 
 export type ScenarioKey = keyof typeof SCENARIO_FIXTURES;
@@ -112,7 +117,9 @@ export const HOSTED_KEYS: ScenarioKey[] = [
   "dev-hosted-inactive",
   "dev-hosted-cancelled",
   "dev-hosted-pending",
+  "dev-hosted-converting",
   "dev-hosted-initial-provisioning",
+  "dev-hosted-pending-verification",
   "dev-hosted-provisioning",
   "dev-hosted-deprovisioned",
 ];
