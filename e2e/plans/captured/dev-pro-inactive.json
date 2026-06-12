@@ -148,7 +148,7 @@
       "state": {
         "status": "INACTIVE",
         "badge": "Inactive",
-        "deactivatedAt": "2026-04-09T12:44:11.643Z",
+        "deactivatedAt": "2026-04-19T01:22:45.615Z",
         "actions": [
           {
             "slug": "renew",
