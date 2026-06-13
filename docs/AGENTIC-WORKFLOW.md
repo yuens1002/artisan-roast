@@ -344,8 +344,9 @@ Main thread reads both reports when complete                           ─┘
 | `/ac-verify` | 3 | Sub-agent verification template |
 | `/ui-verify` | 3 | Screenshot capture + comparison (used by sub-agent) |
 | `/verify-workflow` | 2-4 | Full orchestration (when running without sub-agents) |
+| `/review` | 4.5 | Holistic cross-artifact check — deliverables ↔ code, ACs ↔ tests, docs drift |
 | `/release` | 6 | Version bump + tag + PR |
-| `/retro` | Post-session | Capture process lessons → update skills, templates, validators |
+| `/retro` | 7 | Capture process lessons → update skills, templates, validators |
 
 ## Learning Loop
 
@@ -355,7 +356,7 @@ When a session reveals a process gap (not a code bug), run `/retro` to capture t
 2. **Classify** which layers need fixing (skill, template, validator, workflow doc)
 3. **Apply** concrete, enforceable changes to each layer
 4. **Test** validator changes, trace skill changes through the failure scenario
-5. **Log** the lesson in `.claude/skills/retro/retro-log.md`
+5. **Log** the lesson in `.claude/retro-log.md`
 
 Future sessions automatically benefit because skills, templates, and validators are loaded at session start. The retro log serves as an audit trail of what was learned and when.
 
@@ -467,6 +468,8 @@ Plans must include a commit schedule section:
 | Session awareness | SessionStart | `session-start-loop-node.js` | Injects process loop context at session start | Context injection (exit 2) |
 | Stop gate | Stop | `verify-before-stop-node.js` | Prevents declaring done without verification | Yes (`pending`/`partial`) |
 | Commit gate | PreToolUse (Bash) | `verify-before-commit-node.js` | Prevents commits in unverified states | Yes (`pending`/`partial`) |
+| PR creation gate | PreToolUse (Bash) | `pre-pr-via-release-node.js` | Blocks `gh pr create` unless latest commit is release fingerprint or `docs-only release` | Yes |
+| Merge gate | PreToolUse (Bash) | `review-before-merge-node.js` | Blocks `gh pr merge` while any review thread is unresolved | Yes |
 
 ### How They Work Together
 
@@ -487,8 +490,11 @@ Plans must include a commit schedule section:
 | `.claude/hooks/verify-before-stop-node.js` | Yes | Stop gate — blocks premature completion |
 | `.claude/hooks/verify-before-commit-node.js` | Yes | Pre-commit verification gate |
 | `.claude/verification-status.json` | No | Per-branch AC tracking |
-| `.claude/skills/ac-verify/SKILL.md` | Yes | Verification sub-agent prompt template |
-| `.claude/skills/verify-workflow/SKILL.md` | Yes | Full workflow orchestration |
-| `.claude/skills/ui-verify/SKILL.md` | Yes | Screenshot capture + comparison |
+| `.claude/hooks/pre-pr-via-release-node.js` | Yes | PR creation gate — requires release fingerprint commit |
+| `.claude/hooks/review-before-merge-node.js` | Yes | Merge gate — blocks while review threads are unresolved |
+| `.claude/commands/ac-verify.md` | Yes | Verification sub-agent prompt template |
+| `.claude/commands/verify-workflow.md` | Yes | Full workflow orchestration |
+| `.claude/commands/ui-verify.md` | Yes | Screenshot capture + comparison |
 | `.claude/skills/release/SKILL.md` | Yes | Release workflow |
+| `.claude/retro-log.md` | No | Running log of process lessons (audit trail) |
 | `docs/AGENTIC-WORKFLOW.md` | Yes | This document |

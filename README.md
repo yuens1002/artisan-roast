@@ -54,42 +54,7 @@ Most e-commerce platforms treat coffee like any other product. But your customer
 | One-click subscriptions | Order management & analytics |
 | Stripe checkout (cards, Apple Pay, Google Pay) | Pages CMS with AI content generation |
 
-### Screenshots
-
-<details>
-<summary><strong>Homepage</strong> - Clean, modern storefront</summary>
-
-![Homepage](./docs/assets/screenshots/homepage.png)
-
-</details>
-
-<details>
-<summary><strong>AI Chat Assistant</strong> - Natural language coffee recommendations</summary>
-
-![AI Chat](./docs/assets/screenshots/ai-chat.png)
-
-</details>
-
-<details>
-<summary><strong>Product Page</strong> - Rich product details with variant selection</summary>
-
-![Product Page](./docs/assets/screenshots/product-page.png)
-
-</details>
-
-<details>
-<summary><strong>Admin Dashboard</strong> - Analytics and store overview</summary>
-
-![Admin Dashboard](./docs/assets/screenshots/admin-dashboard.png)
-
-</details>
-
-<details>
-<summary><strong>Menu Builder</strong> - Drag-and-drop catalog organization</summary>
-
-![Menu Builder](./docs/assets/screenshots/menu-builder.png)
-
-</details>
+→ **[Try the live demo at demo.artisanroast.app](https://demo.artisanroast.app/)** — no signup required. Sign in as Admin or Demo Customer to explore every feature.
 
 ---
 
@@ -105,9 +70,8 @@ Setting up Artisan Roast requires a free database (Neon) and a deployment host (
 
 ### For Customers
 
-- **Smart Search** - Find coffee by name, origin, roast level, or tasting notes
-- **AI Recommendations** - Personalized suggestions based on browsing and purchase history
-- **AI Chat Assistant** - Ask questions like "What's good for cold brew?"
+- **Smart Search** - Faceted search by name, origin, roast level, and tasting notes
+- **Product Reviews** - Star ratings, brew method badges, and roaster brew guides
 - **Flexible Subscriptions** - Weekly, bi-weekly, or monthly delivery
 - **Subscription Portal** - Pause, skip, or cancel anytime (Stripe Billing Portal)
 
@@ -162,7 +126,7 @@ Every merge to `main` is verified by two automated pipelines:
 
 | Check | What it guarantees |
 |-------|--------------------|
-| **Build** (every PR + merge) | TypeScript compiles, ESLint passes, 1,000+ unit tests pass, production build succeeds |
+| **Build** (every PR + merge) | TypeScript compiles, ESLint passes, 1,400+ unit tests pass, production build succeeds |
 | **Nightly QA** (nightly cron) | A real fresh install — empty database, deployed to Vercel — passes all 16 acceptance criteria end-to-end |
 
 On merge to `main`, the QA database is reset and the QA deployment is refreshed. The following morning, a Claude Agent SDK + Playwright script walks through the full setup flow, known-value round-trips, and initial app state checks — using the accessibility tree instead of CSS selectors. Any regression opens a GitHub issue automatically.
@@ -175,11 +139,11 @@ On merge to `main`, the QA database is reset and the QA deployment is refreshed.
 
 - [x] Core e-commerce (cart, checkout, orders)
 - [x] Stripe subscriptions
-- [x] AI product recommendations
-- [x] AI chat assistant
 - [x] Menu Builder (drag-and-drop catalog)
 - [x] Pages CMS with AI generation
-- [ ] Voice AI barista (demo only)
+- [x] Product reviews and brew guides
+- [x] Keyword search with faceted filtering
+- [x] Plans page with hosting extension
 - [ ] Inventory management
 - [ ] Multi-store support
 

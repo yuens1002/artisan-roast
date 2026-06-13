@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import {
   Coffee,
-  Sparkles,
+  Search,
   CreditCard,
   LayoutDashboard,
   FileText,
@@ -43,10 +43,10 @@ const features = [
       "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   },
   {
-    icon: Sparkles,
-    title: "AI Digital Sommelier",
+    icon: Search,
+    title: "Smart Search & Discovery",
     description:
-      "More than generic product suggestions. A digital sommelier that guides customers through complex flavor profiles, roast characteristics, and origins to find their perfect brew.",
+      "Faceted keyword search across name, origin, roast level, and tasting notes — with an animated slide-out drawer and curated category chips.",
     accent:
       "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
   },
@@ -149,8 +149,8 @@ const comparisonRows: {
     nextCommerce: false,
   },
   {
-    feature: "AI features",
-    artisan: "Built-in",
+    feature: "AI content generation",
+    artisan: "Built-in (Pages CMS)",
     shopify: "Paid apps",
     medusa: false,
     saleor: false,
@@ -244,7 +244,7 @@ export default function FeaturesPage() {
                 </Button>
                 <Button asChild size="lg" variant="outline" className="gap-2">
                   <Link
-                    href="https://github.com/yuens1002/ecomm-ai-app"
+                    href="https://github.com/yuens1002/artisan-roast"
                     target="_blank"
                   >
                     <Github className="h-5 w-5" />
@@ -381,7 +381,7 @@ export default function FeaturesPage() {
                 </Button>
                 <Button asChild size="lg" variant="outline" className="gap-2">
                   <Link
-                    href="https://github.com/yuens1002/ecomm-ai-app"
+                    href="https://github.com/yuens1002/artisan-roast"
                     target="_blank"
                   >
                     <Github className="h-5 w-5" />
