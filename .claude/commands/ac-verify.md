@@ -199,6 +199,7 @@ If no ACs doc exists yet, produce the report inline in this format:
 10. **Check Pass criteria literally.** Do not interpret — the Pass column is the contract. If it says "no red text visible" and you see red text, it's FAIL regardless of context.
 11. **How column is the contract.** The How column dictates the verification method. If How says `Screenshot:`, you MUST take a screenshot — do not substitute code review. The QC validator will reject mismatched evidence.
 12. **Screenshot-method ACs need `.png` evidence.** Your Agent column entry for any `Screenshot:`/`Interactive:`/`Exercise:` AC must reference a `.png` file path (e.g., `.screenshots/verify/verify-desktop-plans.png`). Without it, the QC validator will flag the AC.
+13. **DEFERRED is not a valid result.** The only valid Agent column values are PASS, FAIL, BLOCKED, and NOT_IMPLEMENTED. Never mark an AC as DEFERRED — especially not for `Interactive:` ACs where the AI response content varies. AI response *content* is non-deterministic; structural *outcomes* (did cards render, did zero cards render, was there no spinner) are deterministic and can always be verified with Puppeteer. If the environment prevents verification, use BLOCKED with an explicit reason — not DEFERRED. BLOCKED = environment failure; FAIL = outcome verified and wrong; PASS = outcome verified and correct.
 
 ## Puppeteer Hard Rules
 
