@@ -17,7 +17,7 @@ Clear — single focused change, no ACs to verify. Root cause (time-advancing `u
 
 ### Code changes not tied to any deliverable
 
-None — CHANGELOG + package.json are version-bump overhead only.
+None — CHANGELOG, package.json, and package-lock.json are version-bump overhead only.
 
 ## Regression risk
 

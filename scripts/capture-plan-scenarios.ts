@@ -150,9 +150,8 @@ async function loadKeys(): Promise<Record<string, string>> {
   return parseEnvFile(text);
 }
 
-/** Recursively replace time-dependent fields so reruns don't diff trivially.
- *  - resolvedAt: top-level timestamp
- *  - used: per-addon counter that advances daily (e.g. trial-days elapsed) */
+/** Recursively replace `used` counters with a placeholder so reruns don't
+ *  diff trivially. resolvedAt is normalised separately in captureOne(). */
 function normalizeTimeDependentFields(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(normalizeTimeDependentFields);
   if (value !== null && typeof value === "object") {
