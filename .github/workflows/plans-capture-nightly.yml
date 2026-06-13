@@ -34,10 +34,10 @@ jobs:
       PLATFORM_URL: https://manage.artisanroast.app
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v4.3.1
 
       - name: Setup Node
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: 24
           cache: npm
