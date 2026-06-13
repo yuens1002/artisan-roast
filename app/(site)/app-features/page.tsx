@@ -187,7 +187,7 @@ export default async function AppFeaturesPage() {
                   Learn about the CMS architecture and design decisions.
                 </p>
                 <Link
-                  href="https://github.com/yuens1002/ecomm-ai-app/blob/main/docs/pages-cms-architecture.md"
+                  href="https://github.com/yuens1002/artisan-roast/blob/main/docs/pages-cms-architecture.md"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-medium text-primary hover:underline"
@@ -202,7 +202,7 @@ export default async function AppFeaturesPage() {
                   Explore the AI-powered About page generator specification.
                 </p>
                 <Link
-                  href="https://github.com/yuens1002/ecomm-ai-app/blob/main/docs/ai-about-page-generator.md"
+                  href="https://github.com/yuens1002/artisan-roast/blob/main/docs/ai-about-page-generator.md"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-medium text-primary hover:underline"
@@ -217,7 +217,7 @@ export default async function AppFeaturesPage() {
                   Review the complete implementation plan and checklist.
                 </p>
                 <Link
-                  href="https://github.com/yuens1002/ecomm-ai-app/blob/main/docs/pages-cms-implementation-plan.md"
+                  href="https://github.com/yuens1002/artisan-roast/blob/main/docs/pages-cms-implementation-plan.md"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-medium text-primary hover:underline"

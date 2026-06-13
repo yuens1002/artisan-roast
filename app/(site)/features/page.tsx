@@ -10,13 +10,14 @@ import {
 } from "@/components/ui/table";
 import {
   Coffee,
-  Sparkles,
+  Search,
   CreditCard,
   LayoutDashboard,
   FileText,
   Shield,
   Code,
   Rocket,
+  Layers,
   Check,
   X,
   Github,
@@ -43,10 +44,10 @@ const features = [
       "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   },
   {
-    icon: Sparkles,
-    title: "AI Digital Sommelier",
+    icon: Search,
+    title: "Smart Search & Discovery",
     description:
-      "More than generic product suggestions. A digital sommelier that guides customers through complex flavor profiles, roast characteristics, and origins to find their perfect brew.",
+      "Faceted keyword search across name, origin, roast level, and tasting notes — with an animated slide-out drawer and curated category chips.",
     accent:
       "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
   },
@@ -79,6 +80,14 @@ const features = [
     description: "OAuth (GitHub/Google), role-based admin access.",
     accent:
       "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+  },
+  {
+    icon: Layers,
+    title: "Provider-Agnostic Plans",
+    description:
+      "Plans, trials, and add-ons follow an open SDK contract. Any developer can build a managed hosting platform — the store is a pure consumer, not locked to any provider.",
+    accent:
+      "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
   },
   {
     icon: Code,
@@ -149,8 +158,8 @@ const comparisonRows: {
     nextCommerce: false,
   },
   {
-    feature: "AI features",
-    artisan: "Built-in",
+    feature: "AI content generation",
+    artisan: "Built-in (Pages CMS)",
     shopify: "Paid apps",
     medusa: false,
     saleor: false,
@@ -244,8 +253,9 @@ export default function FeaturesPage() {
                 </Button>
                 <Button asChild size="lg" variant="outline" className="gap-2">
                   <Link
-                    href="https://github.com/yuens1002/ecomm-ai-app"
+                    href="https://github.com/yuens1002/artisan-roast"
                     target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <Github className="h-5 w-5" />
                     View on GitHub
@@ -381,8 +391,9 @@ export default function FeaturesPage() {
                 </Button>
                 <Button asChild size="lg" variant="outline" className="gap-2">
                   <Link
-                    href="https://github.com/yuens1002/ecomm-ai-app"
+                    href="https://github.com/yuens1002/artisan-roast"
                     target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <Github className="h-5 w-5" />
                     View on GitHub

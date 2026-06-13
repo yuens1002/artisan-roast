@@ -9,13 +9,10 @@ import {
   Package,
   RefreshCw,
   Search,
-  MessageSquare,
-  Mic,
   Sparkles,
   BarChart3,
   Activity,
   Github,
-  Mail,
   LayoutDashboard,
   Settings,
   Boxes,
@@ -144,38 +141,18 @@ export default async function AboutPage() {
               <Card className="h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                    AI-Powered Personalization
+                    <Search className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    Discovery & Reviews
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-3">
-                    <MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                    <Search className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
                     <div>
-                      <h3 className="font-semibold">
-                        Chat AI Assistant{" "}
-                        <span className="text-xs font-normal text-muted-foreground">
-                          (In Progress)
-                        </span>
-                      </h3>
+                      <h3 className="font-semibold">Keyword Search</h3>
                       <p className="text-sm text-muted-foreground">
-                        Text-based conversational interface with full order
-                        history context and brewing expertise.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <Mic className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-                    <div>
-                      <h3 className="font-semibold">
-                        Voice AI Barista{" "}
-                        <span className="text-xs font-normal text-muted-foreground">
-                          (In Progress)
-                        </span>
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Multilingual voice assistant for hands-free coffee
-                        recommendations and ordering.
+                        Faceted search across name, origin, roast level, and
+                        tasting notes with an animated slide-out drawer.
                       </p>
                     </div>
                   </div>
@@ -184,9 +161,8 @@ export default async function AboutPage() {
                     <div>
                       <h3 className="font-semibold">Smart Recommendations</h3>
                       <p className="text-sm text-muted-foreground">
-                        Behavioral product recommendations based on user
-                        activity, powered by Gemini with a smart scoring
-                        algorithm.
+                        Behavioral product recommendations based on browsing
+                        and purchase history with a smart scoring algorithm.
                       </p>
                     </div>
                   </div>
@@ -293,25 +269,24 @@ export default async function AboutPage() {
               <div className="flex flex-col justify-center gap-6 md:flex-row">
                 <Button asChild size="lg" variant="outline" className="gap-2">
                   <Link
-                    href="https://github.com/yuens1002/ecomm-ai-app"
+                    href="https://github.com/yuens1002/artisan-roast"
                     target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <Github className="h-5 w-5" />
                     View on GitHub
                   </Link>
                 </Button>
                 <Button asChild size="lg" className="gap-2">
-                  <Link href="/contact">
-                    <Mail className="h-5 w-5" />
-                    Contact for Demo
+                  <Link href="https://demo.artisanroast.app/" target="_blank" rel="noopener noreferrer">
+                    <Store className="h-5 w-5" />
+                    Try the Demo
                   </Link>
                 </Button>
               </div>
               <p className="mt-6 text-sm text-muted-foreground">
-                Want to see the AI recommendations in action? Contact me for
-                demo account credentials to experience personalized product
-                recommendations, behavioral analytics, and the full feature
-                set.
+                No signup required — sign in as Admin or Demo Customer to
+                explore the full feature set.
               </p>
             </section>
           </ScrollReveal>
