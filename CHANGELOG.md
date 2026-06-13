@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.2 - 2026-06-13
+
+### Fixed
+
+- **Plans drift CI false positives** — `capture-plan-scenarios.ts` now normalizes `"used"` fields to `"<TIME_DEPENDENT>"` before writing baselines; 5 existing captured JSON files updated to match. Prevents daily false-positive drift alerts from time-advancing counters (e.g. `trial-days`).
+
 ## 0.109.1 - 2026-06-12
 
 ### Fixed
