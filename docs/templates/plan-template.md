@@ -79,6 +79,8 @@
 
 ## Implementation Details
 
+> **Portability rule:** bash examples in this section must use relative paths or the sibling-repo convention (`../sibling-repo/path/`), never user-specific absolute paths (`c:/Users/…`, `/home/user/…`). Absolute paths break portability and get flagged at review.
+
 ### Commit {n}: {title}
 
 **Files:**

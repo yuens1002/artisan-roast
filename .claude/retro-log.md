@@ -4,6 +4,44 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 
 ---
 
+## 2026-06-13 — fix/plan-state-baseline-gaps: non-portable plan paths, stale workflow issue body, DEFERRED not BLOCKED
+
+### Gap 1: Non-portable absolute path in plan implementation example
+
+**Gap:** `docs/plans/plan-state-baseline-gaps-plan.md` used `c:/Users/yuens/dev/artisan-roast-platform/scripts/...` in a bash example. Copilot caught it during PR review.
+**Root cause:** The literal local command was pasted without normalizing to the sibling-repo relative convention (`../artisan-roast-platform/...`) used in the project's reference docs (the README already showed the correct form).
+**Role:** cross-cutting → plan template
+**Fix applied to:**
+- `docs/templates/plan-template.md` — Added portability rule to the Implementation Details section: bash examples must use relative or sibling-repo paths, never user-specific absolute paths.
+**Prevented by:** The note appears at the top of Implementation Details — visible at plan authoring time.
+**Source:** Copilot review comment on PR #421 — ad-hoc session
+
+---
+
+### Gap 2: Stale path in `plans-capture-nightly.yml` auto-issue body
+
+**Gap:** The workflow's auto-created drift issue body still referenced `DEV_KEYS_FILE=../artisan-roast-platform/.dev-scenario-keys` (deprecated env-style format). The `/review` for `fix/plan-state-baseline-gaps` caught the same stale path in `e2e/plans/captured/README.md` but missed the identical reference embedded in the workflow file's shell template string.
+**Root cause:** Review scanned in-repo docs but not the workflow file's embedded template body — a different file type in a different directory.
+**Role:** `/devops` (no skill file exists — logged only)
+**Fix applied to:**
+- `.github/workflows/plans-capture-nightly.yml` — Updated auto-issue body to reference `scripts/dev-scenario-keys.public.json`, matching the README fix from PR #421.
+**Prevented by:** Fix applied directly. Future reviews of capture-related changes should cross-check workflow auto-issue bodies for path references alongside companion doc changes.
+**Source:** ad-hoc session — discovered during retro
+
+---
+
+### Gap 3: DEFERRED is not a valid Agent column value for Interactive: ACs (applying 2026-04-22 pending item)
+
+**Gap:** During iter-7 verification, the sub-agent marked 6 `Interactive:` ACs as DEFERRED with the reason "requires interactive AI query; non-deterministic." AI response *content* varies; structural *outcomes* (did cards render, did zero results appear, was there no spinner) are deterministic. The 2026-04-22 retro entry flagged this as "Not yet applied" — it was never fixed.
+**Root cause:** `ac-verify.md` had no explicit rule prohibiting DEFERRED. Rule 4 addressed BLOCKED (method mismatch / server down) but left a loophole: a sub-agent could claim non-determinism to avoid verification entirely.
+**Role:** cross-cutting → ac-verify skill
+**Fix applied to:**
+- `.claude/commands/ac-verify.md` — Added Rule 13: DEFERRED is not a valid result. Defines the correct mapping (BLOCKED = environment failure, FAIL = verified wrong, PASS = verified correct) and explicitly states that AI response *content* being variable does not make structural *outcomes* non-deterministic.
+**Prevented by:** Rule 13 is now in the skill file read by every verification sub-agent.
+**Source:** "Not yet applied" item from 2026-04-22 retro — applied 2026-06-13
+
+---
+
 ## 2026-06-12 — feat/alacarte-parity: /review gate, inline imports, orphaned mock updates, dead plan link
 
 ### Gap 1: `/review` was soft convention — no structural enforcement before `gh pr create`
