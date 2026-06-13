@@ -271,13 +271,14 @@ export default async function AboutPage() {
                   <Link
                     href="https://github.com/yuens1002/artisan-roast"
                     target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <Github className="h-5 w-5" />
                     View on GitHub
                   </Link>
                 </Button>
                 <Button asChild size="lg" className="gap-2">
-                  <Link href="https://demo.artisanroast.app/" target="_blank">
+                  <Link href="https://demo.artisanroast.app/" target="_blank" rel="noopener noreferrer">
                     <Store className="h-5 w-5" />
                     Try the Demo
                   </Link>

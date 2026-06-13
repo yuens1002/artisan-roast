@@ -255,6 +255,7 @@ export default function FeaturesPage() {
                   <Link
                     href="https://github.com/yuens1002/artisan-roast"
                     target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <Github className="h-5 w-5" />
                     View on GitHub
@@ -392,6 +393,7 @@ export default function FeaturesPage() {
                   <Link
                     href="https://github.com/yuens1002/artisan-roast"
                     target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <Github className="h-5 w-5" />
                     View on GitHub

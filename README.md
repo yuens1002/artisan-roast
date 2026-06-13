@@ -26,7 +26,7 @@ No signup required. Click **"Sign in as Admin"** or **"Sign in as Demo Customer"
 | Account | What You'll See |
 |---------|-----------------|
 | **Admin** | Full dashboard: products, orders, analytics, Menu Builder, Pages CMS |
-| **Demo Customer** | Order history, active subscription, AI-powered recommendations |
+| **Demo Customer** | Order history, active subscription, smart product recommendations |
 
 > This is a shared demo environment. Please be respectful with the data.
 
@@ -50,7 +50,7 @@ Most e-commerce platforms treat coffee like any other product. But your customer
 | For Your Customers | For You |
 |---|---|
 | Browse by origin, roast, or tasting notes | Beautiful admin dashboard |
-| Search by origin, roast level, or tasting note | Drag-and-drop menu organization |
+| Search by origin, roast level, or tasting notes | Drag-and-drop menu organization |
 | One-click subscriptions | Order management & analytics |
 | Stripe checkout (cards, Apple Pay, Google Pay) | Pages CMS with AI content generation |
 
