@@ -19,6 +19,9 @@ concurrency:
   group: qa-nightly
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 permissions:
   contents: write
   issues: write
@@ -27,6 +30,7 @@ permissions:
 jobs:
   qa:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4.3.1
@@ -39,8 +43,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browser
-        run: npx playwright install chromium --with-deps
+      - name: Install Playwright system deps
+        run: npx playwright install-deps chromium
+        env:
+          DEBIAN_FRONTEND: noninteractive
+
+      - name: Install Playwright Chromium browser
+        run: npx playwright install chromium
 
       - name: Inject fixture results (fixture mode)
         if: ${{ inputs.fixture_results != '' }}
@@ -198,9 +207,15 @@ jobs:
           echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
           echo "ℹ️  Open issue: ${ISSUE_NUMBER:-none}"
 
-      - name: Install Playwright browser (Category A)
+      - name: Install Playwright system deps (Category A)
         if: env.CATEGORY == 'A'
-        run: npx playwright install chromium --with-deps
+        run: npx playwright install-deps chromium
+        env:
+          DEBIAN_FRONTEND: noninteractive
+
+      - name: Install Playwright Chromium browser (Category A)
+        if: env.CATEGORY == 'A'
+        run: npx playwright install chromium
 
       - name: Repair (Category A)
         if: env.CATEGORY == 'A'

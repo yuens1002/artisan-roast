@@ -9,6 +9,9 @@ concurrency:
   group: e2e-nightly
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 permissions:
   contents: read
   issues: write
@@ -16,6 +19,7 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DIRECT_URL: ${{ secrets.DIRECT_URL }}
@@ -34,8 +38,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium --with-deps
+      - name: Install Playwright system deps
+        run: npx playwright install-deps chromium
+        env:
+          DEBIAN_FRONTEND: noninteractive
+
+      - name: Install Playwright Chromium browser
+        run: npx playwright install chromium
 
       - name: Seed demo admin for e2e tests
         run: npm run create-admin -- "--email=$E2E_ADMIN_EMAIL" "--password=$E2E_ADMIN_PASSWORD" "--name=Admin"
