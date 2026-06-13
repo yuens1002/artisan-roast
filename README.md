@@ -38,7 +38,7 @@ Most e-commerce platforms treat coffee like any other product. But your customer
 
 **Artisan Roast understands coffee.**
 
-- **AI that speaks coffee** - "I like bright, citrusy flavors" → instant recommendations
+- **Coffee in the schema** - Origin, altitude, tasting notes, roast level — first-class columns, not bolt-on custom fields
 - **Subscriptions that just work** - Set it and forget it, with easy customer self-service
 - **Menu Builder** - Organize your catalog the way *you* think about it (Origins → Ethiopian → Yirgacheffe)
 - **Self-host for free** - MIT licensed, your data stays yours
@@ -50,7 +50,7 @@ Most e-commerce platforms treat coffee like any other product. But your customer
 | For Your Customers | For You |
 |---|---|
 | Browse by origin, roast, or tasting notes | Beautiful admin dashboard |
-| AI chat: "What's similar to Ethiopian Yirgacheffe?" | Drag-and-drop menu organization |
+| Search by origin, roast level, or tasting note | Drag-and-drop menu organization |
 | One-click subscriptions | Order management & analytics |
 | Stripe checkout (cards, Apple Pay, Google Pay) | Pages CMS with AI content generation |
 
