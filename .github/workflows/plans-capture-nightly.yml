@@ -23,7 +23,7 @@ permissions:
 #      scenario key (see app/admin/support/plans/_fixtures/plan-scenarios.ts
 #      ALL_KEYS) to its license key.
 #   2. Initial baseline committed at e2e/plans/captured/*.json. Generate via:
-#        DEV_KEYS_FILE=../artisan-roast-platform/.dev-scenario-keys \
+#        DEV_KEYS_FILE=../artisan-roast-platform/scripts/dev-scenario-keys.public.json \
 #        PLATFORM_URL=https://manage.artisanroast.app \
 #        npm run plans:capture
 #        git add e2e/plans/captured/ && git commit
