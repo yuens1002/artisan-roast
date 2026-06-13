@@ -150,6 +150,21 @@ async function loadKeys(): Promise<Record<string, string>> {
   return parseEnvFile(text);
 }
 
+/** Recursively replace time-dependent fields so reruns don't diff trivially.
+ *  - resolvedAt: top-level timestamp
+ *  - used: per-addon counter that advances daily (e.g. trial-days elapsed) */
+function normalizeTimeDependentFields(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeTimeDependentFields);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) =>
+        k === "used" ? [k, "<TIME_DEPENDENT>"] : [k, normalizeTimeDependentFields(v)]
+      )
+    );
+  }
+  return value;
+}
+
 async function captureOne(key: string, licenseKey: string): Promise<void> {
   const url = `${PLATFORM_URL}/api/plans/resolved`;
   const resp = await fetch(url, {
@@ -159,7 +174,8 @@ async function captureOne(key: string, licenseKey: string): Promise<void> {
   if (!resp.ok) {
     throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
   }
-  const body = (await resp.json()) as ResolvedResponse;
+  const raw = (await resp.json()) as ResolvedResponse;
+  const body = normalizeTimeDependentFields(raw) as ResolvedResponse;
   // Normalise resolvedAt so reruns don't diff trivially.
   const out = { ...body, resolvedAt: "<NORMALISED_AT_CAPTURE>" };
   await writeFile(join(OUT_DIR, `${key}.json`), JSON.stringify(out, null, 2) + "\n", "utf8");

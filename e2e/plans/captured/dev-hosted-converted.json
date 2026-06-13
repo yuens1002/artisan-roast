@@ -91,7 +91,7 @@
             "slug": "tickets",
             "label": "Priority tickets",
             "limit": 5,
-            "used": 0,
+            "used": "<TIME_DEPENDENT>",
             "icon": "ticket",
             "countLabel": "used",
             "purchased": 0,

@@ -117,7 +117,7 @@
             "slug": "trial-days",
             "label": "Trial days",
             "limit": 14,
-            "used": 14,
+            "used": "<TIME_DEPENDENT>",
             "icon": "clock",
             "countLabel": "passed"
           }
