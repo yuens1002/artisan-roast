@@ -90,6 +90,11 @@ Setting up Artisan Roast requires a free database (Neon) and a deployment host (
 - **Admin Dashboard** - Sales, trending products, top searches, activity trends
 - **Order Management** - Track orders from purchase to delivery
 
+### For Platform Builders
+
+- **Provider-agnostic SDK** - Plans, trials, and à la carte add-ons follow a typed contract. Any developer can implement a managed hosting platform for Artisan Roast stores — the store is a pure consumer of the SDK, not locked to any provider.
+- **Build-time isolation** - Hosted-mode UI is gated on a single env var and dead-code-eliminated from OSS builds. Self-hosted stores ship none of the hosting chrome.
+
 ### Technical
 
 - **Next.js 16** with App Router and React 19
@@ -97,7 +102,7 @@ Setting up Artisan Roast requires a free database (Neon) and a deployment host (
 - **Stripe** payments and subscriptions
 - **OAuth** login (Google, GitHub)
 - **AI** powered by any OpenAI-compatible provider
-- **1,000+ tests** with Jest and Testing Library
+- **1,400+ tests** with Jest and Testing Library
 
 ---
 

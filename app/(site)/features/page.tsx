@@ -17,6 +17,7 @@ import {
   Shield,
   Code,
   Rocket,
+  Layers,
   Check,
   X,
   Github,
@@ -79,6 +80,14 @@ const features = [
     description: "OAuth (GitHub/Google), role-based admin access.",
     accent:
       "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+  },
+  {
+    icon: Layers,
+    title: "Provider-Agnostic Plans",
+    description:
+      "Plans, trials, and add-ons follow an open SDK contract. Any developer can build a managed hosting platform — the store is a pure consumer, not locked to any provider.",
+    accent:
+      "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
   },
   {
     icon: Code,
