@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.109.3 - 2026-06-14
+
+### Fixed
+
+- **Nightly CI playwright hang** — split `playwright install chromium --with-deps` into two steps (`install-deps` with `DEBIAN_FRONTEND=noninteractive` + `install chromium`) in `e2e-nightly.yml` and `qa-nightly.yml`. The apt post-install hook was silently freezing after Chrome downloaded, causing every nightly run to hang for 6 hours before GitHub cancelled it.
+- **Node.js 20 action deprecation** — added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"` at workflow level to all 7 affected workflows ahead of the mandatory June 16 migration. Added `timeout-minutes: 30` to `e2e` and `qa` jobs so future hangs fail fast.
+
 ## 0.109.2 - 2026-06-13
 
 ### Fixed
