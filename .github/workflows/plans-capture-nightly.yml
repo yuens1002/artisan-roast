@@ -13,6 +13,9 @@ permissions:
   contents: read
   issues: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 # Detects drift between prod /api/plans/resolved and the committed baseline at
 # e2e/plans/captured/*.json. A failing run means either (a) the platform shipped
 # a resolver change — refresh the baseline locally and commit, or (b) the
