@@ -43,13 +43,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Restore Playwright browsers cache
+        id: playwright-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
       - name: Install Playwright system deps
         run: npx playwright install-deps chromium
         env:
           DEBIAN_FRONTEND: noninteractive
 
       - name: Install Playwright Chromium browser
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install chromium
+        timeout-minutes: 5
+
+      - name: Save Playwright browsers cache
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Inject fixture results (fixture mode)
         if: ${{ inputs.fixture_results != '' }}
@@ -208,6 +226,16 @@ jobs:
           echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
           echo "ℹ️  Open issue: ${ISSUE_NUMBER:-none}"
 
+      - name: Restore Playwright browser cache (Category A)
+        id: playwright-cache-selfheal
+        if: env.CATEGORY == 'A'
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
       - name: Install Playwright system deps (Category A)
         if: env.CATEGORY == 'A'
         run: npx playwright install-deps chromium
@@ -215,8 +243,16 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
 
       - name: Install Playwright Chromium browser (Category A)
-        if: env.CATEGORY == 'A'
+        if: env.CATEGORY == 'A' && steps.playwright-cache-selfheal.outputs.cache-hit != 'true'
         run: npx playwright install chromium
+        timeout-minutes: 5
+
+      - name: Save Playwright browser cache (Category A)
+        if: env.CATEGORY == 'A' && steps.playwright-cache-selfheal.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Repair (Category A)
         if: env.CATEGORY == 'A'

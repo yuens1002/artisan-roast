@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.4 - 2026-06-15
+
+### Fixed
+
+- **Nightly CI playwright extraction hang** — added `actions/cache@v4` for `~/.cache/ms-playwright` in `e2e-nightly.yml` and `qa-nightly.yml` (including `self-heal` job). On cache hit, playwright skips the 167 MB zip download and extraction entirely. Added `timeout-minutes: 5` per step as a backstop on cache misses.
+
 ## 0.109.3 - 2026-06-14
 
 ### Fixed
