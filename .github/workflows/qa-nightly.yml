@@ -59,7 +59,26 @@ jobs:
 
       - name: Install Playwright Chromium browser
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --no-shell chromium
+        run: |
+          CHROMIUM_INFO=$(node -e "
+            const r = require('./node_modules/playwright-core/lib/server/registry/index.js');
+            const ex = r.registry.findExecutable('chromium');
+            process.stdout.write(JSON.stringify({
+              dir: ex.directory,
+              url: ex.downloadURLs[0],
+              exe: ex.executablePath() || ''
+            }));
+          ")
+          CHROMIUM_DIR=$(echo "$CHROMIUM_INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).dir)")
+          CHROMIUM_URL=$(echo "$CHROMIUM_INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).url)")
+          CHROMIUM_EXE=$(echo "$CHROMIUM_INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).exe)")
+          mkdir -p "$CHROMIUM_DIR"
+          curl -L --progress-bar -o /tmp/chrome.zip "$CHROMIUM_URL"
+          unzip -qo /tmp/chrome.zip -d "$CHROMIUM_DIR"
+          rm /tmp/chrome.zip
+          [ -n "$CHROMIUM_EXE" ] && [ -f "$CHROMIUM_EXE" ] && chmod 755 "$CHROMIUM_EXE" || true
+          touch "$CHROMIUM_DIR/INSTALLATION_COMPLETE"
+          npx playwright install --no-shell chromium
         timeout-minutes: 5
         env:
           DEBUG: "pw:install"
@@ -246,7 +265,26 @@ jobs:
 
       - name: Install Playwright Chromium browser (Category A)
         if: env.CATEGORY == 'A' && steps.playwright-cache-selfheal.outputs.cache-hit != 'true'
-        run: npx playwright install --no-shell chromium
+        run: |
+          CHROMIUM_INFO=$(node -e "
+            const r = require('./node_modules/playwright-core/lib/server/registry/index.js');
+            const ex = r.registry.findExecutable('chromium');
+            process.stdout.write(JSON.stringify({
+              dir: ex.directory,
+              url: ex.downloadURLs[0],
+              exe: ex.executablePath() || ''
+            }));
+          ")
+          CHROMIUM_DIR=$(echo "$CHROMIUM_INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).dir)")
+          CHROMIUM_URL=$(echo "$CHROMIUM_INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).url)")
+          CHROMIUM_EXE=$(echo "$CHROMIUM_INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).exe)")
+          mkdir -p "$CHROMIUM_DIR"
+          curl -L --progress-bar -o /tmp/chrome.zip "$CHROMIUM_URL"
+          unzip -qo /tmp/chrome.zip -d "$CHROMIUM_DIR"
+          rm /tmp/chrome.zip
+          [ -n "$CHROMIUM_EXE" ] && [ -f "$CHROMIUM_EXE" ] && chmod 755 "$CHROMIUM_EXE" || true
+          touch "$CHROMIUM_DIR/INSTALLATION_COMPLETE"
+          npx playwright install --no-shell chromium
         timeout-minutes: 5
         env:
           DEBUG: "pw:install"

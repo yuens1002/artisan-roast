@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.6 - 2026-06-15
+
+### Fixed
+
+- **Nightly CI playwright install hang (take 4, root cause found)** — `playwright install chromium` uses `yauzl` (pure JavaScript zip library) for extraction. On GitHub Actions runners, yauzl extraction of the 167 MB Chrome zip hangs indefinitely with zero output. Fix: download with `curl` (fast, native) then extract with system `unzip` (C implementation, ~10× faster), write playwright's `INSTALLATION_COMPLETE` marker so the subsequent `playwright install` call skips re-extraction and only downloads ffmpeg (small, fast). Applied to `e2e-nightly.yml` and both jobs in `qa-nightly.yml`.
+
 ## 0.109.5 - 2026-06-15
 
 ### Fixed
