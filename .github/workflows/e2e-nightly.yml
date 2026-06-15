@@ -38,6 +38,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
       - name: Install Playwright system deps
         run: npx playwright install-deps chromium
         env:
@@ -45,6 +53,7 @@ jobs:
 
       - name: Install Playwright Chromium browser
         run: npx playwright install chromium
+        timeout-minutes: 5
 
       - name: Seed demo admin for e2e tests
         run: npm run create-admin -- "--email=$E2E_ADMIN_EMAIL" "--password=$E2E_ADMIN_PASSWORD" "--name=Admin"
