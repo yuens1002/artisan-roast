@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.5 - 2026-06-15
+
+### Fixed
+
+- **Nightly CI playwright install hang (take 3)** — `playwright install chromium` silently downloads two additional artifacts after the main 167 MB zip: `chromium-headless-shell` and `ffmpeg`, both with no progress bar. These silent downloads cause the 5-minute step timeout. Switched to `--no-shell` flag to skip the headless-shell download; tests use `devices["Desktop Chrome"]` with full chromium and don't need the headless shell variant. Added `DEBUG=pw:install` so future hangs produce diagnostic output in the step log.
+
 ## 0.109.4 - 2026-06-15
 
 ### Fixed

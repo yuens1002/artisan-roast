@@ -59,8 +59,10 @@ jobs:
 
       - name: Install Playwright Chromium browser
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install chromium
+        run: npx playwright install --no-shell chromium
         timeout-minutes: 5
+        env:
+          DEBUG: "pw:install"
 
       - name: Save Playwright browsers cache
         if: steps.playwright-cache.outputs.cache-hit != 'true'
@@ -244,8 +246,10 @@ jobs:
 
       - name: Install Playwright Chromium browser (Category A)
         if: env.CATEGORY == 'A' && steps.playwright-cache-selfheal.outputs.cache-hit != 'true'
-        run: npx playwright install chromium
+        run: npx playwright install --no-shell chromium
         timeout-minutes: 5
+        env:
+          DEBUG: "pw:install"
 
       - name: Save Playwright browser cache (Category A)
         if: env.CATEGORY == 'A' && steps.playwright-cache-selfheal.outputs.cache-hit != 'true'
