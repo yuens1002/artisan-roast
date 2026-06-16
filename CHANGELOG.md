@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.7 - 2026-06-15
+
+### Fixed
+
+- **Nightly CI playwright install hang (take 5, complete bypass)** — v0.109.6 fixed the chromium extraction hang but `playwright install --no-shell chromium` still downloads ffmpeg and extracts it with yauzl, which also hangs on Node.js 24 GitHub runners even for tiny (2.37 MB) zips. Root cause confirmed: yauzl's pure-JavaScript extraction hangs on ALL zip files on Node.js 24 shared runners. Fix: `install_browser()` shell function now pre-installs both `chromium` and `ffmpeg` via curl + system `unzip` + `INSTALLATION_COMPLETE` marker before calling `playwright install`. The `playwright install` call finds both markers and completes in < 1s. Applied to `e2e-nightly.yml` and both jobs in `qa-nightly.yml`.
+
 ## 0.109.6 - 2026-06-15
 
 ### Fixed

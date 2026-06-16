@@ -55,34 +55,31 @@ jobs:
       - name: Install Playwright Chromium browser
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
-          # playwright uses yauzl (JS) for zip extraction which hangs on the 167 MB Chrome zip.
-          # Bypass: download with curl + extract with system unzip (C impl, ~10x faster),
-          # write INSTALLATION_COMPLETE marker so playwright skips re-extraction,
-          # then let playwright install handle only ffmpeg (small, fast).
-          CHROMIUM_INFO=$(node -e "
-            const r = require('./node_modules/playwright-core/lib/server/registry/index.js');
-            const ex = r.registry.findExecutable('chromium');
-            process.stdout.write(JSON.stringify({
-              dir: ex.directory,
-              url: ex.downloadURLs[0],
-              exe: ex.executablePath() || ''
-            }));
-          ")
-          CHROMIUM_DIR=$(echo "$CHROMIUM_INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).dir)")
-          CHROMIUM_URL=$(echo "$CHROMIUM_INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).url)")
-          CHROMIUM_EXE=$(echo "$CHROMIUM_INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).exe)")
-          echo "Dir:  $CHROMIUM_DIR"
-          echo "URL:  $CHROMIUM_URL"
-          echo "Exe:  $CHROMIUM_EXE"
-          mkdir -p "$CHROMIUM_DIR"
-          echo "Downloading Chrome zip..."
-          curl -L --progress-bar -o /tmp/chrome.zip "$CHROMIUM_URL"
-          echo "Extracting with system unzip..."
-          unzip -qo /tmp/chrome.zip -d "$CHROMIUM_DIR"
-          rm /tmp/chrome.zip
-          [ -n "$CHROMIUM_EXE" ] && [ -f "$CHROMIUM_EXE" ] && chmod 755 "$CHROMIUM_EXE" || true
-          touch "$CHROMIUM_DIR/INSTALLATION_COMPLETE"
-          echo "Chromium pre-installed — running playwright install for remaining deps..."
+          # playwright's yauzl (JS zip library) hangs on Node.js 24 for ALL zips.
+          # Bypass for both chromium and ffmpeg: curl download + system unzip + INSTALLATION_COMPLETE marker.
+          # playwright install then finds both markers and completes in < 1s.
+          install_browser() {
+            local NAME="$1"
+            local INFO=$(node -e "
+              const r = require('./node_modules/playwright-core/lib/server/registry/index.js');
+              const ex = r.registry.findExecutable('$NAME');
+              process.stdout.write(JSON.stringify({dir:ex.directory,url:ex.downloadURLs[0],exe:ex.executablePath()||''}));
+            ")
+            local DIR URL EXE
+            DIR=$(echo "$INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).dir)")
+            URL=$(echo "$INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).url)")
+            EXE=$(echo "$INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).exe)")
+            echo "[$NAME] dir=$DIR url=$URL"
+            mkdir -p "$DIR"
+            curl -L --fail --progress-bar -o "/tmp/pw-$NAME.zip" "$URL"
+            unzip -qo "/tmp/pw-$NAME.zip" -d "$DIR"
+            rm "/tmp/pw-$NAME.zip"
+            [ -n "$EXE" ] && [ -f "$EXE" ] && chmod 755 "$EXE" || true
+            touch "$DIR/INSTALLATION_COMPLETE"
+            echo "[$NAME] pre-installed"
+          }
+          install_browser chromium
+          install_browser ffmpeg
           npx playwright install --no-shell chromium
         timeout-minutes: 5
         env:
