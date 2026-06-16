@@ -56,8 +56,9 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
           # playwright's yauzl (JS zip library) hangs on Node.js 24 for ALL zips.
-          # Bypass for both chromium and ffmpeg: curl download + system unzip + INSTALLATION_COMPLETE marker.
-          # playwright install then finds both markers and completes in < 1s.
+          # Bypass all three artifacts (chromium, chromium-headless-shell, ffmpeg):
+          # curl download + system unzip + INSTALLATION_COMPLETE marker each.
+          # playwright install then finds all markers and completes in < 1s.
           install_browser() {
             local NAME="$1"
             local INFO=$(node -e "
@@ -79,8 +80,9 @@ jobs:
             echo "[$NAME] pre-installed"
           }
           install_browser chromium
+          install_browser chromium-headless-shell
           install_browser ffmpeg
-          npx playwright install --no-shell chromium
+          npx playwright install chromium
         timeout-minutes: 5
         env:
           DEBUG: "pw:install"

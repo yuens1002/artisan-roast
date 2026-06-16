@@ -80,8 +80,9 @@ jobs:
             touch "$DIR/INSTALLATION_COMPLETE"
           }
           install_browser chromium
+          install_browser chromium-headless-shell
           install_browser ffmpeg
-          npx playwright install --no-shell chromium
+          npx playwright install chromium
         timeout-minutes: 5
         env:
           DEBUG: "pw:install"
@@ -289,8 +290,9 @@ jobs:
             touch "$DIR/INSTALLATION_COMPLETE"
           }
           install_browser chromium
+          install_browser chromium-headless-shell
           install_browser ffmpeg
-          npx playwright install --no-shell chromium
+          npx playwright install chromium
         timeout-minutes: 5
         env:
           DEBUG: "pw:install"

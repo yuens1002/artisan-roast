@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.8 - 2026-06-16
+
+### Fixed
+
+- **Nightly CI — E2E tests need chromium-headless-shell** — `devices["Desktop Chrome"]` in `playwright.config.ts` resolves to `chromium-headless-shell`, not full chromium. The `--no-shell` flag added in v0.109.5 was skipping it; extended `install_browser()` to also pre-install `chromium-headless-shell` via curl + system `unzip` + `INSTALLATION_COMPLETE` marker (same yauzl bypass pattern). Removed `--no-shell` from the final `playwright install` call — all three artifacts (chromium, chromium-headless-shell, ffmpeg) are now pre-installed so playwright finds all markers and exits in < 1s. Applied to `e2e-nightly.yml` and both jobs in `qa-nightly.yml`.
+
 ## 0.109.7 - 2026-06-15
 
 ### Fixed
