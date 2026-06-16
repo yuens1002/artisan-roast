@@ -59,7 +59,7 @@ jobs:
           # Bypass for both chromium and ffmpeg: curl download + system unzip + INSTALLATION_COMPLETE marker.
           # playwright install then finds both markers and completes in < 1s.
           install_browser() {
-            local NAME="$1" EXE_NAME="$2"
+            local NAME="$1"
             local INFO=$(node -e "
               const r = require('./node_modules/playwright-core/lib/server/registry/index.js');
               const ex = r.registry.findExecutable('$NAME');
@@ -71,9 +71,9 @@ jobs:
             EXE=$(echo "$INFO" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).exe)")
             echo "[$NAME] dir=$DIR url=$URL"
             mkdir -p "$DIR"
-            curl -L --progress-bar -o /tmp/pw-$NAME.zip "$URL"
-            unzip -qo /tmp/pw-$NAME.zip -d "$DIR"
-            rm /tmp/pw-$NAME.zip
+            curl -L --fail --progress-bar -o "/tmp/pw-$NAME.zip" "$URL"
+            unzip -qo "/tmp/pw-$NAME.zip" -d "$DIR"
+            rm "/tmp/pw-$NAME.zip"
             [ -n "$EXE" ] && [ -f "$EXE" ] && chmod 755 "$EXE" || true
             touch "$DIR/INSTALLATION_COMPLETE"
             echo "[$NAME] pre-installed"
