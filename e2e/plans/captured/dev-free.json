@@ -100,7 +100,8 @@
           "Custom development",
           "Feature requests",
           "Third-party integrations"
-        ]
+        ],
+        "stripeCouponId": "CqzGPjjs"
       },
       "highlight": true,
       "visibility": "self-hosted",
@@ -144,7 +145,7 @@
       ],
       "saleLabel": "1st 6mos Launch Special",
       "salePrice": 3900,
-      "saleEndsAt": "2026-06-30T23:59:59.000Z",
+      "saleEndsAt": "<TIME_DEPENDENT>",
       "state": {
         "status": "NONE",
         "actions": [

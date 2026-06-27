@@ -150,14 +150,20 @@ async function loadKeys(): Promise<Record<string, string>> {
   return parseEnvFile(text);
 }
 
-/** Recursively replace `used` counters with a placeholder so reruns don't
- *  diff trivially. resolvedAt is normalised separately in captureOne(). */
+/** Recursively replace time-dependent fields with a placeholder so reruns
+ *  don't diff trivially. resolvedAt is normalised separately in captureOne().
+ *
+ *  - `used`: pool usage counters that increment with activity
+ *  - `saleEndsAt`: promotional end dates updated when sales are extended;
+ *    normalising prevents a monthly false-positive on every sale extension */
+const TIME_DEPENDENT_KEYS = new Set(["used", "saleEndsAt"]);
+
 function normalizeTimeDependentFields(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(normalizeTimeDependentFields);
   if (value !== null && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>).map(([k, v]) =>
-        k === "used" ? [k, "<TIME_DEPENDENT>"] : [k, normalizeTimeDependentFields(v)]
+        TIME_DEPENDENT_KEYS.has(k) ? [k, "<TIME_DEPENDENT>"] : [k, normalizeTimeDependentFields(v)]
       )
     );
   }
