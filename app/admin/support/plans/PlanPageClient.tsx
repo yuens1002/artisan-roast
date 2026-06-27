@@ -328,7 +328,11 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
     }
     if (action.endpoint) {
       if (IS_DEMO) {
-        handleSubscribe(plan.slug);
+        if (action.endpoint.startsWith("/api/checkout")) {
+          handleSubscribe(plan.slug);
+        } else {
+          toast({ title: "Not available in demo mode" });
+        }
         return;
       }
       startTransition(async () => {
