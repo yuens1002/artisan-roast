@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.109.10 - 2026-06-27
+
+### Fixed
+
+- **Plans page — Priority Support subscribe CTA in demo mode** — `action.endpoint` path in `handleAction` was missing an `IS_DEMO` guard. The priority-support plan's `checkoutUrl` (`/api/checkout?planSlug=priority-support`) starts with `/api/` and is classified as an endpoint by the platform's materializer, so it bypassed the existing demo-bypass guard and attempted to POST to the store's cart checkout route (wrong). Now routes checkout endpoints (`/api/checkout*`) through the demo-bypass flow (toast: "Purchase complete — Demo mode, no charge made.") and shows "Not available in demo mode" for any other endpoint action. Added contract tests covering both paths.
+- **Plans page not loading on demo site** — `LICENSE_KEY` was missing from the Vercel production environment, causing `fetchResolvedPlans()` to silently return `[]`. Added `LICENSE_KEY` to the `artisan-roast` Vercel project's production env.
+
 ## 0.109.9 - 2026-06-26
 
 ### Fixed

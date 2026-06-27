@@ -6,9 +6,9 @@
 
 ---
 
-## Now — v0.100.9
+## Now — v0.109.10
 
-_Patch — Counter SRP refactor: route.ts split into extraction, prompts, catalog, and types modules (395 lines, orchestration-only). No behavior change._
+_Patch — Priority Support subscribe CTA in demo mode now shows toast via demo-bypass; LICENSE_KEY added to Vercel prod so plans page loads._
 
 ---
 
