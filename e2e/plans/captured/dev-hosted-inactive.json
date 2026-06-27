@@ -82,6 +82,7 @@
       ],
       "saleLabel": "6mos Launch Special",
       "salePrice": 6900,
+      "saleEndsAt": "<TIME_DEPENDENT>",
       "state": {
         "status": "INACTIVE",
         "badge": "Inactive",

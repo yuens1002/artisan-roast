@@ -327,6 +327,10 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
       return;
     }
     if (action.endpoint) {
+      if (IS_DEMO) {
+        handleSubscribe(plan.slug);
+        return;
+      }
       startTransition(async () => {
         try {
           const resp = await fetch(action.endpoint!, { method: "POST" });
