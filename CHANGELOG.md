@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.9 - 2026-06-26
+
+### Fixed
+
+- **Plans resolver drift — daily false positives on `saleEndsAt`** — `saleEndsAt` is a promotional end date updated when sales are extended; treating it as structural data caused the nightly drift check to fail every day whenever the platform team extended the launch sale. Added `saleEndsAt` to `TIME_DEPENDENT_KEYS` in `capture-plan-scenarios.ts` (same `<TIME_DEPENDENT>` placeholder pattern as `used`). Also refreshed the captured baselines to pick up two platform changes since the last capture: `saleEndsAt` now returned on hosted-plan scenarios, and `stripeCouponId` added to Priority Support addon.
+
 ## 0.109.8 - 2026-06-16
 
 ### Fixed
