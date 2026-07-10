@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.109.13",
+  "version": "0.109.14",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -125,7 +125,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.82.0",
+    "@anthropic-ai/sdk": "^0.111.0",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
