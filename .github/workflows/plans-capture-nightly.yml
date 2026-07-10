@@ -37,7 +37,7 @@ jobs:
       PLATFORM_URL: https://manage.artisanroast.app
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.3.1
+        uses: actions/checkout@v7.0.0
 
       - name: Setup Node
         uses: actions/setup-node@v6.4.0
@@ -81,7 +81,7 @@ jobs:
           fi
 
       - name: Upload drift diff
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         if: failure() && steps.drift.outputs.drift_detected == 'true'
         with:
           name: plans-resolver-drift

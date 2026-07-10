@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.3.1
+        uses: actions/checkout@v7.0.0
 
       - name: Setup Node
         uses: actions/setup-node@v6.4.0
@@ -45,7 +45,7 @@ jobs:
 
       - name: Restore Playwright browsers cache
         id: playwright-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -89,7 +89,7 @@ jobs:
 
       - name: Save Playwright browsers cache
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -159,7 +159,7 @@ jobs:
 
       - name: Upload QA results artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: qa-results
           path: qa-results.json
@@ -209,7 +209,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.3.1
+        uses: actions/checkout@v7.0.0
 
       - name: Setup Node
         uses: actions/setup-node@v6.4.0
@@ -220,7 +220,7 @@ jobs:
         run: npm ci
 
       - name: Download QA results artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: qa-results
         continue-on-error: true
@@ -254,7 +254,7 @@ jobs:
       - name: Restore Playwright browser cache (Category A)
         id: playwright-cache-selfheal
         if: env.CATEGORY == 'A'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -299,7 +299,7 @@ jobs:
 
       - name: Save Playwright browser cache (Category A)
         if: env.CATEGORY == 'A' && steps.playwright-cache-selfheal.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}

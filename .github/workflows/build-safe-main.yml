@@ -29,7 +29,7 @@ jobs:
       RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL != '' && secrets.RESEND_FROM_EMAIL || 'orders@example.com' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.3.1
+        uses: actions/checkout@v7.0.0
 
       # Check if code files changed (vs docs-only)
       - name: Check for code changes
@@ -65,7 +65,7 @@ jobs:
       - name: Restore Next.js cache
         if: steps.filter.outputs.code == 'true'
         id: next-cache
-        uses: actions/cache/restore@v4.2.3
+        uses: actions/cache/restore@v6.1.0
         with:
           path: |
             .next/cache
@@ -101,7 +101,7 @@ jobs:
 
       - name: Save Next.js cache
         if: steps.filter.outputs.code == 'true' && steps.next-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4.2.3
+        uses: actions/cache/save@v6.1.0
         with:
           path: |
             .next/cache

@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.3.1
+        uses: actions/checkout@v7.0.0
 
       - name: Detect changed files
         id: filter
@@ -36,7 +36,7 @@ jobs:
       # Warn when setup-related files change without updating the spec
       - name: Post spec-drift comment
         if: steps.filter.outputs.setup == 'true' && steps.filter.outputs.spec == 'false'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9.0.0
         with:
           script: |
             const body = [
@@ -65,7 +65,7 @@ jobs:
       # Warn when the spec changes without updating the qa-agent test blocks
       - name: Post missing-test comment
         if: steps.filter.outputs.spec == 'true' && steps.filter.outputs.agent == 'false'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9.0.0
         with:
           script: |
             const body = [
