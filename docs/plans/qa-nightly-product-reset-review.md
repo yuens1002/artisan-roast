@@ -33,7 +33,7 @@ Not applicable — no `AC-TST-*` rows; this is a workflow-YAML change with no ap
 
 ## Root-cause check (schema)
 
-`Product` has five inbound relations. Three cascade (`ProductVariant`, `ProductTag`, `Review`, `AddOnLink.primaryProduct`); two do not:
+`Product` has six inbound relations. Four cascade (`ProductVariant`, `ProductTag`, `Review`, `AddOnLink.primaryProduct`); two do not:
 
 - `CategoriesOnProducts.product` — no `onDelete` specified (defaults to restrict/no-action in Postgres)
 - `AddOnLink.addOnProduct` — explicit `onDelete: Restrict`
