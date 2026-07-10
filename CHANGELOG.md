@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.11 - 2026-07-10
+
+### Chore
+
+- **Dependency + CI maintenance sweep** — `npm update` for patch/minor bumps across ~90 packages, closing all 7 outstanding Next.js security advisories (DoS, SSRF, cache poisoning, middleware bypass — now on 16.2.10) plus transitive `undici`/`ws`/`qs`/`uuid` CVEs (17 → 9 vulnerabilities, no highs remaining). Reverted two packages that `npm update` over-eagerly bumped and would have broken things: `stripe` (20.4.1 pinned a new Stripe API version literal that failed typecheck — API version bumps need dedicated review, not a side effect of a routine update) and `eslint-plugin-react-hooks` (7.1.1 ships two new stricter rules that flag 53 pre-existing call sites — deferred to its own cleanup session). Bumped pinned GitHub Actions to latest majors across all 7 workflow files (`checkout` v4→v7, `cache` v4→v6.1.0, `upload-artifact` v4→v7.0.1, `download-artifact` v4→v8.0.1, `github-script` v7→v9.0.0) after confirming no breaking changes apply to how this repo uses them. Fixed `install-matrix.yml` running Node 22 with `--ignore-engines` while every other workflow and `package.json` engines require Node ≥24 — now consistent. Remaining `npm audit` findings (`@anthropic-ai/sdk`, `markdownlint-cli2`, plus two npm-suggested "fixes" that are actually downgrades to ancient `prisma`/`next` versions) are real major-version or false-positive cases, left for a dedicated major-bump session.
+
 ## 0.109.10 - 2026-06-27
 
 ### Fixed
