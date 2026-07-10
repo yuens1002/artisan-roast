@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.12 - 2026-07-10
+
+### Fixed
+
+- **qa-nightly — stray products break the empty-state AC** — `Reset QA state` only cleared `Order`/`SiteSettings`/`User`, never `Product`. Under normal nightly cadence this was invisible (nothing else seeds products between runs), but a full `prisma migrate reset --force` + redeploy (e.g. via `install-test.yml`, whose `vercel-build` auto-seeds one demo product when it finds the catalog empty) leaves a product behind that `qa-nightly.yml`'s narrower reset never clears, failing `AC-IS-2` on the next run. Added `DELETE FROM "CategoriesOnProducts"` and `DELETE FROM "AddOnLink"` before `DELETE FROM "Product"` — both relations restrict rather than cascade, so clearing `Product` alone would have hit a foreign-key violation.
+
 ## 0.109.11 - 2026-07-10
 
 ### Chore

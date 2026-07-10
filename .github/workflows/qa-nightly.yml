@@ -140,8 +140,11 @@ jobs:
           DELETE FROM "Order";
           DELETE FROM "SiteSettings" WHERE key = 'eula_accepted';
           DELETE FROM "User";
+          DELETE FROM "CategoriesOnProducts";
+          DELETE FROM "AddOnLink";
+          DELETE FROM "Product";
           SQL
-          echo "✅ QA state reset (orders, EULA + users cleared)"
+          echo "✅ QA state reset (orders, EULA, users + products cleared)"
 
       - name: Run QA agent
         if: ${{ inputs.fixture_results == '' }}
