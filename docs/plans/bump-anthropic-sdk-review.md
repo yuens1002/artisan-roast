@@ -31,7 +31,7 @@ Not applicable — no `AC-TST-*` rows. Verification:
 - `npm run test:ci`: 128 suites / 1437 tests passing
 - `npm run build`: succeeds
 - `npm audit`: the `@anthropic-ai/sdk` advisory is gone (6 moderate → 5 moderate; the remaining 5 are unrelated, pre-existing, and have no sane fix path — see conversation record)
-- **Live verification pending**: dispatching `qa-nightly.yml` against this branch to exercise `client.messages.create()` for real against the bumped SDK (the actual runtime surface, not just static analysis) before merge.
+- **Live verification complete**: dispatched `qa-nightly.yml` against this branch to exercise `client.messages.create()` for real against the bumped SDK (the actual runtime surface, not just static analysis) — passed (all 18 ACs green).
 
 ## Docs drift
 
