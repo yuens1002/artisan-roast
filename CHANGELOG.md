@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.14 - 2026-07-10
+
+### Fixed
+
+- **`@anthropic-ai/sdk` moderate security advisory** — bumped 0.82.0 → 0.111.0, closing `GHSA-p7fg-763f-g4gf` (insecure default file permissions in the beta Local Filesystem Memory Tool). Neither `scripts/qa-agent.js` nor `scripts/qa-repair-agent.js` uses the `client.beta.*` namespace this bug lives in, so it wasn't actually exploitable in our usage, but the vulnerable code shipped in the installed package regardless. Verified no breaking changes across the ~55 releases in range: the stable Messages API surface these scripts use (`client.messages.create`, `response.usage`, `response.stop_reason`, tool-use content blocks, env-driven `ANTHROPIC_BASE_URL`/`ANTHROPIC_API_KEY` resolution) is unchanged, and neither referenced model (`claude-sonnet-4-6`, `claude-haiku-4-5-20251001`) was retired.
+
 ## 0.109.13 - 2026-07-10
 
 ### Chore
