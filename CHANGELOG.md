@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.109.13 - 2026-07-10
+
+### Chore
+
+- **Low-risk npm major-version bumps** — `uuid` 13→14, `@types/node` 25→26, `markdownlint-cli2` 0.21→0.23, `sharp` 0.34→0.35. All have narrow, standard-API usage in this codebase (1 file each for `uuid`/`sharp`, dev-tooling-only for `markdownlint-cli2`) and verified clean via `precheck`/`test:ci`/`build`. Reverted `archiver`/`@types/archiver` (would have stayed at 7.x): `archiver@8.0.0` rewrote its entire API from a factory function (`archiver("zip", opts)`) to ES classes (`new ZipArchive(opts)`) — real migration work, not a mechanical version bump, deferred to its own session.
+
 ## 0.109.12 - 2026-07-10
 
 ### Fixed
